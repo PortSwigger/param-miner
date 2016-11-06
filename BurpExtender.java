@@ -281,7 +281,7 @@ class Fuzzable extends CustomScanIssue {
     private final static String NAME = "Interesting input handling: ";
     private final static String DETAIL = "The application reacts to inputs in a way that suggests it might be vulnerable to some kind of server-side code injection. The probes are listed below in chronological order.";
     private final static String REMEDIATION = "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of of manual investigation. Try to determine the root cause of the observed behaviour." +
-            "Refer to <a href='http://blog.portswigger.net/2016/10/backslash-powered-scanning.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
+            "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
     private final static String SEVERITY = "High";
     private final static String CONFIDENCE = "Firm";
 
@@ -297,7 +297,7 @@ class InputTransformation extends CustomScanIssue {
     private final static String REMEDIATION =
             "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. " +
             "Try to determine the root cause of the observed input transformations." +
-                    "Refer to <a href='http://blog.portswigger.net/2016/10/backslash-powered-scanning.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results.";
+                    "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results.";
     private final static String CONFIDENCE = "Tentative";
 
     public InputTransformation(ArrayList<String> interesting, ArrayList<String> boring, IHttpRequestResponse base, URL url, String paramName) {
