@@ -377,7 +377,11 @@ class DiffingScan {
                 }
             }
 
-            if (Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
+            byte type = insertionPoint.getInsertionPointType();
+            boolean isInPath = (type == IScannerInsertionPoint.INS_URL_PATH_FILENAME) ||
+                    type == IScannerInsertionPoint.INS_URL_PATH_FOLDER ||
+                    type == IScannerInsertionPoint.INS_URL_PATH_REST;
+            if (!isInPath && Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
                 Probe dotSlash = new Probe("File Path Manipulation", 3, "../", "z/", "_/", "./../");
                 dotSlash.addEscapePair("./z/../", "././");
                 dotSlash.setRandomAnchor(false);
