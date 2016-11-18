@@ -16,18 +16,17 @@ public class BurpExtender implements IBurpExtender {
         new Utilities(callbacks);
         callbacks.setExtensionName(name);
 
+
         try {
             StringUtils.isNumeric("1");
-        }
-        catch (java.lang.NoClassDefFoundError e) {
+        } catch (java.lang.NoClassDefFoundError e) {
             Utilities.out("Failed to import the Apache Commons Lang library. You can get it from http://commons.apache.org/proper/commons-lang/");
             throw new NoClassDefFoundError();
         }
 
         try {
             callbacks.getHelpers().analyzeResponseVariations();
-        }
-        catch (java.lang.NoSuchMethodError e) {
+        } catch (java.lang.NoSuchMethodError e) {
             Utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
             throw new NoSuchMethodError();
         }
@@ -35,7 +34,7 @@ public class BurpExtender implements IBurpExtender {
         callbacks.registerScannerCheck(new FastScan(callbacks));
 
         Utilities.out("Loaded " + name + " v" + version);
-        Utilities.out("Debug mode: "+Utilities.DEBUG);
+        Utilities.out("Debug mode: " + Utilities.DEBUG);
         Utilities.out("Thorough mode: " + Utilities.THOROUGH_MODE);
     }
 }
@@ -57,7 +56,7 @@ class FastScan implements IScannerCheck {
         IParameter baseParam = null;
         int basePayloadStart = insertionPoint.getPayloadOffsets("x".getBytes())[0];
         List<IParameter> params = helpers.analyzeRequest(request).getParameters();
-        for ( IParameter param: params){
+        for (IParameter param : params) {
             if (param.getValueStart() == basePayloadStart && insertionPoint.getBaseValue().equals(param.getValue())) {
                 baseParam = param;
                 break;
@@ -75,7 +74,7 @@ class FastScan implements IScannerCheck {
 
         ArrayList<IScanIssue> issues = new ArrayList<>();
         String leftAnchor = Utilities.randomString(5);
-        String rightAnchor = "z"+Utilities.randomString(2);
+        String rightAnchor = "z" + Utilities.randomString(2);
         Attack basicAttack = Utilities.buildTransformationAttack(baseRequestResponse, insertionPoint, leftAnchor, "\\\\", rightAnchor);
 
         issues.add(diffingScan.findReflectionIssues(baseRequestResponse, insertionPoint, basicAttack));
@@ -87,7 +86,7 @@ class FastScan implements IScannerCheck {
         issues.removeAll(Collections.singleton(null));
         if (baseParam != null && (baseParam.getType() == IParameter.PARAM_BODY || baseParam.getType() == IParameter.PARAM_URL) && Utilities.getExtension(baseRequestResponse.getRequest()).equals(".php")) {
 
-            String param_name = baseParam.getName()+"[]";
+            String param_name = baseParam.getName() + "[]";
 
             byte[] newReq = helpers.removeParameter(baseRequestResponse.getRequest(), baseParam);
             IParameter newParam = helpers.buildParameter(param_name, baseParam.getValue(), baseParam.getType());
@@ -170,8 +169,9 @@ class Probe {
     public void setBase(String base) {
         this.base = base;
     }
-    public void setEscapeStrings(String... args){
-        for (String arg: args ) {
+
+    public void setEscapeStrings(String... args) {
+        for (String arg : args) {
             escapeStrings.add(new String[]{arg});
         }
     }
@@ -221,7 +221,7 @@ class Attack {
         add(req.getResponse(), anchor);
     }
 
-    public HashMap<String, Object> getPrint(){
+    public HashMap<String, Object> getPrint() {
         return fingerprint;
     }
 
@@ -245,7 +245,9 @@ class Attack {
         fingerprint = generatedPrint;
     }
 
-    public Probe getProbe() { return probe; }
+    public Probe getProbe() {
+        return probe;
+    }
 
     public Attack add(byte[] response, String anchor) {
         assert (req != null);
@@ -257,8 +259,7 @@ class Attack {
         int reflections = Utilities.countMatches(response, anchor.getBytes());
         if (responseReflections == -1) {
             responseReflections = reflections;
-        }
-        else if (responseReflections != reflections) {
+        } else if (responseReflections != reflections) {
             responseReflections = -2;
         }
 
@@ -286,7 +287,7 @@ class Fuzzable extends CustomScanIssue {
     private final static String CONFIDENCE = "Firm";
 
     public Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail) {
-        super(requests[0].getHttpService(), url, requests, NAME+title, DETAIL+detail, SEVERITY, CONFIDENCE, REMEDIATION);
+        super(requests[0].getHttpService(), url, requests, NAME + title, DETAIL + detail, SEVERITY, CONFIDENCE, REMEDIATION);
     }
 
 }
@@ -296,7 +297,7 @@ class InputTransformation extends CustomScanIssue {
     private final static String DETAIL = "The application transforms input in a way that suggests it might be vulnerable to some kind of server-side code injection";
     private final static String REMEDIATION =
             "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. " +
-            "Try to determine the root cause of the observed input transformations." +
+                    "Try to determine the root cause of the observed input transformations." +
                     "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results.";
     private final static String CONFIDENCE = "Tentative";
 
@@ -306,21 +307,21 @@ class InputTransformation extends CustomScanIssue {
 
     private static String generateSeverity(ArrayList<String> interesting) {
         String severity = "High";
-        if(interesting.size() == 1 && interesting.contains("\\0 => \0")) {
+        if (interesting.size() == 1 && interesting.contains("\\0 => \0")) {
             severity = "Information";
         }
         return severity;
     }
 
     private static String generateDetail(ArrayList<String> interesting, ArrayList<String> boring, String paramName) {
-        String details = DETAIL + "<br/><br/>Affected parameter:<code>"+paramName+"</code><br/><br/>";
+        String details = DETAIL + "<br/><br/>Affected parameter:<code>" + paramName + "</code><br/><br/>";
         details += "<p>Interesting transformations:</p><ul> ";
-        for (String transform: interesting) {
-            details += "<li><b><code style='font-size: 125%;'>"+transform + "</code></b></li>";
+        for (String transform : interesting) {
+            details += "<li><b><code style='font-size: 125%;'>" + transform + "</code></b></li>";
         }
         details += "</ul><p>Boring transformations:</p><ul>";
-        for (String transform: boring) {
-            details += "<li><b><code>"+transform + "</code></b></li>";
+        for (String transform : boring) {
+            details += "<li><b><code>" + transform + "</code></b></li>";
         }
         details += "</ul>";
         return details;
@@ -359,7 +360,7 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
     @Override
     public int[] getPayloadOffsets(byte[] payload) {
         //IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
-        return new int[]{0,0};
+        return new int[]{0, 0};
         //return new int[]{newParam.getValueStart(), newParam.getValueEnd()};
     }
 
