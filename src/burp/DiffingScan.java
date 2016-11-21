@@ -383,7 +383,7 @@ class DiffingScan {
                     type == IScannerInsertionPoint.INS_URL_PATH_REST;
             if (!isInPath && Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
                 Probe dotSlash = new Probe("File Path Manipulation", 3, "../", "z/", "_/", "./../");
-                dotSlash.addEscapePair("./z/../", "././");
+                dotSlash.addEscapePair("./z/../", "././", "./././");
                 dotSlash.setRandomAnchor(false);
                 dotSlash.setPrefix(Probe.PREPEND);
                 attacks.addAll(fuzz(baseRequestResponse, insertionPoint, softBase, dotSlash));
