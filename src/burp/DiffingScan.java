@@ -1,6 +1,5 @@
 package burp;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -65,118 +64,127 @@ class DiffingScan {
         
         String baseValue = insertionPoint.getBaseValue();
 
-        Probe multiFuzz = new Probe("Basic fuzz", 0, "`z'z\"\\", "\\z`z'z\"\\");
-        multiFuzz.addEscapePair("\\`z\\'z\\\"\\\\", "\\`z''z\\\"\\\\");
-        ArrayList<Attack> attacks = injector.fuzz(basicAttack, multiFuzz);
 
-        ArrayList<String> potential_delimiters = new ArrayList<>();
-        if (Utilities.THOROUGH_MODE || !attacks.isEmpty()) {
+        Probe genericFuzz = new Probe("Generic fuzz", 0, "`z'z\"${{%{{\\", "\\z`z'z\"${{%{{\\");
+        genericFuzz.setEscapeStrings("");
 
-            // find the encapsulating quote type: ` ' "
-            Probe trailer = new Probe("Backslash", 1, "\\\\\\", "\\");
-            trailer.setBase("\\");
-            trailer.setEscapeStrings("\\\\\\\\", "\\\\");
+        ArrayList<Attack> attacks = new ArrayList<>();
+        if (!injector.fuzz(basicAttack, genericFuzz).isEmpty()) {
 
-            Probe apos = new Probe("String - apostrophe", 3, "z'z", "\\zz'z", "z/'z"); // "z'z'z"
-            apos.setBase("'");
-            apos.addEscapePair("z\\'z", "z''z");
-            apos.addEscapePair("z\\\\\\'z", "z\\''z");
-
-            Probe quote = new Probe("String - doublequoted", 3, "\"", "\\zz\"");
-            quote.setBase("\"");
-            quote.setEscapeStrings("\\\"");
-
-            Probe backtick = new Probe("String - backtick", 2, "`", "\\z`");
-            backtick.setBase("`");
-            backtick.setEscapeStrings("\\`");
-
-            Probe[] potential_breakers = {trailer, apos, quote, backtick};
-
-            for (Probe breaker : potential_breakers) {
-                ArrayList<Attack> results = injector.fuzz(basicAttack, breaker);
-                if (results.isEmpty()) {
-                    continue;
-                }
-                potential_delimiters.add(breaker.getBase());
-                attacks.addAll(results);
+            boolean worthTryingInjections = false;
+            if (!Utilities.THOROUGH_MODE) {
+                Probe multiFuzz = new Probe("Basic fuzz", 0, "`z'z\"\\", "\\z`z'z\"\\");
+                multiFuzz.addEscapePair("\\`z\\'z\\\"\\\\", "\\`z''z\\\"\\\\");
+                worthTryingInjections = !injector.fuzz(basicAttack, multiFuzz).isEmpty();
             }
 
-            if (potential_delimiters.isEmpty()) {
-                Probe quoteSlash = new Probe("Doublequote plus slash", 4, "\"z\\", "z\"z\\");
-                quoteSlash.setEscapeStrings("\"a\\zz", "z\\z", "z\"z/");
-                attacks.addAll(injector.fuzz(basicAttack, quoteSlash));
+            if(Utilities.THOROUGH_MODE || worthTryingInjections) {
+                ArrayList<String> potential_delimiters = new ArrayList<>();
 
-                Probe aposSlash = new Probe("Singlequote plus slash", 4, "'z\\", "z'z\\");
-                aposSlash.setEscapeStrings("'a\\zz", "z\\z", "z'z/");
-                attacks.addAll(injector.fuzz(basicAttack, aposSlash));
-            }
+                // find the encapsulating quote type: ` ' "
+                Probe trailer = new Probe("Backslash", 1, "\\\\\\", "\\");
+                trailer.setBase("\\");
+                trailer.setEscapeStrings("\\\\\\\\", "\\\\");
 
-            if (potential_delimiters.contains("\\")) {
-                // todo follow up with [char]/e%00
-                Probe regexEscapeAt = new Probe("Regex escape - @", 4, "z@", "\\@z@");
-                regexEscapeAt.setEscapeStrings("z\\@", "\\@z\\@");
-                attacks.addAll(injector.fuzz(basicAttack, regexEscapeAt));
+                Probe apos = new Probe("String - apostrophe", 3, "z'z", "\\zz'z", "z/'z"); // "z'z'z"
+                apos.setBase("'");
+                apos.addEscapePair("z\\'z", "z''z");
+                apos.addEscapePair("z\\\\\\'z", "z\\''z");
 
-                Probe regexEscapeSlash = new Probe("Regex escape - /", 4, "z/", "\\/z/");
-                regexEscapeSlash.setEscapeStrings("z\\/", "\\/z\\/");
-                attacks.addAll(injector.fuzz(basicAttack, regexEscapeSlash));
-            }
+                Probe quote = new Probe("String - doublequoted", 3, "\"", "\\zz\"");
+                quote.setBase("\"");
+                quote.setEscapeStrings("\\\"");
 
-            // find the concatenation character
-            String[] concatenators = {"||", "+", " ", ".", "&"};
-            ArrayList<String[]> injectionSequence = new ArrayList<>();
+                Probe backtick = new Probe("String - backtick", 2, "`", "\\z`");
+                backtick.setBase("`");
+                backtick.setEscapeStrings("\\`");
 
-            for (String delimiter : potential_delimiters) {
-                for (String concat : concatenators) {
-                    Probe concat_attack = new Probe("Concatenation: "+delimiter+concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
-                    concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z");
-                    ArrayList<Attack> results = injector.fuzz(basicAttack, concat_attack);
+                Probe[] potential_breakers = {trailer, apos, quote, backtick};
+
+                for (Probe breaker : potential_breakers) {
+                    ArrayList<Attack> results = injector.fuzz(basicAttack, breaker);
                     if (results.isEmpty()) {
                         continue;
                     }
+                    potential_delimiters.add(breaker.getBase());
                     attacks.addAll(results);
-                    injectionSequence.add(new String[]{delimiter, concat});
                 }
-            }
 
-            // try to invoke a function
-            for (String[] injection: injectionSequence) {
-                String delim = injection[0];
-                String concat = injection[1];
-                ArrayList<Attack> functionProbeResults = exploreAvailableFunctions(injector, basicAttack, delim+concat, concat+delim, true);
-                if (!functionProbeResults.isEmpty()) { //  && !functionProbeResults.get(-1).getProbe().getName().equals("Basic function injection")
-                    attacks.addAll(functionProbeResults);
-                    break;
+                if (potential_delimiters.isEmpty()) {
+                    Probe quoteSlash = new Probe("Doublequote plus slash", 4, "\"z\\", "z\"z\\");
+                    quoteSlash.setEscapeStrings("\"a\\zz", "z\\z", "z\"z/");
+                    attacks.addAll(injector.fuzz(basicAttack, quoteSlash));
+
+                    Probe aposSlash = new Probe("Singlequote plus slash", 4, "'z\\", "z'z\\");
+                    aposSlash.setEscapeStrings("'a\\zz", "z\\z", "z'z/");
+                    attacks.addAll(injector.fuzz(basicAttack, aposSlash));
                 }
+
+                if (potential_delimiters.contains("\\")) {
+                    // todo follow up with [char]/e%00
+                    Probe regexEscapeAt = new Probe("Regex escape - @", 4, "z@", "\\@z@");
+                    regexEscapeAt.setEscapeStrings("z\\@", "\\@z\\@");
+                    attacks.addAll(injector.fuzz(basicAttack, regexEscapeAt));
+
+                    Probe regexEscapeSlash = new Probe("Regex escape - /", 4, "z/", "\\/z/");
+                    regexEscapeSlash.setEscapeStrings("z\\/", "\\/z\\/");
+                    attacks.addAll(injector.fuzz(basicAttack, regexEscapeSlash));
+                }
+
+                // find the concatenation character
+                String[] concatenators = {"||", "+", " ", ".", "&"};
+                ArrayList<String[]> injectionSequence = new ArrayList<>();
+
+                for (String delimiter : potential_delimiters) {
+                    for (String concat : concatenators) {
+                        Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
+                        concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z");
+                        ArrayList<Attack> results = injector.fuzz(basicAttack, concat_attack);
+                        if (results.isEmpty()) {
+                            continue;
+                        }
+                        attacks.addAll(results);
+                        injectionSequence.add(new String[]{delimiter, concat});
+                    }
+                }
+
+                // try to invoke a function
+                for (String[] injection : injectionSequence) {
+                    String delim = injection[0];
+                    String concat = injection[1];
+                    ArrayList<Attack> functionProbeResults = exploreAvailableFunctions(injector, basicAttack, delim + concat, concat + delim, true);
+                    if (!functionProbeResults.isEmpty()) { //  && !functionProbeResults.get(-1).getProbe().getName().equals("Basic function injection")
+                        attacks.addAll(functionProbeResults);
+                        break;
+                    }
+                }
+
             }
 
-        }
+            Probe interp = new Probe("Interpolation fuzz", 2, "%{{z${{z", "z%{{zz${{z");
+            interp.setEscapeStrings("%}}$}}", "}}%z}}$z", "z%}}zz$}}z");
+            ArrayList<Attack> interpResults = injector.fuzz(basicAttack, interp);
+            if (!interpResults.isEmpty()) {
+                attacks.addAll(interpResults);
 
-        Probe interp = new Probe("Interpolation fuzz", 2, "%{{z${{z", "z%{{zz${{z");
-        interp.setEscapeStrings("%}}$}}", "}}%z}}$z", "z%}}zz$}}z");
-        ArrayList<Attack> interpResults = injector.fuzz(basicAttack, interp);
-        if (!interpResults.isEmpty()) {
-            attacks.addAll(interpResults);
+                Probe dollarParse = new Probe("Interpolation - dollar", 5, "${{z", "z${{z");
+                dollarParse.setEscapeStrings("$}}", "}}$z", "z$}}z");
+                ArrayList<Attack> dollarParseAttack = injector.fuzz(basicAttack, dollarParse);
+                attacks.addAll(dollarParseAttack);
 
-            Probe dollarParse = new Probe("Interpolation - dollar", 5, "${{z", "z${{z");
-            dollarParse.setEscapeStrings("$}}", "}}$z", "z$}}z");
-            ArrayList<Attack>  dollarParseAttack = injector.fuzz(basicAttack, dollarParse);
-            attacks.addAll(dollarParseAttack);
+                Probe percentParse = new Probe("Interpolation - percent", 5, "%{{z", "z%{{z");
+                percentParse.setEscapeStrings("%}}", "}}%z", "z%}}z");
+                ArrayList<Attack> percentParseAttack = injector.fuzz(basicAttack, percentParse);
+                attacks.addAll(percentParseAttack);
 
-            Probe percentParse = new Probe("Interpolation - percent", 5, "%{{z", "z%{{z");
-            percentParse.setEscapeStrings("%}}", "}}%z", "z%}}z");
-            ArrayList<Attack> percentParseAttack = injector.fuzz(basicAttack, percentParse);
-            attacks.addAll(percentParseAttack);
-
-            if (!dollarParseAttack.isEmpty() && !percentParseAttack.isEmpty()) {
-                attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "{{", "}}", true));
-            }
-            else if (!dollarParseAttack.isEmpty()) {
-                attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "${", "}", true));
-                attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "", "", true));
-            }
-            else if (!percentParseAttack.isEmpty()) {
-                attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "%{", "}", true));
+                if (!dollarParseAttack.isEmpty() && !percentParseAttack.isEmpty()) {
+                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "{{", "}}", true));
+                } else if (!dollarParseAttack.isEmpty()) {
+                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "${", "}", true));
+                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "", "", true));
+                } else if (!percentParseAttack.isEmpty()) {
+                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "%{", "}", true));
+                }
             }
         }
 
