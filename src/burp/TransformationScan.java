@@ -2,6 +2,7 @@ package burp;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,21 +61,26 @@ public class TransformationScan {
         HashSet<String> transformations = recordHandling(baseRequestResponse, insertionPoint, probe);
         for (String transform : transformations) {
             String pretty_transform = probe + " => " + transform;
-            if (probe.startsWith("\\")) {
-                if (transform.equals(probe) || URLDecoder.decode(transform).equals(probe)) {
-                    noTransform.add(pretty_transform);
-                } else if (transform.equals(probe.substring(1))) {
-                    backslashConsumed.add(pretty_transform);
-                } else {
-                    classifiedTransformations.interesting.add(pretty_transform);
-                }
+            try {
+                if (probe.startsWith("\\")) {
+                    if (transform.equals(probe) || URLDecoder.decode(transform, "UTF-8").equals(probe)) {
+                        noTransform.add(pretty_transform);
+                    } else if (transform.equals(probe.substring(1))) {
+                        backslashConsumed.add(pretty_transform);
+                    } else {
+                        classifiedTransformations.interesting.add(pretty_transform);
+                    }
 
-            } else {
-                if (transform.equals(probe) || URLDecoder.decode(transform).equals(probe)) {
-                    classifiedTransformations.boring.add(pretty_transform);
                 } else {
-                    classifiedTransformations.interesting.add(pretty_transform);
+                    if (transform.equals(probe) || URLDecoder.decode(transform, "UTF-8").equals(probe)) {
+                        classifiedTransformations.boring.add(pretty_transform);
+                    } else {
+                        classifiedTransformations.interesting.add(pretty_transform);
+                    }
                 }
+            }
+            catch (UnsupportedEncodingException e) {
+                classifiedTransformations.interesting.add(pretty_transform);
             }
         }
 
