@@ -51,8 +51,8 @@ public class TransformationScan {
         return getTransformationResults(leftAnchor + "\\" + middleAnchor, rightAnchor, helpers.stringToBytes(helpers.bytesToString(Utilities.filterResponse(attack.getResponse()))));
     }
 
-    private ProbeResults classifyHandling(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String probe, boolean expectBackSlashConsumption) {
-        ProbeResults classifiedTransformations = new ProbeResults();
+    private Probe.ProbeResults classifyHandling(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String probe, boolean expectBackSlashConsumption) {
+        Probe.ProbeResults classifiedTransformations = new Probe.ProbeResults();
 
         HashSet<String> noTransform = new HashSet<>();
         HashSet<String> backslashConsumed = new HashSet<>();
@@ -105,7 +105,7 @@ public class TransformationScan {
         String[] payloads = {"'", "\"", "{", "}", "(", ")", "[", "]", "$", "`", "/", "@", "#", ";", "%", "&", "|", ";", "^", "?"};
 
         for (String payload : decodeBasedPayloads) {
-            ProbeResults handling = classifyHandling(baseRequestResponse, insertionPoint, "\\" + payload, backslashConsumed);
+            Probe.ProbeResults handling = classifyHandling(baseRequestResponse, insertionPoint, "\\" + payload, backslashConsumed);
             interesting.addAll(handling.interesting);
             boring.addAll(handling.boring);
         }
@@ -122,7 +122,7 @@ public class TransformationScan {
                 followUpPayload = payload;
             }
 
-            ProbeResults handling = classifyHandling(baseRequestResponse, insertionPoint, chosen_payload, backslashConsumed);
+            Probe.ProbeResults handling = classifyHandling(baseRequestResponse, insertionPoint, chosen_payload, backslashConsumed);
             if (!handling.interesting.isEmpty()) {
                 interesting.addAll(handling.interesting);
 
