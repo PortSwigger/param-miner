@@ -89,12 +89,13 @@ class DiffingScan {
         return candidate.getPrint().equals(attack2.getPrint());
     }
 
-    private boolean similar(Attack candidate, Attack attack2) {
-        //if (!candidate.getPrint().keySet().equals(attack2.getPrint().keySet())) {
+
+    private boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttack) {
+        //if (!candidate.getPrint().keySet().equals(individualBreakAttack.getPrint().keySet())) {
         //    return false;
         //}
-        for (String key: candidate.getPrint().keySet()) {
-            if (attack2.getPrint().containsKey(key) && !attack2.getPrint().get(key).equals(candidate.getPrint().get(key))) {
+        for (String key: doNotBreakAttackGroup.getPrint().keySet()) {
+            if (individualBreakAttack.getPrint().containsKey(key) && !individualBreakAttack.getPrint().get(key).equals(doNotBreakAttackGroup.getPrint().get(key))) {
                 return false;
             }
         }
@@ -343,7 +344,7 @@ class DiffingScan {
                     divArith.setRandomAnchor(false);
                     ArrayList<Attack> divArithResult = fuzz(baseRequestResponse, insertionPoint, softBase, divArith);
 
-                    Probe divAbs = new Probe("Divide by function", 7, "/ABS(0)", "/abs(0)", "/abs(00)");
+                    Probe divAbs = new Probe("Divide by function", 7, "/ABS(0)", "/abz(1)", "/abs(00)");
                     divAbs.setEscapeStrings("/ABS(1)", "/abs(1)", "/abs(01)");
                     divAbs.setRandomAnchor(false);
                     ArrayList<Attack> divAbsResult = fuzz(baseRequestResponse, insertionPoint, softBase, divAbs);
