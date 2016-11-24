@@ -357,7 +357,7 @@ public class Utilities {
             filteredResponse = helpers.stringToBytes(headers.toLowerCase());
         }
 
-        if(details.getStatedMimeType().toLowerCase().contains("json") || inferredMimeType.contains("json")) {
+        if(details.getStatedMimeType().toLowerCase().contains("json") && (inferredMimeType.contains("json") || inferredMimeType.contains("javascript"))) {
             String headers = helpers.bytesToString(Arrays.copyOfRange(response, 0, details.getBodyOffset()));
             String body =  helpers.bytesToString(Arrays.copyOfRange(response, details.getBodyOffset(), response.length));
             filteredResponse = helpers.stringToBytes(headers + StringEscapeUtils.unescapeJson(body));
