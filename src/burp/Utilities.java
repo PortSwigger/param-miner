@@ -370,6 +370,53 @@ public class Utilities {
         return payload.replace("%", "%25").replace("\u0000", "%00").replace("&", "%26").replace("#", "%23").replace("\u0020", "%20").replace(";", "%3b").replace("+", "%2b");
     }
 
+
+    public static boolean identical(Attack candidate, Attack attack2) {
+        return candidate.getPrint().equals(attack2.getPrint());
+    }
+
+    public static boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttack) {
+        //if (!candidate.getPrint().keySet().equals(individualBreakAttack.getPrint().keySet())) {
+        //    return false;
+        //}
+        for (String key: doNotBreakAttackGroup.getPrint().keySet()) {
+            if (individualBreakAttack.getPrint().containsKey(key) && !individualBreakAttack.getPrint().get(key).equals(doNotBreakAttackGroup.getPrint().get(key))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse) {
+        IHttpRequestResponse[] requests = new IHttpRequestResponse[attacks.length];
+        Probe bestProbe = null;
+        String detail = "<br/><br/><b>Successful probes</b><br/><ul>";
+        for (int i=0; i<attacks.length; i++) {
+            requests[i] = attacks[i].req;
+            if (i % 2 == 0) {
+                detail += "<li><b>"+StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName())+"</b> &#x20; (<b style='color: red'>"+ StringEscapeUtils.escapeHtml4(attacks[i].payload)+ "</b> vs <b style='color: blue'> ";
+            }
+            else {
+                detail += StringEscapeUtils.escapeHtml4(attacks[i].payload)+"</b>)</li>";
+                detail += "<ul>";
+                for (String mark : attacks[i].getPrint().keySet()) {
+                    if (attacks[i-1].getPrint().containsKey(mark) && !attacks[i].getPrint().get(mark).equals(attacks[i-1].getPrint().get(mark))) {
+                        detail += "<li>" + StringEscapeUtils.escapeHtml4(mark)+": "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(attacks[i-1].getPrint().get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(attacks[i].getPrint().get(mark).toString()) + "</b></li>";
+                    }
+                }
+
+                detail += "</ul>";
+            }
+            if (bestProbe == null || attacks[i].getProbe().getSeverity() >= bestProbe.getSeverity()) {
+                bestProbe = attacks[i].getProbe();
+            }
+        }
+
+        detail += "</ul>";
+
+        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail); //attacks[attacks.length-2].getProbe().getName()
+    }
 }
 
 class PartialParam implements IParameter {

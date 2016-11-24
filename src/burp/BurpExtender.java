@@ -47,7 +47,7 @@ class FastScan implements IScannerCheck {
 
     public FastScan(final IBurpExtenderCallbacks callbacks) {
         transformationScan = new TransformationScan(callbacks);
-        diffingScan = new DiffingScan(callbacks);
+        diffingScan = new DiffingScan();
         this.callbacks = callbacks;
         helpers = callbacks.getHelpers();
     }
