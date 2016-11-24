@@ -330,8 +330,8 @@ class DiffingScan {
 
             if (StringUtils.isNumeric(baseValue)) {
 
-                Probe div0 = new Probe("Divide by 0", 4, "/0", "/00");
-                div0.setEscapeStrings("/1", "-0");
+                Probe div0 = new Probe("Divide by 0", 4, "/0", "/00", "/000");
+                div0.setEscapeStrings("/1", "-0", "/01", "-00");
                 div0.setRandomAnchor(false);
                 ArrayList<Attack> div0_results = fuzz(baseRequestResponse, insertionPoint, softBase, div0);
 
@@ -341,15 +341,19 @@ class DiffingScan {
                     Probe divArith = new Probe("Divide by expression", 5, "/(2-2)", "/(3-3)");
                     divArith.setEscapeStrings("/(2-1)", "/(1*1)");
                     divArith.setRandomAnchor(false);
+                    ArrayList<Attack> divArithResult = fuzz(baseRequestResponse, insertionPoint, softBase, divArith);
 
-                    Probe divAbs = new Probe("Divide by function", 7, "/ABS(0)", "/abs(0)");
-                    divAbs.setEscapeStrings("/ABS(1)", "/abs(1)");
+                    Probe divAbs = new Probe("Divide by function", 7, "/ABS(0)", "/abs(0)", "/abs(00)");
+                    divAbs.setEscapeStrings("/ABS(1)", "/abs(1)", "/abs(01)");
                     divAbs.setRandomAnchor(false);
+                    ArrayList<Attack> divAbsResult = fuzz(baseRequestResponse, insertionPoint, softBase, divAbs);
 
                     attacks.addAll(fuzz(baseRequestResponse, insertionPoint, softBase, divArith));
                     attacks.addAll(fuzz(baseRequestResponse, insertionPoint, softBase, divAbs));
 
-                    attacks.addAll(exploreAvailableFunctions(baseRequestResponse, insertionPoint, softBase, "/", "", false));
+                    if (!(divAbsResult.isEmpty() && divArithResult.isEmpty())) {
+                        attacks.addAll(exploreAvailableFunctions(baseRequestResponse, insertionPoint, softBase, "/", "", false));
+                    }
                 }
             }
 
@@ -360,14 +364,21 @@ class DiffingScan {
                 ArrayList<Attack> commentAttack = fuzz(baseRequestResponse, insertionPoint, softBase, comment);
                 if (!commentAttack.isEmpty()) {
                     attacks.addAll(commentAttack);
+
+                    Probe htmlComment = new Probe("HTML comment injection (WAF?)", 4, "<!-zz-->", "<--zz-->", "<!--zz->");
+                    htmlComment.setEscapeStrings("<!--zz-->", "<!--z-z-->", "<!-->z<-->");
+                    htmlComment.setRandomAnchor(false);
+                    ArrayList<Attack> htmlCommentAttack = fuzz(baseRequestResponse, insertionPoint, softBase, htmlComment);
+                    attacks.addAll(htmlCommentAttack);
+
                     Probe procedure = new Probe("MySQL order-by", 7, " procedure analyse (0,0,0)-- -", " procedure analyze (0,0)-- -");
                     procedure.setEscapeStrings(" procedure analyse (0,0)-- -", " procedure analyse (0,0)-- -z");
                     procedure.setRandomAnchor(false);
                     attacks.addAll(fuzz(baseRequestResponse, insertionPoint, softBase, procedure));
                 }
 
-                Probe commaAbs = new Probe("Order-by function injection", 5, ",ABS(0,1)", ",abs(0,1,2)", ",abs()");
-                commaAbs.setEscapeStrings(",ABS(1)", ",abs(1)", "abs(01)"); //  1
+                Probe commaAbs = new Probe("Order-by function injection", 5, ",abz(1)", ",abs(0,1)", ",abs()","abs(z)");
+                commaAbs.setEscapeStrings(",ABS(1)", ",abs(1)", ",abs(01)"); //  1
                 commaAbs.setRandomAnchor(false);
                 ArrayList<Attack> commaAbsAttack = fuzz(baseRequestResponse, insertionPoint, softBase, commaAbs);
 
@@ -390,7 +401,7 @@ class DiffingScan {
             }
 
             if((!Utilities.THOROUGH_MODE && Utilities.mightBeIdentifier(baseValue)) || (Utilities.THOROUGH_MODE && Utilities.mightBeFunction(baseValue))) {
-                Probe functionCall = new Probe("Function hijacking", 6, "sprimtf", "sprintg", "exception");
+                Probe functionCall = new Probe("Function hijacking", 6, "sprimtf", "sprintg", "exception", "malloc");
                 functionCall.setEscapeStrings("sprintf");
                 functionCall.setPrefix(Probe.REPLACE);
                 attacks.addAll(fuzz(baseRequestResponse, insertionPoint, softBase, functionCall));

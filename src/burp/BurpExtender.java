@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
-    private static final String version = "0.862";
+    private static final String version = "0.863";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
