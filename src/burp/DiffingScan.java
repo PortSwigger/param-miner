@@ -121,14 +121,23 @@ class DiffingScan {
                 }
 
                 if (potential_delimiters.contains("\\")) {
-                    // todo follow up with [char]/e%00
-                    Probe regexEscapeAt = new Probe("Regex escape - @", 4, "z@", "\\@z@");
-                    regexEscapeAt.setEscapeStrings("z\\@", "\\@z\\@");
-                    attacks.addAll(injector.fuzz(basicAttack, regexEscapeAt));
+                    Probe unicodeEscape = new Probe("Escape sequence - unicode", 3, "\\g0041", "\\z0041");
+                    unicodeEscape.setEscapeStrings("\\u0041", "\\u0042");
+                    attacks.addAll(injector.fuzz(basicAttack, unicodeEscape));
 
-                    Probe regexEscapeSlash = new Probe("Regex escape - /", 4, "z/", "\\/z/");
-                    regexEscapeSlash.setEscapeStrings("z\\/", "\\/z\\/");
-                    attacks.addAll(injector.fuzz(basicAttack, regexEscapeSlash));
+                    Probe regexEscape = new Probe("Escape sequence - regex", 4, "\\g0041", "\\z0041");
+                    regexEscape.setEscapeStrings("\\s0041", "\\n0041");
+                    attacks.addAll(injector.fuzz(basicAttack, regexEscape));
+
+                    // todo follow up with [char]/e%00
+                    Probe regexBreakoutAt = new Probe("Regex breakout - @", 5, "z@", "\\@z@");
+                    regexBreakoutAt.setEscapeStrings("z\\@", "\\@z\\@");
+                    attacks.addAll(injector.fuzz(basicAttack, regexBreakoutAt));
+
+                    Probe regexBreakoutSlash = new Probe("Regex breakout - /", 5, "z/", "\\/z/");
+                    regexBreakoutSlash.setEscapeStrings("z\\/", "\\/z\\/");
+                    attacks.addAll(injector.fuzz(basicAttack, regexBreakoutSlash));
+
                 }
 
                 // find the concatenation character
