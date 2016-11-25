@@ -146,7 +146,7 @@ class DiffingScan {
 
                 for (String delimiter : potential_delimiters) {
                     for (String concat : concatenators) {
-                        Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
+                        Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z", "z(z" + delimiter + "z"+delimiter + concat + "z");
                         concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z");
                         ArrayList<Attack> results = injector.fuzz(basicAttack, concat_attack);
                         if (results.isEmpty()) {
@@ -155,7 +155,17 @@ class DiffingScan {
                         attacks.addAll(results);
                         injectionSequence.add(new String[]{delimiter, concat});
                     }
+
+                    Probe jsonValue = new Probe("JSON Injection (value)", 6, "z"+delimiter+","+delimiter+"foo:"+delimiter+"bar");
+                    jsonValue.setEscapeStrings("z"+delimiter+","+delimiter+"foo"+delimiter+":"+delimiter+"bar");
+                    attacks.addAll(injector.fuzz(basicAttack, jsonValue));
+
+                    Probe jsonKey = new Probe("JSON Injection (key)", 6, "z"+delimiter+":"+delimiter+"z"+","+delimiter);
+                    jsonKey.setEscapeStrings("z"+delimiter+":"+delimiter+"z"+delimiter+","+delimiter);
+                    attacks.addAll(injector.fuzz(basicAttack, jsonKey));
                 }
+
+
 
                 // try to invoke a function
                 for (String[] injection : injectionSequence) {
