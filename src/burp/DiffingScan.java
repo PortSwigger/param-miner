@@ -146,7 +146,7 @@ class DiffingScan {
 
                 for (String delimiter : potential_delimiters) {
                     for (String concat : concatenators) {
-                        Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z", "z(z" + delimiter + "z"+delimiter + concat + "z");
+                        Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
                         concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z");
                         ArrayList<Attack> results = injector.fuzz(basicAttack, concat_attack);
                         if (results.isEmpty()) {
@@ -156,11 +156,15 @@ class DiffingScan {
                         injectionSequence.add(new String[]{delimiter, concat});
                     }
 
-                    Probe jsonValue = new Probe("JSON Injection (value)", 6, "z"+delimiter+","+delimiter+"foo:"+delimiter+"bar");
-                    jsonValue.setEscapeStrings("z"+delimiter+","+delimiter+"foo"+delimiter+":"+delimiter+"bar");
+                    Probe jsonValue = new Probe("JSON Injection (value)", 6, "z"+delimiter+","+delimiter+"z"+delimiter+"z"+delimiter+"z",
+                            "z"+delimiter+","+delimiter+"z"+delimiter+";"+delimiter+"z",
+                            "z"+delimiter+","+delimiter+"z"+delimiter+"."+delimiter+"z");
+                    jsonValue.setEscapeStrings("z"+delimiter+","+delimiter+"z"+delimiter+":"+delimiter+"z");
                     attacks.addAll(injector.fuzz(basicAttack, jsonValue));
 
-                    Probe jsonKey = new Probe("JSON Injection (key)", 6, "z"+delimiter+":"+delimiter+"z"+","+delimiter);
+                    Probe jsonKey = new Probe("JSON Injection (key)", 6, "z"+delimiter+":"+delimiter+"z"+delimiter+"z"+delimiter,
+                            "z"+delimiter+":"+delimiter+"z"+delimiter+":"+delimiter,
+                            "z"+delimiter+":"+delimiter+"z"+delimiter+"."+delimiter);
                     jsonKey.setEscapeStrings("z"+delimiter+":"+delimiter+"z"+delimiter+","+delimiter);
                     attacks.addAll(injector.fuzz(basicAttack, jsonKey));
                 }
@@ -186,23 +190,31 @@ class DiffingScan {
             if (!interpResults.isEmpty()) {
                 attacks.addAll(interpResults);
 
-                Probe dollarParse = new Probe("Interpolation - dollar", 5, "${{z", "z${{z");
-                dollarParse.setEscapeStrings("$}}", "}}$z", "z$}}z");
-                ArrayList<Attack> dollarParseAttack = injector.fuzz(basicAttack, dollarParse);
-                attacks.addAll(dollarParseAttack);
+                Probe curlyParse = new Probe("Interpolation - curly", 5, "{{z", "z{{z");
+                curlyParse.setEscapeStrings("z}}z", "}}z", "z}}");
+                ArrayList<Attack> curlyParseAttack = injector.fuzz(basicAttack, curlyParse);
 
-                Probe percentParse = new Probe("Interpolation - percent", 5, "%{{z", "z%{{z");
-                percentParse.setEscapeStrings("%}}", "}}%z", "z%}}z");
-                ArrayList<Attack> percentParseAttack = injector.fuzz(basicAttack, percentParse);
-                attacks.addAll(percentParseAttack);
-
-                if (!dollarParseAttack.isEmpty() && !percentParseAttack.isEmpty()) {
+                if (!curlyParseAttack.isEmpty()) {
+                    attacks.addAll(curlyParseAttack);
                     attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "{{", "}}", true));
-                } else if (!dollarParseAttack.isEmpty()) {
-                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "${", "}", true));
-                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "", "", true));
-                } else if (!percentParseAttack.isEmpty()) {
-                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "%{", "}", true));
+                }
+                else {
+                    Probe dollarParse = new Probe("Interpolation - dollar", 5, "${{z", "z${{z");
+                    dollarParse.setEscapeStrings("$}}", "}}$z", "z$}}z");
+                    ArrayList<Attack> dollarParseAttack = injector.fuzz(basicAttack, dollarParse);
+                    attacks.addAll(dollarParseAttack);
+
+                    Probe percentParse = new Probe("Interpolation - percent", 5, "%{{z", "z%{{z");
+                    percentParse.setEscapeStrings("%}}", "}}%z", "z%}}z");
+                    ArrayList<Attack> percentParseAttack = injector.fuzz(basicAttack, percentParse);
+                    attacks.addAll(percentParseAttack);
+
+                    if (!dollarParseAttack.isEmpty()) {
+                        attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "${", "}", true));
+                        attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "", "", true));
+                    } else if (!percentParseAttack.isEmpty()) {
+                        attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "%{", "}", true));
+                    }
                 }
             }
         }
@@ -275,7 +287,8 @@ class DiffingScan {
             boolean isInPath = (type == IScannerInsertionPoint.INS_URL_PATH_FILENAME) ||
                     type == IScannerInsertionPoint.INS_URL_PATH_FOLDER ||
                     type == IScannerInsertionPoint.INS_URL_PATH_REST;
-            if (!isInPath && Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
+
+            if (Utilities.THOROUGH_MODE && !isInPath && Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
                 Probe dotSlash = new Probe("File Path Manipulation", 3, "../", "z/", "_/", "./../");
                 dotSlash.addEscapePair("./z/../", "././", "./././");
                 dotSlash.setRandomAnchor(false);
