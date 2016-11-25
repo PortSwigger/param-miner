@@ -7,35 +7,27 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class Utilities {
+class Utilities {
 
     private static PrintWriter stdout;
     private static PrintWriter stderr;
-    public static final boolean THOROUGH_MODE = true;
-    public static final boolean DEBUG = false;
-    public static final boolean THROTTLE_SCANITEM_CREATION = false;
-    public static long THROTTLE = 1001;
-    public static Set<Integer> THROTTLED_COMPONENTS = new HashSet<>();
-    public static ReadWriteLock spiderLock = new ReentrantReadWriteLock();
-    public static IBurpExtenderCallbacks callbacks;
-    public static IExtensionHelpers helpers;
+    static final boolean THOROUGH_MODE = true;
+    static final boolean DEBUG = false;
+
+    static IBurpExtenderCallbacks callbacks;
+    static IExtensionHelpers helpers;
     private static HashSet<String> phpFunctions = new HashSet<>();
 
-    static final String CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz"; // ABCDEFGHIJKLMNOPQRSTUVWXYZ
-    static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
-    public static Random rnd = new Random();
+    private static final String CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz"; // ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
+    static Random rnd = new Random();
 
-    public Utilities(final IBurpExtenderCallbacks incallbacks) {
+    Utilities(final IBurpExtenderCallbacks incallbacks) {
         callbacks = incallbacks;
         stdout = new PrintWriter(callbacks.getStdout(), true);
         stderr = new PrintWriter(callbacks.getStderr(), true);
         helpers = callbacks.getHelpers();
-        Integer[] to_throttle = {IBurpExtenderCallbacks.TOOL_SPIDER, IBurpExtenderCallbacks.TOOL_SCANNER, IBurpExtenderCallbacks.TOOL_INTRUDER, IBurpExtenderCallbacks.TOOL_SEQUENCER, IBurpExtenderCallbacks.TOOL_EXTENDER};
-        Collections.addAll(THROTTLED_COMPONENTS, to_throttle);
-
 
         Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
         while (s.hasNext()) {
@@ -45,7 +37,7 @@ public class Utilities {
 
     }
 
-    public static String randomString(int len) {
+    static String randomString(int len) {
         StringBuilder sb = new StringBuilder(len);
         sb.append(START_CHARSET.charAt(rnd.nextInt(START_CHARSET.length())));
         for (int i = 1; i < len; i++)
@@ -53,25 +45,20 @@ public class Utilities {
         return sb.toString();
     }
 
-    public static void out(String message) {
+    static void out(String message) {
         stdout.println(message);
     }
-    public static void err(String message) {
+    static void err(String message) {
         stderr.println(message);
     }
 
-    public static void log(String message) {
+    static void log(String message) {
         if (DEBUG) {
             stdout.println(message);
         }
     }
 
-    public static void setThrottle(long throttle) {
-        Utilities.THROTTLE = throttle;
-        Utilities.log("Set throttle to "+throttle);
-    }
-
-    public static String sensibleURL(URL url) {
+    private static String sensibleURL(URL url) {
         String out = url.toString();
         if (url.getDefaultPort() == url.getPort()) {
             out = out.replaceFirst(":" + Integer.toString(url.getPort()), "");
@@ -79,7 +66,7 @@ public class Utilities {
         return out;
     }
 
-    public static URL getURL(IHttpRequestResponse request) {
+    private static URL getURL(IHttpRequestResponse request) {
         IHttpService service = request.getHttpService();
         URL url;
         try {
@@ -91,7 +78,7 @@ public class Utilities {
     }
 
 
-    public static boolean mightBeOrderBy(String name, String value) {
+    static boolean mightBeOrderBy(String name, String value) {
         return (name.toLowerCase().contains("order") ||
                 name.toLowerCase().contains("sort")) ||
                 value.toLowerCase().equals("asc") ||
@@ -100,7 +87,7 @@ public class Utilities {
                 (value.length() < 20 && StringUtils.isAlpha(value));
     }
 
-    public static boolean mightBeIdentifier(String value) {
+    static boolean mightBeIdentifier(String value) {
         for (int i=0; i<value.length(); i++) {
             char x = value.charAt(i);
             if (!(CharUtils.isAsciiAlphanumeric(x) || x == '.' || x == '-' || x == '_' || x == ':' || x == '$') ) {
@@ -110,12 +97,12 @@ public class Utilities {
         return true;
     }
 
-    public static boolean mightBeFunction(String value) {
+    static boolean mightBeFunction(String value) {
         return phpFunctions.contains(value);
     }
 
     // records from the first space to the second space
-    public static String getPathFromRequest(byte[] request) {
+    private static String getPathFromRequest(byte[] request) {
         int i = 0;
         boolean recording = false;
         String path = "";
@@ -138,7 +125,7 @@ public class Utilities {
         return path;
     }
 
-    public static String getExtension(byte[] request) {
+    static String getExtension(byte[] request) {
         String url = getPathFromRequest(request);
         int query_start = url.indexOf('?');
         if (query_start == -1) {
@@ -156,7 +143,7 @@ public class Utilities {
 
 
 
-    public static IHttpRequestResponse fetchFromSitemap(URL url) {
+    static IHttpRequestResponse fetchFromSitemap(URL url) {
         IHttpRequestResponse[] pages = callbacks.getSiteMap(sensibleURL(url));
         for (IHttpRequestResponse page : pages) {
             if (page.getResponse() != null) {
@@ -168,7 +155,7 @@ public class Utilities {
         return null;
     }
 
-    public static int countByte(byte[] response, byte match) {
+    static int countByte(byte[] response, byte match) {
         int count = 0;
         int i = 0;
         while (i < response.length) {
@@ -180,7 +167,7 @@ public class Utilities {
         return count;
     }
 
-    public static int countMatches(byte[] response, byte[] match) {
+    static int countMatches(byte[] response, byte[] match) {
         int matches = 0;
         if (match.length < 4) {
             return matches;
@@ -198,7 +185,7 @@ public class Utilities {
         return matches;
     }
 
-    public static List<int[]> getMatches(byte[] response, byte[] match, int giveUpAfter) {
+    static List<int[]> getMatches(byte[] response, byte[] match, int giveUpAfter) {
         if (giveUpAfter == -1) {
             giveUpAfter = response.length;
         }
@@ -221,7 +208,7 @@ public class Utilities {
         return matches;
     }
 
-    public static int getBodyStart(byte[] response) {
+    private static int getBodyStart(byte[] response) {
         int i = 0;
         int newlines_seen = 0;
         while (i < response.length) {
@@ -246,7 +233,7 @@ public class Utilities {
         return i;
     }
 
-    public static String getStartType(byte[] response) {
+    static String getStartType(byte[] response) {
         int i = getBodyStart(response);
 
         String start = "";
@@ -266,7 +253,7 @@ public class Utilities {
         return start;
     }
 
-    public static List<IParameter> getExtraInsertionPoints(byte[] request) { //
+    static List<IParameter> getExtraInsertionPoints(byte[] request) { //
         List<IParameter> params = new ArrayList<>();
         int end = getBodyStart(request);
         int i = 0;
@@ -305,12 +292,12 @@ public class Utilities {
         return params;
     }
 
-    public static boolean isHTTP(URL url) {
+    static boolean isHTTP(URL url) {
         String protocol = url.getProtocol().toLowerCase();
         return "https".equals(protocol);
     }
 
-    public static IHttpRequestResponse highlightRequestResponse(IHttpRequestResponse attack, String responseHighlight, String requestHighlight, IScannerInsertionPoint insertionPoint) {
+    static IHttpRequestResponse highlightRequestResponse(IHttpRequestResponse attack, String responseHighlight, String requestHighlight, IScannerInsertionPoint insertionPoint) {
         List<int[]> requestMarkers = new ArrayList<>(1);
         if (requestHighlight != null && requestHighlight.length() > 2) {
             requestMarkers.add(insertionPoint.getPayloadOffsets(requestHighlight.getBytes()));
@@ -325,17 +312,15 @@ public class Utilities {
         return attack;
     }
 
-    public static Attack buildTransformationAttack(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String leftAnchor, String payload, String rightAnchor) {
+    static Attack buildTransformationAttack(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String leftAnchor, String payload, String rightAnchor) {
 
         IHttpRequestResponse req = callbacks.makeHttpRequest(
                 baseRequestResponse.getHttpService(), insertionPoint.buildRequest(helpers.stringToBytes(insertionPoint.getBaseValue() + leftAnchor + payload +rightAnchor)));
 
-        Attack attack = new Attack(Utilities.highlightRequestResponse(req, leftAnchor, leftAnchor+payload+rightAnchor, insertionPoint), null, payload, "");
-
-        return attack;
+        return new Attack(Utilities.highlightRequestResponse(req, leftAnchor, leftAnchor+payload+rightAnchor, insertionPoint), null, payload, "");
     }
 
-    public static byte[] filterResponse(byte[] response) {
+    static byte[] filterResponse(byte[] response) {
 
         if (response == null) {
             return new byte[]{'n','u','l','l'};
@@ -366,16 +351,16 @@ public class Utilities {
         return filteredResponse;
     }
 
-    public static String encodeParam(String payload) {
+    static String encodeParam(String payload) {
         return payload.replace("%", "%25").replace("\u0000", "%00").replace("&", "%26").replace("#", "%23").replace("\u0020", "%20").replace(";", "%3b").replace("+", "%2b");
     }
 
 
-    public static boolean identical(Attack candidate, Attack attack2) {
+    static boolean identical(Attack candidate, Attack attack2) {
         return candidate.getPrint().equals(attack2.getPrint());
     }
 
-    public static boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttack) {
+    static boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttack) {
         //if (!candidate.getPrint().keySet().equals(individualBreakAttack.getPrint().keySet())) {
         //    return false;
         //}
@@ -388,7 +373,7 @@ public class Utilities {
         return true;
     }
 
-    public static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse) {
+    static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse) {
         IHttpRequestResponse[] requests = new IHttpRequestResponse[attacks.length];
         Probe bestProbe = null;
         String detail = "<br/><br/><b>Successful probes</b><br/><ul>";
@@ -421,10 +406,10 @@ public class Utilities {
 
 class PartialParam implements IParameter {
 
-    int valueStart, valueEnd;
-    String name;
+    private int valueStart, valueEnd;
+    private String name;
 
-    public PartialParam(String name, int valueStart, int valueEnd) {
+    PartialParam(String name, int valueStart, int valueEnd) {
         this.name = name;
         this.valueStart = valueStart;
         this.valueEnd = valueEnd;

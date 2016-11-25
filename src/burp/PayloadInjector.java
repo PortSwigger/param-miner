@@ -3,17 +3,17 @@ package burp;
 import java.util.ArrayList;
 
 
-public class PayloadInjector {
+class PayloadInjector {
 
     private IHttpRequestResponse baseRequestResponse;
     private IScannerInsertionPoint insertionPoint;
 
-    public PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+    PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         this.baseRequestResponse = baseRequestResponse;
         this.insertionPoint = insertionPoint;
     }
 
-    public ArrayList<Attack> fuzz(Attack basicAttack, Probe probe) {
+    ArrayList<Attack> fuzz(Attack basicAttack, Probe probe) {
         ArrayList<Attack> attacks = new ArrayList<>(2);
         Attack breakAttack;
         Attack doNotBreakAttack;
@@ -102,9 +102,7 @@ public class PayloadInjector {
             req = Utilities.highlightRequestResponse(req, anchor, anchor, insertionPoint);
         }
 
-        Attack attack = new Attack(req, probe, base_payload, anchor);
-
-        return attack;
+        return new Attack(req, probe, base_payload, anchor);
     }
 
 }

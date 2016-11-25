@@ -46,7 +46,7 @@ class FastScan implements IScannerCheck {
     private IExtensionHelpers helpers;
     private IBurpExtenderCallbacks callbacks;
 
-    public FastScan(final IBurpExtenderCallbacks callbacks) {
+    FastScan(final IBurpExtenderCallbacks callbacks) {
         transformationScan = new TransformationScan(callbacks);
         diffingScan = new DiffingScan();
         this.callbacks = callbacks;
@@ -129,7 +129,7 @@ class Fuzzable extends CustomScanIssue {
     private final static String SEVERITY = "High";
     private final static String CONFIDENCE = "Firm";
 
-    public Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail) {
+    Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail) {
         super(requests[0].getHttpService(), url, requests, NAME + title, DETAIL + detail, SEVERITY, CONFIDENCE, REMEDIATION);
     }
 
@@ -144,7 +144,7 @@ class InputTransformation extends CustomScanIssue {
                     "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results.";
     private final static String CONFIDENCE = "Tentative";
 
-    public InputTransformation(ArrayList<String> interesting, ArrayList<String> boring, IHttpRequestResponse base, URL url, String paramName) {
+    InputTransformation(ArrayList<String> interesting, ArrayList<String> boring, IHttpRequestResponse base, URL url, String paramName) {
         super(base.getHttpService(), url, new IHttpRequestResponse[]{base}, NAME, generateDetail(interesting, boring, paramName), generateSeverity(interesting), CONFIDENCE, REMEDIATION);
     }
 
@@ -177,7 +177,7 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
     private String value;
     private byte type;
 
-    public ParamInsertionPoint(byte[] request, String name, String value, byte type) {
+    ParamInsertionPoint(byte[] request, String name, String value, byte type) {
         this.request = request;
         this.name = name;
         this.value = value;
@@ -225,7 +225,7 @@ class CustomScanIssue implements IScanIssue {
     private String confidence;
     private String remediation;
 
-    public CustomScanIssue(
+    CustomScanIssue(
             IHttpService httpService,
             URL url,
             IHttpRequestResponse[] httpMessages,
