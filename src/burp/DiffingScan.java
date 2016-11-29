@@ -62,37 +62,33 @@ class DiffingScan {
         
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
         String baseValue = insertionPoint.getBaseValue();
-        Attack softBase = new Attack(baseRequestResponse, null, null, "");
-
-        // how many repeat-requests should I use for this?
-        // generic fuzz, random input and base request are all used twice
-        // I need to save both prints, plus a way to compare something with a pregenerated print
-        // also I could use this pregenerated input to aid accuracy... is that actually worthwhile? I think so; enables speedy-abort on variable pages
-        Attack basicAttack = new Attack(injector.buildRequest(Utilities.randomString(7)), null, null, "");
+        Attack softBase = new Attack(baseRequestResponse);
 
         // does generic fuzz differ from the base request? (ie 'should I abort the scan?')
-        Probe genericFuzz = new Probe("Generic fuzz", 0, "`z'z\"${{%{{\\", "\\z`z'z\"${{%{{\\");
-        genericFuzz.setEscapeStrings("");
-        genericFuzz.setRandomAnchor(false);
-        injector.fuzz(softBase, genericFuzz);
+        Attack crudeFuzz = injector.buildAttack("`z'z\"${{%{{\\", true);
+        if(Utilities.similar(softBase, crudeFuzz)) { return null;  }
+
+        softBase.addAttack(injector.buildAttack(baseValue, false));
+        if(Utilities.similar(softBase, crudeFuzz)) { return null;  }
+
+        crudeFuzz.addAttack(injector.buildAttack("\\z`z'z\"${{%{{\\", true));
+        if(Utilities.similar(softBase, crudeFuzz)) { return null;  }
 
         // if so, does generic fuzz differ from a request w/random input? (ie 'should I do hard attacks?')
         // one request to avoid doing two (or avoid doing five in thorough)
-        //genericFuzz.setRandomAnchor(true);
-        //injector.fuzz(softBase, genericFuzz);
-
-        // also, does a request w/random input differ from the base request? (ie 'should I do soft attacks?')
-        // free, since we already sent all the required requests
-
+        Attack hardBase = injector.buildAttack("", true);
+        if (Utilities.similar(softBase, hardBase)) {
+            hardBase.addAttack(injector.buildAttack("", true));
+        }
 
         ArrayList<Attack> attacks = new ArrayList<>();
-        if (!injector.fuzz(basicAttack, genericFuzz).isEmpty()) {
+        if (!Utilities.similar(softBase, hardBase)) {
 
             boolean worthTryingInjections = false;
             if (!Utilities.THOROUGH_MODE) {
                 Probe multiFuzz = new Probe("Basic fuzz", 0, "`z'z\"\\", "\\z`z'z\"\\");
                 multiFuzz.addEscapePair("\\`z\\'z\\\"\\\\", "\\`z''z\\\"\\\\");
-                worthTryingInjections = !injector.fuzz(basicAttack, multiFuzz).isEmpty();
+                worthTryingInjections = !injector.fuzz(hardBase, multiFuzz).isEmpty();
             }
 
             if(Utilities.THOROUGH_MODE || worthTryingInjections) {
@@ -119,7 +115,7 @@ class DiffingScan {
                 Probe[] potential_breakers = {trailer, apos, quote, backtick};
 
                 for (Probe breaker : potential_breakers) {
-                    ArrayList<Attack> results = injector.fuzz(basicAttack, breaker);
+                    ArrayList<Attack> results = injector.fuzz(hardBase, breaker);
                     if (results.isEmpty()) {
                         continue;
                     }
@@ -130,30 +126,30 @@ class DiffingScan {
                 if (potential_delimiters.isEmpty()) {
                     Probe quoteSlash = new Probe("Doublequote plus slash", 4, "\"z\\", "z\"z\\");
                     quoteSlash.setEscapeStrings("\"a\\zz", "z\\z", "z\"z/");
-                    attacks.addAll(injector.fuzz(basicAttack, quoteSlash));
+                    attacks.addAll(injector.fuzz(hardBase, quoteSlash));
 
                     Probe aposSlash = new Probe("Singlequote plus slash", 4, "'z\\", "z'z\\");
                     aposSlash.setEscapeStrings("'a\\zz", "z\\z", "z'z/");
-                    attacks.addAll(injector.fuzz(basicAttack, aposSlash));
+                    attacks.addAll(injector.fuzz(hardBase, aposSlash));
                 }
 
                 if (potential_delimiters.contains("\\")) {
                     Probe unicodeEscape = new Probe("Escape sequence - unicode", 3, "\\g0041", "\\z0041");
                     unicodeEscape.setEscapeStrings("\\u0041", "\\u0042");
-                    attacks.addAll(injector.fuzz(basicAttack, unicodeEscape));
+                    attacks.addAll(injector.fuzz(hardBase, unicodeEscape));
 
                     Probe regexEscape = new Probe("Escape sequence - regex", 4, "\\g0041", "\\z0041");
                     regexEscape.setEscapeStrings("\\s0041", "\\n0041");
-                    attacks.addAll(injector.fuzz(basicAttack, regexEscape));
+                    attacks.addAll(injector.fuzz(hardBase, regexEscape));
 
                     // todo follow up with [char]/e%00
                     Probe regexBreakoutAt = new Probe("Regex breakout - @", 5, "z@", "\\@z@");
                     regexBreakoutAt.setEscapeStrings("z\\@", "\\@z\\@");
-                    attacks.addAll(injector.fuzz(basicAttack, regexBreakoutAt));
+                    attacks.addAll(injector.fuzz(hardBase, regexBreakoutAt));
 
                     Probe regexBreakoutSlash = new Probe("Regex breakout - /", 5, "z/", "\\/z/");
                     regexBreakoutSlash.setEscapeStrings("z\\/", "\\/z\\/");
-                    attacks.addAll(injector.fuzz(basicAttack, regexBreakoutSlash));
+                    attacks.addAll(injector.fuzz(hardBase, regexBreakoutSlash));
 
                 }
 
@@ -165,7 +161,7 @@ class DiffingScan {
                     for (String concat : concatenators) {
                         Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
                         concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z");
-                        ArrayList<Attack> results = injector.fuzz(basicAttack, concat_attack);
+                        ArrayList<Attack> results = injector.fuzz(hardBase, concat_attack);
                         if (results.isEmpty()) {
                             continue;
                         }
@@ -177,13 +173,13 @@ class DiffingScan {
                             "z"+delimiter+","+delimiter+"z"+delimiter+";"+delimiter+"z",
                             "z"+delimiter+","+delimiter+"z"+delimiter+"."+delimiter+"z");
                     jsonValue.setEscapeStrings("z"+delimiter+","+delimiter+"z"+delimiter+":"+delimiter+"z");
-                    attacks.addAll(injector.fuzz(basicAttack, jsonValue));
+                    attacks.addAll(injector.fuzz(hardBase, jsonValue));
 
                     Probe jsonKey = new Probe("JSON Injection (key)", 6, "z"+delimiter+":"+delimiter+"z"+delimiter+"z"+delimiter,
                             "z"+delimiter+":"+delimiter+"z"+delimiter+":"+delimiter,
                             "z"+delimiter+":"+delimiter+"z"+delimiter+"."+delimiter);
                     jsonKey.setEscapeStrings("z"+delimiter+":"+delimiter+"z"+delimiter+","+delimiter);
-                    attacks.addAll(injector.fuzz(basicAttack, jsonKey));
+                    attacks.addAll(injector.fuzz(hardBase, jsonKey));
                 }
 
 
@@ -192,7 +188,7 @@ class DiffingScan {
                 for (String[] injection : injectionSequence) {
                     String delim = injection[0];
                     String concat = injection[1];
-                    ArrayList<Attack> functionProbeResults = exploreAvailableFunctions(injector, basicAttack, delim + concat, concat + delim, true);
+                    ArrayList<Attack> functionProbeResults = exploreAvailableFunctions(injector, hardBase, delim + concat, concat + delim, true);
                     if (!functionProbeResults.isEmpty()) { //  && !functionProbeResults.get(-1).getProbe().getName().equals("Basic function injection")
                         attacks.addAll(functionProbeResults);
                         break;
@@ -203,42 +199,41 @@ class DiffingScan {
 
             Probe interp = new Probe("Interpolation fuzz", 2, "%{{z${{z", "z%{{zz${{z");
             interp.setEscapeStrings("%}}$}}", "}}%z}}$z", "z%}}zz$}}z");
-            ArrayList<Attack> interpResults = injector.fuzz(basicAttack, interp);
+            ArrayList<Attack> interpResults = injector.fuzz(hardBase, interp);
             if (!interpResults.isEmpty()) {
                 attacks.addAll(interpResults);
 
                 Probe curlyParse = new Probe("Interpolation - curly", 5, "{{z", "z{{z");
                 curlyParse.setEscapeStrings("z}}z", "}}z", "z}}");
-                ArrayList<Attack> curlyParseAttack = injector.fuzz(basicAttack, curlyParse);
+                ArrayList<Attack> curlyParseAttack = injector.fuzz(hardBase, curlyParse);
 
                 if (!curlyParseAttack.isEmpty()) {
                     attacks.addAll(curlyParseAttack);
-                    attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "{{", "}}", true));
+                    attacks.addAll(exploreAvailableFunctions(injector, hardBase, "{{", "}}", true));
                 }
                 else {
                     Probe dollarParse = new Probe("Interpolation - dollar", 5, "${{z", "z${{z");
                     dollarParse.setEscapeStrings("$}}", "}}$z", "z$}}z");
-                    ArrayList<Attack> dollarParseAttack = injector.fuzz(basicAttack, dollarParse);
+                    ArrayList<Attack> dollarParseAttack = injector.fuzz(hardBase, dollarParse);
                     attacks.addAll(dollarParseAttack);
 
                     Probe percentParse = new Probe("Interpolation - percent", 5, "%{{z", "z%{{z");
                     percentParse.setEscapeStrings("%}}", "}}%z", "z%}}z");
-                    ArrayList<Attack> percentParseAttack = injector.fuzz(basicAttack, percentParse);
+                    ArrayList<Attack> percentParseAttack = injector.fuzz(hardBase, percentParse);
                     attacks.addAll(percentParseAttack);
 
                     if (!dollarParseAttack.isEmpty()) {
-                        attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "${", "}", true));
-                        attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "", "", true));
+                        attacks.addAll(exploreAvailableFunctions(injector, hardBase, "${", "}", true));
+                        attacks.addAll(exploreAvailableFunctions(injector, hardBase, "", "", true));
                     } else if (!percentParseAttack.isEmpty()) {
-                        attacks.addAll(exploreAvailableFunctions(injector, basicAttack, "%{", "}", true));
+                        attacks.addAll(exploreAvailableFunctions(injector, hardBase, "%{", "}", true));
                     }
                 }
             }
         }
 
-
-
-        if (!Utilities.identical(softBase, basicAttack)) {
+        // does a request w/random input differ from the base request? (ie 'should I do soft attacks?')
+        if (!Utilities.similar(softBase, hardBase)) {
 
             if (StringUtils.isNumeric(baseValue)) {
 
@@ -307,10 +302,18 @@ class DiffingScan {
 
             if (Utilities.THOROUGH_MODE && !isInPath && Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
                 Probe dotSlash = new Probe("File Path Manipulation", 3, "../", "z/", "_/", "./../");
-                dotSlash.addEscapePair("./z/../", "././", "./././");
+                dotSlash.setEscapeStrings("./", "././", "./././");
                 dotSlash.setRandomAnchor(false);
                 dotSlash.setPrefix(Probe.PREPEND);
-                attacks.addAll(injector.fuzz(softBase, dotSlash));
+                ArrayList<Attack> filePathManip = injector.fuzz(softBase, dotSlash);
+                if (!filePathManip.isEmpty()) {
+                    attacks.addAll(filePathManip);
+                    Probe normalisedDotSlash = new Probe("File Path Manipulation (normalised)", 4, "../", "z/", "_/", "./../");
+                    normalisedDotSlash.setEscapeStrings("./cow/../", "./foo/bar/../../", "./z/../");
+                    normalisedDotSlash.setRandomAnchor(false);
+                    normalisedDotSlash.setPrefix(Probe.PREPEND);
+                    attacks.addAll(injector.fuzz(softBase, normalisedDotSlash));
+                }
             }
 
             if((!Utilities.THOROUGH_MODE && Utilities.mightBeIdentifier(baseValue)) || (Utilities.THOROUGH_MODE && Utilities.mightBeFunction(baseValue))) {

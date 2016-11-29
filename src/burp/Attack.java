@@ -30,6 +30,12 @@ class Attack {
         firstFingerprint = fingerprint;
     }
 
+    public Attack(IHttpRequestResponse req) {
+        this.firstRequest = req;
+        add(req.getResponse(), "");
+        firstFingerprint = fingerprint;
+    }
+
 
     public HashMap<String, Object> getPrint() {
         return fingerprint;
@@ -63,22 +69,25 @@ class Attack {
         fingerprint = generatedPrint;
     }
 
-    public Probe getProbe() {
+    Probe getProbe() {
         return probe;
     }
 
     public Attack add(byte[] response, String anchor) {
         assert (firstRequest != null);
 
+
         response = Utilities.filterResponse(response);
         responseKeywords.updateWith(response);
         responseDetails.updateWith(response);
 
-        int reflections = Utilities.countMatches(response, anchor.getBytes());
-        if (responseReflections == -1) {
-            responseReflections = reflections;
-        } else if (responseReflections != reflections) {
-            responseReflections = -2;
+        if(!anchor.equals("")) {
+            int reflections = Utilities.countMatches(response, anchor.getBytes());
+            if (responseReflections == -1) {
+                responseReflections = reflections;
+            } else if (responseReflections != reflections) {
+                responseReflections = -2;
+            }
         }
 
         // print.put("Content start", Utilities.getStartType(response));
@@ -90,7 +99,7 @@ class Attack {
 
     // todo verify this actually works as intended
     Attack addAttack(Attack attack) {
-        add(attack.firstRequest.getResponse(), anchor);
+        //add(attack.firstRequest.getResponse(), anchor);
         HashMap<String, Object> generatedPrint = new HashMap<>();
         HashMap<String, Object> inputPrint = attack.getPrint();
         for (String key: inputPrint.keySet()) {

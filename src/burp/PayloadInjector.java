@@ -118,4 +118,14 @@ class PayloadInjector {
                 baseRequestResponse.getHttpService(), request); // Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
     }
 
+
+    Attack buildAttack(String payload, boolean random) {
+        String canary = "";
+        if (random) {
+            canary = Utilities.randomString(7);
+        }
+        return new Attack(buildRequest(canary+payload), null, null, canary);
+
+    }
+
 }

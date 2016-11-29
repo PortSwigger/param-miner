@@ -155,7 +155,7 @@ class InputTransformation extends CustomScanIssue {
     private final static String DETAIL = "The application transforms input in a way that suggests it might be vulnerable to some kind of server-side code injection";
     private final static String REMEDIATION =
             "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. " +
-                    "Try to determine the root cause of the observed input transformations." +
+                    "Try to determine the root cause of the observed input transformations. " +
                     "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results.";
     private final static String CONFIDENCE = "Tentative";
 
