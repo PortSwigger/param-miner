@@ -367,6 +367,7 @@ class Utilities {
         //if (!candidate.getPrint().keySet().equals(individualBreakAttack.getPrint().keySet())) {
         //    return false;
         //}
+
         for (String key: doNotBreakAttackGroup.getPrint().keySet()) {
             if (individualBreakAttack.getPrint().containsKey(key) && !individualBreakAttack.getPrint().get(key).equals(doNotBreakAttackGroup.getPrint().get(key))) {
                 return false;

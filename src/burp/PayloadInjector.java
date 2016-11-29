@@ -64,12 +64,14 @@ class PayloadInjector {
         // this final probe pair is sent out of order, to prevent alternation false positives
         doNotBreakAttack.addAttack(buildAttack(probe, probe.getNextEscapeSet()[chosen_escape]));
         breakAttack = buildAttack(probe, probe.getNextBreak());
+        mergedBreakAttack.addAttack(breakAttack);
 
+        // todo compare mergedBreakAttack instead here? will this actually increase coverage?
+        // point is to exploit response attributes that vary in "don't break" responses (but are static in 'break' responses)
         if(Utilities.similar(doNotBreakAttack, breakAttack)) {
             return new ArrayList<>();
         }
 
-        mergedBreakAttack.addAttack(breakAttack);
         attacks.add(mergedBreakAttack);
         attacks.add(doNotBreakAttack);
 

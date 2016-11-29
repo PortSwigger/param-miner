@@ -71,6 +71,10 @@ class FastScan implements IScannerCheck {
     public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
 
         ArrayList<IScanIssue> issues = new ArrayList<>();
+        if(!(Utilities.TRANSFORMATION_SCAN || Utilities.DIFFING_SCAN)) {
+            Utilities.out("Aborting scan - all scanner checks disabled");
+            return issues;
+        }
 
         // make a custom insertion point to avoid burp excessively URL-encoding payloads
         IParameter baseParam = getParameterFromInsertionPoint(insertionPoint, baseRequestResponse.getRequest());
