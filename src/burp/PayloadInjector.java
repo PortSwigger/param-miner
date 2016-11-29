@@ -39,9 +39,10 @@ class PayloadInjector {
 
     private ArrayList<Attack> verify(Attack doNotBreakAttack, Probe probe, int chosen_escape) {
         ArrayList<Attack> attacks = new ArrayList<>(2);
+        Attack mergedBreakAttack = null;
         Attack breakAttack;
 
-        for(int i=0; i<6; i++) {
+        for(int i=0; i<Utilities.CONFIRMATIONS; i++) {
             breakAttack = buildAttack(probe, probe.getNextBreak());
             if(Utilities.similar(doNotBreakAttack, breakAttack)) {
                 return new ArrayList<>();
@@ -50,6 +51,13 @@ class PayloadInjector {
             doNotBreakAttack.addAttack(buildAttack(probe, probe.getNextEscapeSet()[chosen_escape]));
             if(Utilities.similar(doNotBreakAttack, breakAttack)) {
                 return new ArrayList<>();
+            }
+
+            if(i==0) {
+                mergedBreakAttack = breakAttack;
+            }
+            else {
+                mergedBreakAttack.addAttack(breakAttack);
             }
         }
 
@@ -61,7 +69,8 @@ class PayloadInjector {
             return new ArrayList<>();
         }
 
-        attacks.add(breakAttack);
+        mergedBreakAttack.addAttack(breakAttack);
+        attacks.add(mergedBreakAttack);
         attacks.add(doNotBreakAttack);
 
         return attacks;
@@ -91,18 +100,22 @@ class PayloadInjector {
             Utilities.err("Unknown payload position");
         }
 
-        byte[] request = insertionPoint.buildRequest(payload.getBytes());
-        IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.randomString(8), "1", IParameter.PARAM_URL);
-        request = burp.Utilities.helpers.addParameter(request, cacheBuster);
 
-        IHttpRequestResponse req = burp.Utilities.callbacks.makeHttpRequest(
-                baseRequestResponse.getHttpService(), request); // Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
-
+        IHttpRequestResponse req = buildRequest(payload);
         if(randomAnchor) {
             req = Utilities.highlightRequestResponse(req, anchor, anchor, insertionPoint);
         }
 
         return new Attack(req, probe, base_payload, anchor);
+    }
+
+    IHttpRequestResponse buildRequest(String payload) {
+        byte[] request = insertionPoint.buildRequest(payload.getBytes());
+        IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.randomString(8), "1", IParameter.PARAM_URL);
+        request = burp.Utilities.helpers.addParameter(request, cacheBuster);
+
+        return burp.Utilities.callbacks.makeHttpRequest(
+                baseRequestResponse.getHttpService(), request); // Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
     }
 
 }

@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
-    private static final String version = "0.863c";
+    private static final String version = "0.864";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -37,6 +37,7 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("Debug mode: " + Utilities.DEBUG);
         Utilities.out("Thorough mode: " + Utilities.THOROUGH_MODE);
+        Utilities.out("Input transformation detection: " + Utilities.TRANSFORMATION_SCAN);
     }
 }
 
@@ -68,23 +69,30 @@ class FastScan implements IScannerCheck {
 
     public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
 
+        // make a custom insertion point to avoid burp excessively URL-encoding payloads
         IParameter baseParam = getParameterFromInsertionPoint(insertionPoint, baseRequestResponse.getRequest());
         if (baseParam != null && (baseParam.getType() == IParameter.PARAM_BODY || baseParam.getType() == IParameter.PARAM_URL)) {
             insertionPoint = new ParamInsertionPoint(baseRequestResponse.getRequest(), baseParam.getName(), baseParam.getValue(), baseParam.getType());
         }
 
         ArrayList<IScanIssue> issues = new ArrayList<>();
-        String leftAnchor = Utilities.randomString(5);
-        String rightAnchor = "z" + Utilities.randomString(2);
-        Attack basicAttack = Utilities.buildTransformationAttack(baseRequestResponse, insertionPoint, leftAnchor, "\\\\", rightAnchor);
-
-        issues.add(diffingScan.findReflectionIssues(baseRequestResponse, insertionPoint, basicAttack));
-
-        if (!Utilities.getMatches(Utilities.filterResponse(basicAttack.req.getResponse()), (leftAnchor + "\\" + rightAnchor).getBytes(), -1).isEmpty()) {
-            issues.add(transformationScan.findTransformationIssues(baseRequestResponse, insertionPoint, basicAttack.req));
+        Attack basicAttack;
+        if (Utilities.TRANSFORMATION_SCAN) {
+            String leftAnchor = Utilities.randomString(5);
+            String rightAnchor = "z" + Utilities.randomString(2);
+            basicAttack = Utilities.buildTransformationAttack(baseRequestResponse, insertionPoint, leftAnchor, "\\\\", rightAnchor);
+            if (!Utilities.getMatches(Utilities.filterResponse(basicAttack.getFirstRequest().getResponse()), (leftAnchor + "\\" + rightAnchor).getBytes(), -1).isEmpty()) {
+                issues.add(transformationScan.findTransformationIssues(baseRequestResponse, insertionPoint, basicAttack.getFirstRequest()));
+            }
         }
 
-        issues.removeAll(Collections.singleton(null));
+        issues.add(diffingScan.findReflectionIssues(baseRequestResponse, insertionPoint));
+
+
+
+        //issues.removeAll(Collections.singleton(null));
+
+        /*
         if (baseParam != null && (baseParam.getType() == IParameter.PARAM_BODY || baseParam.getType() == IParameter.PARAM_URL) && Utilities.getExtension(baseRequestResponse.getRequest()).equals(".php")) {
 
             String param_name = baseParam.getName() + "[]";
@@ -98,7 +106,7 @@ class FastScan implements IScannerCheck {
             IHttpRequestResponse newBase = callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), arrayInsertionPoint.buildRequest(newParam.getValue().getBytes()));
             basicAttack = Utilities.buildTransformationAttack(newBase, arrayInsertionPoint, leftAnchor, "\\\\", rightAnchor);
             issues.add(diffingScan.findReflectionIssues(newBase, arrayInsertionPoint, basicAttack));
-        }
+        }*/
 
         return issues
                 .stream()
@@ -123,14 +131,21 @@ class FastScan implements IScannerCheck {
 
 class Fuzzable extends CustomScanIssue {
     private final static String NAME = "Interesting input handling: ";
-    private final static String DETAIL = "The application reacts to inputs in a way that suggests it might be vulnerable to some kind of server-side code injection. The probes are listed below in chronological order.";
+    private final static String DETAIL = "The application reacts to inputs in a way that suggests it might be vulnerable to some kind of server-side code injection. The probes are listed below in chronological order, with evidence. Unreliable response attributes are coloured light blue.";
     private final static String REMEDIATION = "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of of manual investigation. Try to determine the root cause of the observed behaviour." +
             "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
     private final static String SEVERITY = "High";
-    private final static String CONFIDENCE = "Firm";
 
-    Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail) {
-        super(requests[0].getHttpService(), url, requests, NAME + title, DETAIL + detail, SEVERITY, CONFIDENCE, REMEDIATION);
+    Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail, boolean reliable) {
+        super(requests[0].getHttpService(), url, requests, NAME + title, DETAIL + detail, SEVERITY, calculateConfidence(reliable), REMEDIATION);
+    }
+
+    private static String calculateConfidence(boolean reliable) {
+        String confidence = "Tentative";
+        if (reliable) {
+            confidence = "Firm";
+        }
+        return confidence;
     }
 
 }

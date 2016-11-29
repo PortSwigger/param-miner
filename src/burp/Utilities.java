@@ -14,6 +14,8 @@ class Utilities {
     private static PrintWriter stderr;
     static final boolean THOROUGH_MODE = true;
     static final boolean DEBUG = false;
+    static final boolean TRANSFORMATION_SCAN = false;
+    static final byte CONFIRMATIONS = 6;
 
     static IBurpExtenderCallbacks callbacks;
     static IExtensionHelpers helpers;
@@ -376,18 +378,26 @@ class Utilities {
     static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse) {
         IHttpRequestResponse[] requests = new IHttpRequestResponse[attacks.length];
         Probe bestProbe = null;
-        String detail = "<br/><br/><b>Successful probes</b><br/><ul>";
+        boolean reliable = false;
+        String detail = "<br/><br/><b>Successful probes</b><br/><ul style='list-style-type: none'>";
         for (int i=0; i<attacks.length; i++) {
-            requests[i] = attacks[i].req;
+            requests[i] = attacks[i].getFirstRequest();
             if (i % 2 == 0) {
                 detail += "<li><b>"+StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName())+"</b> &#x20; (<b style='color: red'>"+ StringEscapeUtils.escapeHtml4(attacks[i].payload)+ "</b> vs <b style='color: blue'> ";
             }
             else {
                 detail += StringEscapeUtils.escapeHtml4(attacks[i].payload)+"</b>)</li>";
-                detail += "<ul>";
-                for (String mark : attacks[i].getPrint().keySet()) {
-                    if (attacks[i-1].getPrint().containsKey(mark) && !attacks[i].getPrint().get(mark).equals(attacks[i-1].getPrint().get(mark))) {
-                        detail += "<li>" + StringEscapeUtils.escapeHtml4(mark)+": "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(attacks[i-1].getPrint().get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(attacks[i].getPrint().get(mark).toString()) + "</b></li>";
+                detail += "<ul style='list-style-type: circle'>";
+                HashMap<String, Object> workedPrint = attacks[i].getPrint();
+                HashMap<String, Object> breakPrint = attacks[i-1].getFirstPrint();
+                HashMap<String, Object> consistentBreakPrint = attacks[i-1].getPrint();
+                for (String mark : workedPrint.keySet()) {
+                    if (consistentBreakPrint.containsKey(mark) && !workedPrint.get(mark).equals(consistentBreakPrint.get(mark))) {
+                        detail += "<li>" + StringEscapeUtils.escapeHtml4(mark)+": "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "</b></li>";
+                        reliable = true;
+                    }
+                    else if (breakPrint.containsKey(mark) && !workedPrint.get(mark).equals(breakPrint.get(mark))) {
+                        detail += "<li><span style='color: #6688ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "</b></li>";
                     }
                 }
 
@@ -400,7 +410,7 @@ class Utilities {
 
         detail += "</ul>";
 
-        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail); //attacks[attacks.length-2].getProbe().getName()
+        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail, reliable); //attacks[attacks.length-2].getProbe().getName()
     }
 }
 

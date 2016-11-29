@@ -8,7 +8,8 @@ import java.util.List;
  * Created by james on 24/11/2016.
  */
 class Attack {
-    public IHttpRequestResponse req;
+    private IHttpRequestResponse firstRequest;
+    private HashMap<String, Object> firstFingerprint;
 
     private final String[] keys = {"</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
     String payload;
@@ -21,15 +22,25 @@ class Attack {
     private int responseReflections = -1;
 
     public Attack(IHttpRequestResponse req, Probe probe, String payload, String anchor) {
-        this.req = req;
+        this.firstRequest = req;
         this.probe = probe;
         this.payload = payload;
         this.anchor = anchor;
         add(req.getResponse(), anchor);
+        firstFingerprint = fingerprint;
     }
+
 
     public HashMap<String, Object> getPrint() {
         return fingerprint;
+    }
+
+    public HashMap<String, Object> getFirstPrint() {
+        return firstFingerprint;
+    }
+
+    public IHttpRequestResponse getFirstRequest() {
+        return firstRequest;
     }
 
     private void regeneratePrint() {
@@ -57,7 +68,7 @@ class Attack {
     }
 
     public Attack add(byte[] response, String anchor) {
-        assert (req != null);
+        assert (firstRequest != null);
 
         response = Utilities.filterResponse(response);
         responseKeywords.updateWith(response);
@@ -77,8 +88,20 @@ class Attack {
         return this;
     }
 
-    public Attack addAttack(Attack attack) {
-        add(attack.req.getResponse(), anchor);
+    // todo verify this actually works as intended
+    Attack addAttack(Attack attack) {
+        add(attack.firstRequest.getResponse(), anchor);
+        HashMap<String, Object> generatedPrint = new HashMap<>();
+        HashMap<String, Object> inputPrint = attack.getPrint();
+        for (String key: inputPrint.keySet()) {
+            if (fingerprint.containsKey(key)) {
+                if (fingerprint.get(key).equals(inputPrint.get(key))) {
+                    generatedPrint.put(key, fingerprint.get(key));
+                }
+            }
+        }
+
+        fingerprint = generatedPrint;
         return this;
     }
 

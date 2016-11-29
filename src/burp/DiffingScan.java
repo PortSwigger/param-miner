@@ -58,15 +58,32 @@ class DiffingScan {
         return attacks;
     }
 
-    IScanIssue findReflectionIssues(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, Attack basicAttack) {
+    IScanIssue findReflectionIssues(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
-        
         String baseValue = insertionPoint.getBaseValue();
+        Attack softBase = new Attack(baseRequestResponse, null, null, "");
 
+        // how many repeat-requests should I use for this?
+        // generic fuzz, random input and base request are all used twice
+        // I need to save both prints, plus a way to compare something with a pregenerated print
+        // also I could use this pregenerated input to aid accuracy... is that actually worthwhile? I think so; enables speedy-abort on variable pages
+        Attack basicAttack = new Attack(injector.buildRequest(Utilities.randomString(7)), null, null, "");
 
+        // does generic fuzz differ from the base request? (ie 'should I abort the scan?')
         Probe genericFuzz = new Probe("Generic fuzz", 0, "`z'z\"${{%{{\\", "\\z`z'z\"${{%{{\\");
         genericFuzz.setEscapeStrings("");
+        genericFuzz.setRandomAnchor(false);
+        injector.fuzz(softBase, genericFuzz);
+
+        // if so, does generic fuzz differ from a request w/random input? (ie 'should I do hard attacks?')
+        // one request to avoid doing two (or avoid doing five in thorough)
+        //genericFuzz.setRandomAnchor(true);
+        //injector.fuzz(softBase, genericFuzz);
+
+        // also, does a request w/random input differ from the base request? (ie 'should I do soft attacks?')
+        // free, since we already sent all the required requests
+
 
         ArrayList<Attack> attacks = new ArrayList<>();
         if (!injector.fuzz(basicAttack, genericFuzz).isEmpty()) {
@@ -219,7 +236,7 @@ class DiffingScan {
             }
         }
 
-        Attack softBase = new Attack(baseRequestResponse, null, null, "");
+
 
         if (!Utilities.identical(softBase, basicAttack)) {
 
