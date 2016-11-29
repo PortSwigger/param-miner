@@ -95,7 +95,15 @@ public class TransformationScan {
         return classifiedTransformations;
     }
 
-    public IScanIssue findTransformationIssues(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, IHttpRequestResponse basicAttack) {
+    public IScanIssue findTransformationIssues(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+
+        String leftAnchor = Utilities.randomString(5);
+        String rightAnchor = "z" + Utilities.randomString(2);
+        Attack basicAttack = Utilities.buildTransformationAttack(baseRequestResponse, insertionPoint, leftAnchor, "\\\\", rightAnchor);
+        if (Utilities.getMatches(Utilities.filterResponse(basicAttack.getFirstRequest().getResponse()), (leftAnchor + "\\" + rightAnchor).getBytes(), -1).isEmpty()) {
+            return null;
+        }
+
         HashSet<String> default_behaviour = recordHandling(baseRequestResponse, insertionPoint, "\\zz");
 
         // assumes only one backslash-eating reflection
@@ -142,6 +150,6 @@ public class TransformationScan {
         }
 
         // IHttpRequestResponse highlightedAttack = Utilities.highlightRequestResponse(attack, expect, probe, insertionPoint);
-        return (new InputTransformation(interesting, boring, basicAttack, helpers.analyzeRequest(baseRequestResponse).getUrl(), insertionPoint.getInsertionPointName()));
+        return (new InputTransformation(interesting, boring, basicAttack.getFirstRequest(), helpers.analyzeRequest(baseRequestResponse).getUrl(), insertionPoint.getInsertionPointName()));
     }
 }
