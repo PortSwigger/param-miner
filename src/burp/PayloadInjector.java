@@ -66,8 +66,9 @@ class PayloadInjector {
         breakAttack = buildAttack(probe, probe.getNextBreak());
         mergedBreakAttack.addAttack(breakAttack);
 
-        // todo compare mergedBreakAttack instead here? will this actually increase coverage?
+        // todo compare mergedBreakAttack instead here? will this actually increase coverage? probably.
         // point is to exploit response attributes that vary in "don't break" responses (but are static in 'break' responses)
+        // I'll need to use similar w/mergedbreak attack in the loop too
         if(Utilities.similar(doNotBreakAttack, breakAttack)) {
             return new ArrayList<>();
         }

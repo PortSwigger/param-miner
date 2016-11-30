@@ -390,19 +390,32 @@ class Utilities {
             else {
                 detail += StringEscapeUtils.escapeHtml4(attacks[i].payload)+"</b>)</li>";
                 detail += "<ul style='list-style-type: circle'>";
-                HashMap<String, Object> workedPrint = attacks[i].getPrint();
+                HashMap<String, Object> workedPrint = attacks[i].getFirstPrint();
+                HashMap<String, Object> consistentWorkedPrint = attacks[i].getPrint();
                 HashMap<String, Object> breakPrint = attacks[i-1].getFirstPrint();
                 HashMap<String, Object> consistentBreakPrint = attacks[i-1].getPrint();
-                for (String mark : workedPrint.keySet()) {
-                    if (consistentBreakPrint.containsKey(mark) && !workedPrint.get(mark).equals(consistentBreakPrint.get(mark))) {
-                        detail += "<li>" + StringEscapeUtils.escapeHtml4(mark)+": "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "</b></li>";
+
+                Set<String> allKeys = new HashSet<>(consistentWorkedPrint.keySet());
+                allKeys.addAll(consistentBreakPrint.keySet());
+                String boringDetail = "";
+                for (String mark: allKeys) {
+                    if(workedPrint.get(mark).equals(breakPrint.get(mark))) {
+                        continue;
+                    }
+
+                    if (consistentBreakPrint.containsKey(mark) && consistentWorkedPrint.containsKey(mark)) {
+                        detail += "<li>" + StringEscapeUtils.escapeHtml4(mark) + ": " + "<b style='color: red'>" + StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> " + StringEscapeUtils.escapeHtml4(consistentWorkedPrint.get(mark).toString()) + "</b></li>";
                         reliable = true;
                     }
-                    else if (breakPrint.containsKey(mark) && !workedPrint.get(mark).equals(breakPrint.get(mark))) {
-                        detail += "<li><span style='color: #6688ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "</b></li>";
+                    else if (consistentBreakPrint.containsKey(mark)) {
+                        boringDetail += "<li><span style='color: #6666ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "</b></li>";
                     }
-                }
+                    else {
+                        boringDetail += "<li><span style='color: #6688ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(consistentWorkedPrint.get(mark).toString()) + "</b></li>";
+                    }
 
+                }
+                detail += boringDetail;
                 detail += "</ul>";
             }
             if (bestProbe == null || attacks[i].getProbe().getSeverity() >= bestProbe.getSeverity()) {
