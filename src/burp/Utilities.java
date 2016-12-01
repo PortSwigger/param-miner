@@ -416,6 +416,7 @@ class Utilities {
                 Set<String> allKeys = new HashSet<>(consistentWorkedPrint.keySet());
                 allKeys.addAll(consistentBreakPrint.keySet());
                 String boringDetail = "";
+                // fixme - need to cycle through requests to find culprit!
                 for (String mark: allKeys) {
                     if(workedPrint.get(mark).equals(breakPrint.get(mark))) {
                         continue;

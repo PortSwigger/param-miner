@@ -26,7 +26,7 @@ class PayloadInjector {
         for(int k=0; k<probe.getNextEscapeSet().length; k++) {
             doNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[k]);
             doNotBreakAttack.addAttack(basicAttack);
-            if(!Utilities.similar(doNotBreakAttack, breakAttack)) {
+            if(!Utilities.verySimilar(doNotBreakAttack, breakAttack)) {
                 attacks = verify(doNotBreakAttack, probe, k);
                 if (!attacks.isEmpty()) {
                     break;
@@ -37,27 +37,35 @@ class PayloadInjector {
         return attacks;
     }
 
-    private ArrayList<Attack> verify(Attack doNotBreakAttack, Probe probe, int chosen_escape) {
+    private ArrayList<Attack> verify(Attack doNotBreakAttack2, Probe probe, int chosen_escape) {
         ArrayList<Attack> attacks = new ArrayList<>(2);
         Attack mergedBreakAttack = null;
         Attack breakAttack;
+        Attack doNotBreakAttack = null;
 
         for(int i=0; i<Utilities.CONFIRMATIONS; i++) {
             breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
-            if(Utilities.similar(doNotBreakAttack, breakAttack)) {
-                return new ArrayList<>();
-            }
-
-            doNotBreakAttack.addAttack(buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]));
-            if(Utilities.similar(doNotBreakAttack, breakAttack)) {
-                return new ArrayList<>();
-            }
-
             if(i==0) {
                 mergedBreakAttack = breakAttack;
             }
             else {
                 mergedBreakAttack.addAttack(breakAttack);
+            }
+
+            if(doNotBreakAttack != null && Utilities.verySimilar(doNotBreakAttack, mergedBreakAttack)) {
+                return new ArrayList<>();
+            }
+
+            Attack tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
+            if(i==0) {
+                doNotBreakAttack = tempDoNotBreakAttack;
+            }
+            else {
+                doNotBreakAttack.addAttack(tempDoNotBreakAttack);
+            }
+
+            if(Utilities.verySimilar(doNotBreakAttack, mergedBreakAttack)) {
+                return new ArrayList<>();
             }
         }
 
@@ -69,7 +77,7 @@ class PayloadInjector {
         // todo compare mergedBreakAttack instead here? will this actually increase coverage? probably.
         // point is to exploit response attributes that vary in "don't break" responses (but are static in 'break' responses)
         // I'll need to use similar w/mergedbreak attack in the loop too
-        if(Utilities.similar(doNotBreakAttack, breakAttack)) {
+        if(Utilities.verySimilar(doNotBreakAttack, mergedBreakAttack)) {
             return new ArrayList<>();
         }
 

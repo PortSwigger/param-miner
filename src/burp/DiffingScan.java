@@ -159,13 +159,16 @@ class DiffingScan {
                 for (String delimiter : potential_delimiters) {
                     for (String concat : concatenators) {
                         Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
-                        concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z");
+                        concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z", "zx" + delimiter + concat + delimiter + "zy");
                         ArrayList<Attack> results = injector.fuzz(hardBase, concat_attack);
                         if (results.isEmpty()) {
                             continue;
                         }
+                        //Utilities.out(results.get(0).getPrint().toString());
+                        //Utilities.out(results.get(1).getPrint().toString());
                         attacks.addAll(results);
                         injectionSequence.add(new String[]{delimiter, concat});
+                        //break;
                     }
 
                     Probe jsonValue = new Probe("JSON Injection (value)", 6, "z"+delimiter+","+delimiter+"z"+delimiter+"z"+delimiter+"z",
@@ -232,7 +235,7 @@ class DiffingScan {
         }
 
         // does a request w/random input differ from the base request? (ie 'should I do soft attacks?')
-        if (!Utilities.similar(softBase, hardBase)) {
+        if (!Utilities.verySimilar(softBase, hardBase)) {
 
             if (StringUtils.isNumeric(baseValue)) {
 
