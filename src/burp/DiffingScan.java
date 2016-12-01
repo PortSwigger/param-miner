@@ -64,25 +64,24 @@ class DiffingScan {
         String baseValue = insertionPoint.getBaseValue();
         Attack softBase = new Attack(baseRequestResponse);
 
-        // does generic fuzz differ from the base request? (ie 'should I abort the scan?')
+        // work out which payloads (if any) are worth trying
         Attack crudeFuzz = injector.buildAttack("`z'z\"${{%{{\\", true);
-        if(Utilities.similar(softBase, crudeFuzz)) { return null;  }
+        if(Utilities.verySimilar(softBase, crudeFuzz)) { return null;  }
 
         softBase.addAttack(injector.buildAttack(baseValue, false));
-        if(Utilities.similar(softBase, crudeFuzz)) { return null;  }
+        if(Utilities.verySimilar(softBase, crudeFuzz)) { return null;  }
 
         crudeFuzz.addAttack(injector.buildAttack("\\z`z'z\"${{%{{\\", true));
-        if(Utilities.similar(softBase, crudeFuzz)) { return null;  }
+        if(Utilities.verySimilar(softBase, crudeFuzz)) { return null;  }
 
-        // if so, does generic fuzz differ from a request w/random input? (ie 'should I do hard attacks?')
-        // one request to avoid doing two (or avoid doing five in thorough)
+
+        ArrayList<Attack> attacks = new ArrayList<>();
         Attack hardBase = injector.buildAttack("", true);
-        if (Utilities.similar(softBase, hardBase)) {
+        if (!Utilities.verySimilar(hardBase, crudeFuzz)) {
             hardBase.addAttack(injector.buildAttack("", true));
         }
 
-        ArrayList<Attack> attacks = new ArrayList<>();
-        if (!Utilities.similar(softBase, hardBase)) {
+        if (!Utilities.verySimilar(hardBase, crudeFuzz)) {
 
             boolean worthTryingInjections = false;
             if (!Utilities.THOROUGH_MODE) {

@@ -17,14 +17,14 @@ class PayloadInjector {
         ArrayList<Attack> attacks = new ArrayList<>(2);
         Attack breakAttack;
         Attack doNotBreakAttack;
-        breakAttack = buildAttack(probe, probe.getNextBreak());
+        breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
 
         if (Utilities.identical(basicAttack, breakAttack)) {
             return new ArrayList<>();
         }
 
         for(int k=0; k<probe.getNextEscapeSet().length; k++) {
-            doNotBreakAttack = buildAttack(probe, probe.getNextEscapeSet()[k]);
+            doNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[k]);
             doNotBreakAttack.addAttack(basicAttack);
             if(!Utilities.similar(doNotBreakAttack, breakAttack)) {
                 attacks = verify(doNotBreakAttack, probe, k);
@@ -43,12 +43,12 @@ class PayloadInjector {
         Attack breakAttack;
 
         for(int i=0; i<Utilities.CONFIRMATIONS; i++) {
-            breakAttack = buildAttack(probe, probe.getNextBreak());
+            breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
             if(Utilities.similar(doNotBreakAttack, breakAttack)) {
                 return new ArrayList<>();
             }
 
-            doNotBreakAttack.addAttack(buildAttack(probe, probe.getNextEscapeSet()[chosen_escape]));
+            doNotBreakAttack.addAttack(buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]));
             if(Utilities.similar(doNotBreakAttack, breakAttack)) {
                 return new ArrayList<>();
             }
@@ -62,8 +62,8 @@ class PayloadInjector {
         }
 
         // this final probe pair is sent out of order, to prevent alternation false positives
-        doNotBreakAttack.addAttack(buildAttack(probe, probe.getNextEscapeSet()[chosen_escape]));
-        breakAttack = buildAttack(probe, probe.getNextBreak());
+        doNotBreakAttack.addAttack(buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]));
+        breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
         mergedBreakAttack.addAttack(breakAttack);
 
         // todo compare mergedBreakAttack instead here? will this actually increase coverage? probably.
@@ -80,13 +80,13 @@ class PayloadInjector {
     }
 
 
-    private Attack buildAttack(Probe probe, String payload) {
+    private Attack buildAttackFromProbe(Probe probe, String payload) {
         boolean randomAnchor = probe.getRandomAnchor();
         byte prefix = probe.getPrefix();
 
         String anchor = "";
         if (randomAnchor) {
-            anchor = Utilities.randomString(5) + Integer.toString(Utilities.rnd.nextInt(9));
+            anchor = Utilities.generateCanary();
         }
 
         String base_payload = payload;
@@ -114,7 +114,7 @@ class PayloadInjector {
 
     IHttpRequestResponse buildRequest(String payload) {
         byte[] request = insertionPoint.buildRequest(payload.getBytes());
-        IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.randomString(8), "1", IParameter.PARAM_URL);
+        IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         request = burp.Utilities.helpers.addParameter(request, cacheBuster);
 
         return burp.Utilities.callbacks.makeHttpRequest(
@@ -125,8 +125,9 @@ class PayloadInjector {
     Attack buildAttack(String payload, boolean random) {
         String canary = "";
         if (random) {
-            canary = Utilities.randomString(7);
+            canary = Utilities.generateCanary();
         }
+
         return new Attack(buildRequest(canary+payload), null, null, canary);
 
     }

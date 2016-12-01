@@ -61,6 +61,10 @@ class Utilities {
         }
     }
 
+    static String generateCanary() {
+        return randomString(4+rnd.nextInt(7)) + Integer.toString(rnd.nextInt(9));
+    }
+
     private static String sensibleURL(URL url) {
         String out = url.toString();
         if (url.getDefaultPort() == url.getPort()) {
@@ -370,6 +374,20 @@ class Utilities {
 
         for (String key: doNotBreakAttackGroup.getPrint().keySet()) {
             if (individualBreakAttack.getPrint().containsKey(key) && !individualBreakAttack.getPrint().get(key).equals(doNotBreakAttackGroup.getPrint().get(key))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    static boolean verySimilar(Attack attack1, Attack attack2) {
+        if (!attack1.getPrint().keySet().equals(attack2.getPrint().keySet())) {
+            return false;
+        }
+
+        for (String key: attack1.getPrint().keySet()) {
+            if (attack2.getPrint().containsKey(key) && !attack2.getPrint().get(key).equals(attack1.getPrint().get(key))) {
                 return false;
             }
         }

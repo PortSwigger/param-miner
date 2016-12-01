@@ -82,7 +82,7 @@ class Attack {
         responseDetails.updateWith(response);
 
         if(!anchor.equals("")) {
-            int reflections = Utilities.countMatches(response, anchor.getBytes());
+            int reflections = -1;//Utilities.countMatches(response, anchor.getBytes());
             if (responseReflections == -1) {
                 responseReflections = reflections;
             } else if (responseReflections != reflections) {
