@@ -36,6 +36,8 @@ class Attack {
         firstFingerprint = fingerprint;
     }
 
+    public Attack() {}
+
 
     public HashMap<String, Object> getPrint() {
         return fingerprint;
@@ -99,6 +101,14 @@ class Attack {
 
     // todo verify this actually works as intended
     Attack addAttack(Attack attack) {
+        if(firstRequest == null) {
+            firstRequest = attack.firstRequest;
+            anchor = attack.anchor;
+            probe = attack.getProbe();
+            payload = attack.payload;
+            add(attack.getFirstRequest().getResponse(), anchor);
+            firstFingerprint = fingerprint;
+        }
         //add(attack.firstRequest.getResponse(), anchor);
         HashMap<String, Object> generatedPrint = new HashMap<>();
         HashMap<String, Object> inputPrint = attack.getPrint();

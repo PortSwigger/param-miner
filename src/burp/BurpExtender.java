@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class BurpExtender implements IBurpExtender {
+public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Backslash Powered Scanner";
     private static final String version = "0.864";
 
@@ -39,6 +39,11 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("Thorough mode: " + Utilities.THOROUGH_MODE);
         Utilities.out("Input transformation detection: " + Utilities.TRANSFORMATION_SCAN);
         Utilities.out("Suspicious input handling detection: " + Utilities.DIFFING_SCAN);
+    }
+
+    public void extensionUnloaded() {
+        Utilities.out("Unloading extension...");
+        Utilities.unloaded.set(true);
     }
 }
 

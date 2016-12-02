@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class Utilities {
 
@@ -14,9 +15,11 @@ class Utilities {
     private static PrintWriter stderr;
     static final boolean THOROUGH_MODE = true;
     static final boolean DEBUG = false;
-    static final boolean TRANSFORMATION_SCAN = true;
+    static final boolean TRANSFORMATION_SCAN = false;
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 6;
+    static AtomicBoolean unloaded = new AtomicBoolean(false);
+    boolean unload = false;
 
     static IBurpExtenderCallbacks callbacks;
     static IExtensionHelpers helpers;

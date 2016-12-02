@@ -26,7 +26,7 @@ class PayloadInjector {
         for(int k=0; k<probe.getNextEscapeSet().length; k++) {
             doNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[k]);
             doNotBreakAttack.addAttack(basicAttack);
-            if(!Utilities.verySimilar(doNotBreakAttack, breakAttack)) {
+            if(!Utilities.similar(doNotBreakAttack, breakAttack)) {
                 attacks = verify(doNotBreakAttack, probe, k);
                 if (!attacks.isEmpty()) {
                     break;
@@ -37,52 +37,42 @@ class PayloadInjector {
         return attacks;
     }
 
-    private ArrayList<Attack> verify(Attack doNotBreakAttack2, Probe probe, int chosen_escape) {
+    private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Probe probe, int chosen_escape) {
         ArrayList<Attack> attacks = new ArrayList<>(2);
-        Attack mergedBreakAttack = null;
-        Attack breakAttack;
-        Attack doNotBreakAttack = null;
+        Attack mergedBreakAttack = new Attack();
+        Attack mergedDoNotBreakAttack = new Attack();
+        mergedDoNotBreakAttack.addAttack(doNotBreakAttackSeed);
 
         for(int i=0; i<Utilities.CONFIRMATIONS; i++) {
-            breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
-            if(i==0) {
-                mergedBreakAttack = breakAttack;
-            }
-            else {
-                mergedBreakAttack.addAttack(breakAttack);
-            }
+            Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
+            mergedBreakAttack.addAttack(tempBreakAttack);
 
-            if(doNotBreakAttack != null && Utilities.verySimilar(doNotBreakAttack, mergedBreakAttack)) {
+            if(/*Utilities.verySimilar(mergedDoNotBreakAttack, mergedBreakAttack)/* ||*/
+                    Utilities.similar(mergedDoNotBreakAttack, tempBreakAttack)) {
                 return new ArrayList<>();
             }
 
             Attack tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
-            if(i==0) {
-                doNotBreakAttack = tempDoNotBreakAttack;
-            }
-            else {
-                doNotBreakAttack.addAttack(tempDoNotBreakAttack);
-            }
+            mergedDoNotBreakAttack.addAttack(tempDoNotBreakAttack);
 
-            if(Utilities.verySimilar(doNotBreakAttack, mergedBreakAttack)) {
+            if(/*Utilities.verySimilar(mergedDoNotBreakAttack, mergedBreakAttack)/* ||*/
+                    Utilities.similar(mergedBreakAttack, tempDoNotBreakAttack)) {
                 return new ArrayList<>();
             }
         }
 
         // this final probe pair is sent out of order, to prevent alternation false positives
-        doNotBreakAttack.addAttack(buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]));
-        breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
-        mergedBreakAttack.addAttack(breakAttack);
+        mergedDoNotBreakAttack.addAttack(buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]));
+        Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
+        mergedBreakAttack.addAttack(tempBreakAttack);
 
-        // todo compare mergedBreakAttack instead here? will this actually increase coverage? probably.
         // point is to exploit response attributes that vary in "don't break" responses (but are static in 'break' responses)
-        // I'll need to use similar w/mergedbreak attack in the loop too
-        if(Utilities.verySimilar(doNotBreakAttack, mergedBreakAttack)) {
+        if(Utilities.verySimilar(mergedDoNotBreakAttack, mergedBreakAttack)) {
             return new ArrayList<>();
         }
 
         attacks.add(mergedBreakAttack);
-        attacks.add(doNotBreakAttack);
+        attacks.add(mergedDoNotBreakAttack);
 
         return attacks;
     }
@@ -121,6 +111,10 @@ class PayloadInjector {
     }
 
     IHttpRequestResponse buildRequest(String payload) {
+        if(Utilities.unloaded.get()) {
+            throw new RuntimeException("Extension unloaded");
+        }
+
         byte[] request = insertionPoint.buildRequest(payload.getBytes());
         IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         request = burp.Utilities.helpers.addParameter(request, cacheBuster);
