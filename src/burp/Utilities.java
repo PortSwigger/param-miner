@@ -370,12 +370,55 @@ class Utilities {
         return candidate.getPrint().equals(attack2.getPrint());
     }
 
+    static boolean similarIsh(Attack noBreakGroup, Attack breakGroup, Attack noBreak, Attack doBreak) {
+        /*
+        if (!noBreakGroup.getPrint().keySet().equals(breakGroup.getPrint().keySet())){
+            // fixme problem is here. the consistent attributes being different isn't sufficient
+            // I should also verify the attribute in question is different *this time*
+            return true;
+        }
+        */
+
+        // todo make it work the other way around
+        for (String key: noBreakGroup.getPrint().keySet()) {
+            Object noBreakVal = noBreakGroup.getPrint().get(key);
+
+            // if this key isn't consistent, check if it's different this time
+            if (!breakGroup.getPrint().containsKey(key)) {
+                if (noBreakVal.equals(doBreak.getPrint().get(key))) {
+                    continue;
+                }
+                else {
+                    return false;
+                }
+            }
+
+            Object breakVal = breakGroup.getPrint().get(key);
+            if (!noBreakVal.equals(breakVal)) {
+                return false;
+            }
+        }
+
+        for (String key: breakGroup.getPrint().keySet()) {
+            if (!noBreakGroup.getPrint().containsKey(key)) {
+                if (!breakGroup.getPrint().get(key).equals(noBreak.getPrint().get(key))){
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     static boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttack) {
         //if (!candidate.getPrint().keySet().equals(individualBreakAttack.getPrint().keySet())) {
         //    return false;
         //}
 
         for (String key: doNotBreakAttackGroup.getPrint().keySet()) {
+            if (!individualBreakAttack.getPrint().containsKey(key)){
+                return false;
+            }
             if (individualBreakAttack.getPrint().containsKey(key) && !individualBreakAttack.getPrint().get(key).equals(doNotBreakAttackGroup.getPrint().get(key))) {
                 return false;
             }

@@ -47,27 +47,26 @@ class PayloadInjector {
             Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
             mergedBreakAttack.addAttack(tempBreakAttack);
 
-            if(/*Utilities.verySimilar(mergedDoNotBreakAttack, mergedBreakAttack)/* ||*/
-                    Utilities.similar(mergedDoNotBreakAttack, tempBreakAttack)) {
-                return new ArrayList<>();
-            }
+            //if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
+            //    return new ArrayList<>();
+            //}
 
             Attack tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
             mergedDoNotBreakAttack.addAttack(tempDoNotBreakAttack);
 
-            if(/*Utilities.verySimilar(mergedDoNotBreakAttack, mergedBreakAttack)/* ||*/
-                    Utilities.similar(mergedBreakAttack, tempDoNotBreakAttack)) {
+            if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
                 return new ArrayList<>();
             }
         }
 
         // this final probe pair is sent out of order, to prevent alternation false positives
-        mergedDoNotBreakAttack.addAttack(buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]));
+        Attack tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
+        mergedDoNotBreakAttack.addAttack(tempDoNotBreakAttack);
         Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
         mergedBreakAttack.addAttack(tempBreakAttack);
 
         // point is to exploit response attributes that vary in "don't break" responses (but are static in 'break' responses)
-        if(Utilities.verySimilar(mergedDoNotBreakAttack, mergedBreakAttack)) {
+        if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
             return new ArrayList<>();
         }
 
