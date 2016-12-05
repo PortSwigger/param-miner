@@ -3,6 +3,7 @@ package burp;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -156,14 +157,14 @@ class InputTransformation extends CustomScanIssue {
     }
 
     private static String generateDetail(ArrayList<String> interesting, ArrayList<String> boring, String paramName) {
-        String details = DETAIL + "<br/><br/>Affected parameter:<code>" + paramName + "</code><br/><br/>";
+        String details = DETAIL + "<br/><br/>Affected parameter:<code>" + StringEscapeUtils.escapeHtml4(paramName) + "</code><br/><br/>";
         details += "<p>Interesting transformations:</p><ul> ";
         for (String transform : interesting) {
-            details += "<li><b><code style='font-size: 125%;'>" + transform + "</code></b></li>";
+            details += "<li><b><code style='font-size: 125%;'>" + StringEscapeUtils.escapeHtml4(transform) + "</code></b></li>";
         }
         details += "</ul><p>Boring transformations:</p><ul>";
         for (String transform : boring) {
-            details += "<li><b><code>" + transform + "</code></b></li>";
+            details += "<li><b><code>" + StringEscapeUtils.escapeHtml4(transform) + "</code></b></li>";
         }
         details += "</ul>";
         return details;
