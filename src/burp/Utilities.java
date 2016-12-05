@@ -379,28 +379,24 @@ class Utilities {
         }
         */
 
-        // todo make it work the other way around
         for (String key: noBreakGroup.getPrint().keySet()) {
             Object noBreakVal = noBreakGroup.getPrint().get(key);
 
-            // if this key isn't consistent, check if it's different this time
+            // if this attribute is inconsistent, make sure it's different this time
             if (!breakGroup.getPrint().containsKey(key)) {
-                if (noBreakVal.equals(doBreak.getPrint().get(key))) {
-                    continue;
-                }
-                else {
+                if (!noBreakVal.equals(doBreak.getPrint().get(key))) {
                     return false;
                 }
             }
-
-            Object breakVal = breakGroup.getPrint().get(key);
-            if (!noBreakVal.equals(breakVal)) {
+            else if (!noBreakVal.equals(breakGroup.getPrint().get(key))) {
+                // if it's consistent and different, these responses definitely don't match
                 return false;
             }
         }
 
         for (String key: breakGroup.getPrint().keySet()) {
             if (!noBreakGroup.getPrint().containsKey(key)) {
+                // if this attribute is inconsistent, make sure it's different this time
                 if (!breakGroup.getPrint().get(key).equals(noBreak.getPrint().get(key))){
                     return false;
                 }
