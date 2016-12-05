@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
