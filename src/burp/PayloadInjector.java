@@ -26,7 +26,7 @@ class PayloadInjector {
         for(int k=0; k<probe.getNextEscapeSet().length; k++) {
             doNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[k]);
             doNotBreakAttack.addAttack(basicAttack);
-            if(!Utilities.similar(doNotBreakAttack, breakAttack)) {
+            if(!Utilities.identical(doNotBreakAttack, breakAttack)) {
                 attacks = verify(doNotBreakAttack, probe, k);
                 if (!attacks.isEmpty()) {
                     break;
