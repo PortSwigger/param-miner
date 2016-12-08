@@ -13,21 +13,20 @@ class PayloadInjector {
         this.insertionPoint = insertionPoint;
     }
 
-    ArrayList<Attack> fuzz(Attack basicAttack, Probe probe) {
+    // fixme horribly inefficient
+    ArrayList<Attack> fuzz(Attack baselineAttack, Probe probe) {
         ArrayList<Attack> attacks = new ArrayList<>(2);
-        Attack breakAttack;
-        Attack doNotBreakAttack;
-        breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
+        Attack breakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
 
-        if (Utilities.identical(basicAttack, breakAttack)) {
+        if (Utilities.identical(baselineAttack, breakAttack)) {
             return new ArrayList<>();
         }
 
         for(int k=0; k<probe.getNextEscapeSet().length; k++) {
-            doNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[k]);
-            doNotBreakAttack.addAttack(basicAttack);
+            Attack doNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[k]);
+            doNotBreakAttack.addAttack(baselineAttack);
             if(!Utilities.identical(doNotBreakAttack, breakAttack)) {
-                attacks = verify(doNotBreakAttack, probe, k);
+                attacks = verify(doNotBreakAttack, breakAttack, probe, k);
                 if (!attacks.isEmpty()) {
                     break;
                 }
@@ -37,21 +36,24 @@ class PayloadInjector {
         return attacks;
     }
 
-    private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Probe probe, int chosen_escape) {
+    private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttackSeed, Probe probe, int chosen_escape) {
         ArrayList<Attack> attacks = new ArrayList<>(2);
         Attack mergedBreakAttack = new Attack();
+        mergedBreakAttack.addAttack(breakAttackSeed);
         Attack mergedDoNotBreakAttack = new Attack();
         mergedDoNotBreakAttack.addAttack(doNotBreakAttackSeed);
+
+        Attack tempDoNotBreakAttack = doNotBreakAttackSeed;
 
         for(int i=0; i<Utilities.CONFIRMATIONS; i++) {
             Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
             mergedBreakAttack.addAttack(tempBreakAttack);
 
-            //if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
-            //    return new ArrayList<>();
-            //}
+            if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
+                return new ArrayList<>();
+            }
 
-            Attack tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
+            tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
             mergedDoNotBreakAttack.addAttack(tempDoNotBreakAttack);
 
             if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
@@ -60,7 +62,7 @@ class PayloadInjector {
         }
 
         // this final probe pair is sent out of order, to prevent alternation false positives
-        Attack tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
+        tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
         mergedDoNotBreakAttack.addAttack(tempDoNotBreakAttack);
         Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
         mergedBreakAttack.addAttack(tempBreakAttack);
@@ -85,6 +87,9 @@ class PayloadInjector {
         if (randomAnchor) {
             anchor = Utilities.generateCanary();
         }
+        //else {
+        //    payload = payload.replace("z", Utilities.generateCanary());
+        //}
 
         String base_payload = payload;
         if (prefix == Probe.PREPEND) {

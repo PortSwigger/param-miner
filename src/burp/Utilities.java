@@ -469,7 +469,7 @@ class Utilities {
                         reliable = true;
                     }
                     else if (consistentBreakPrint.containsKey(mark)) {
-                        boringDetail += "<li><span style='color: #6666ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "</b></li>";
+                        boringDetail += "<li><span style='color: #6666ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> ??"+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "??</b></li>";
                     }
                     else {
                         boringDetail += "<li><span style='color: #6688ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(consistentWorkedPrint.get(mark).toString()) + "</b></li>";

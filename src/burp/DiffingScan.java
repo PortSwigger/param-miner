@@ -286,6 +286,7 @@ class DiffingScan {
                     attacks.addAll(injector.fuzz(softBase, procedure));
                 }
 
+
                 Probe commaAbs = new Probe("Order-by function injection", 5, ",abz(1)", ",abs(0,1)", ",abs()","abs(z)");
                 commaAbs.setEscapeStrings(",ABS(1)", ",abs(1)", ",abs(01)"); //  1
                 commaAbs.setRandomAnchor(false);
@@ -298,9 +299,8 @@ class DiffingScan {
             }
 
             byte type = insertionPoint.getInsertionPointType();
-            boolean isInPath = (type == IScannerInsertionPoint.INS_URL_PATH_FILENAME) ||
-                    type == IScannerInsertionPoint.INS_URL_PATH_FOLDER ||
-                    type == IScannerInsertionPoint.INS_URL_PATH_REST;
+            boolean isInPath = (type == IScannerInsertionPoint.INS_URL_PATH_FILENAME ||
+                                type == IScannerInsertionPoint.INS_URL_PATH_FOLDER);
 
             if (Utilities.THOROUGH_MODE && !isInPath && Utilities.mightBeIdentifier(baseValue) && !baseValue.equals("")) {
                 Probe dotSlash = new Probe("File Path Manipulation", 3, "../", "z/", "_/", "./../");
