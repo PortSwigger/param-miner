@@ -106,7 +106,7 @@ class PayloadInjector {
         }
 
 
-        IHttpRequestResponse req = buildRequest(payload);
+        IHttpRequestResponse req = buildRequest(payload, !randomAnchor);
         if(randomAnchor) {
             req = Utilities.highlightRequestResponse(req, anchor, anchor, insertionPoint);
         }
@@ -114,14 +114,17 @@ class PayloadInjector {
         return new Attack(req, probe, base_payload, anchor);
     }
 
-    IHttpRequestResponse buildRequest(String payload) {
+    IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster) {
         if(Utilities.unloaded.get()) {
             throw new RuntimeException("Extension unloaded");
         }
 
         byte[] request = insertionPoint.buildRequest(payload.getBytes());
-        IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-        request = burp.Utilities.helpers.addParameter(request, cacheBuster);
+
+        if (needCacheBuster) {
+            IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+            request = burp.Utilities.helpers.addParameter(request, cacheBuster);
+        }
 
         return burp.Utilities.callbacks.makeHttpRequest(
                 baseRequestResponse.getHttpService(), request); // Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
@@ -134,7 +137,7 @@ class PayloadInjector {
             canary = Utilities.generateCanary();
         }
 
-        return new Attack(buildRequest(canary+payload), null, null, canary);
+        return new Attack(buildRequest(canary+payload, !random), null, null, canary);
 
     }
 
