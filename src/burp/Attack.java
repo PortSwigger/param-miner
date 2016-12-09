@@ -8,6 +8,10 @@ import java.util.List;
  * Created by james on 24/11/2016.
  */
 class Attack {
+    final static int UNINITIALISED = -1;
+    final static int DYNAMIC = -2;
+    final static int INCALCULABLE = -3;
+
     private IHttpRequestResponse firstRequest;
     private HashMap<String, Object> firstFingerprint;
 
@@ -19,7 +23,8 @@ class Attack {
 
     private IResponseKeywords responseKeywords = Utilities.helpers.analyzeResponseKeywords(Arrays.asList(keys));
     private IResponseVariations responseDetails = Utilities.helpers.analyzeResponseVariations();
-    private int responseReflections = -1;
+    // todo add response end?
+    private int responseReflections = UNINITIALISED;
 
     public Attack(IHttpRequestResponse req, Probe probe, String payload, String anchor) {
         this.firstRequest = req;
@@ -64,7 +69,7 @@ class Attack {
 
         }
 
-        if (responseReflections > -1) {
+        if (responseReflections != DYNAMIC) {
             generatedPrint.put("input_reflections", responseReflections);
         }
 
@@ -83,23 +88,23 @@ class Attack {
         responseKeywords.updateWith(response);
         responseDetails.updateWith(response);
 
-        if(!anchor.equals("")) {
-            int reflections = -1;//Utilities.countMatches(response, anchor.getBytes());
-            if (responseReflections == -1) {
+        if(anchor.equals("")) {
+            responseReflections = INCALCULABLE;
+        }
+        else {
+            int reflections = Utilities.countMatches(response, anchor.getBytes());
+            if (responseReflections == UNINITIALISED) {
                 responseReflections = reflections;
-            } else if (responseReflections != reflections) {
-                responseReflections = -2;
+            } else if (responseReflections != reflections && responseReflections != INCALCULABLE) {
+                responseReflections = DYNAMIC;
             }
         }
-
-        // print.put("Content start", Utilities.getStartType(response));
 
         regeneratePrint();
 
         return this;
     }
 
-    // todo verify this actually works as intended
     Attack addAttack(Attack attack) {
         if(firstRequest == null) {
             firstRequest = attack.firstRequest;
@@ -109,6 +114,7 @@ class Attack {
             add(attack.getFirstRequest().getResponse(), anchor);
             firstFingerprint = fingerprint;
         }
+
         //add(attack.firstRequest.getResponse(), anchor);
         HashMap<String, Object> generatedPrint = new HashMap<>();
         HashMap<String, Object> inputPrint = attack.getPrint();

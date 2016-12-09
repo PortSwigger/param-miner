@@ -371,16 +371,13 @@ class Utilities {
     }
 
     static boolean similarIsh(Attack noBreakGroup, Attack breakGroup, Attack noBreak, Attack doBreak) {
-        /*
-        if (!noBreakGroup.getPrint().keySet().equals(breakGroup.getPrint().keySet())){
-            // fixme problem is here. the consistent attributes being different isn't sufficient
-            // I should also verify the attribute in question is different *this time*
-            return true;
-        }
-        */
 
         for (String key: noBreakGroup.getPrint().keySet()) {
             Object noBreakVal = noBreakGroup.getPrint().get(key);
+
+            if(key.equals("input_reflections") && noBreakVal.equals(Attack.INCALCULABLE)) {
+                continue;
+            }
 
             // if this attribute is inconsistent, make sure it's different this time
             if (!breakGroup.getPrint().containsKey(key)) {
@@ -429,6 +426,10 @@ class Utilities {
         }
 
         for (String key: attack1.getPrint().keySet()) {
+            if(key.equals("input_reflections") && (attack1.getPrint().get(key).equals(Attack.INCALCULABLE) || attack2.getPrint().get(key).equals(Attack.INCALCULABLE))) {
+                continue;
+            }
+
             if (attack2.getPrint().containsKey(key) && !attack2.getPrint().get(key).equals(attack1.getPrint().get(key))) {
                 return false;
             }
@@ -466,11 +467,17 @@ class Utilities {
                         continue;
                     }
 
-                    if(Math.abs(Integer.parseInt(brokeResult)) > 9999) {
-                        brokeResult = "X";
+                    try {
+                        if (Math.abs(Integer.parseInt(brokeResult)) > 9999) {
+                            brokeResult = "X";
+                        }
+                        if (Math.abs(Integer.parseInt(workedResult)) > 9999) {
+                            workedResult = "Y";
+                        }
                     }
-                    if(Math.abs(Integer.parseInt(workedResult)) > 9999) {
-                        workedResult = "Y";
+                    catch (NumberFormatException e) {
+                        brokeResult = StringEscapeUtils.escapeHtml4(brokeResult);
+                        workedResult = StringEscapeUtils.escapeHtml4(workedResult);
                     }
 
                     if (consistentBreakPrint.containsKey(mark) && consistentWorkedPrint.containsKey(mark)) {
