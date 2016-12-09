@@ -441,15 +441,14 @@ class Utilities {
         IHttpRequestResponse[] requests = new IHttpRequestResponse[attacks.length];
         Probe bestProbe = null;
         boolean reliable = false;
-        String detail = "<br/><br/><b>Successful probes</b><br/><ul style='list-style-type: none'>";
+        String detail = "<br/><br/><b>Successful probes</b><br/>";
         for (int i=0; i<attacks.length; i++) {
             requests[i] = attacks[i].getFirstRequest();
             if (i % 2 == 0) {
-                detail += "<li><b>"+StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName())+"</b> &#x20; (<b style='color: red'>"+ StringEscapeUtils.escapeHtml4(attacks[i].payload)+ "</b> vs <b style='color: blue'> ";
+                detail += " &#160;  &#160; <table><tr><td><b>"+StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName())+" &#160;  &#160; </b></td><td><b>"+ StringEscapeUtils.escapeHtml4(attacks[i].payload)+ " &#160; </b></td><td><b>";
             }
             else {
-                detail += StringEscapeUtils.escapeHtml4(attacks[i].payload)+"</b>)</li>";
-                detail += "<ul style='list-style-type: circle'>";
+                detail += StringEscapeUtils.escapeHtml4(attacks[i].payload)+"</b></td></tr>\n";
                 HashMap<String, Object> workedPrint = attacks[i].getFirstPrint();
                 HashMap<String, Object> consistentWorkedPrint = attacks[i].getPrint();
                 HashMap<String, Object> breakPrint = attacks[i-1].getFirstPrint();
@@ -458,33 +457,41 @@ class Utilities {
                 Set<String> allKeys = new HashSet<>(consistentWorkedPrint.keySet());
                 allKeys.addAll(consistentBreakPrint.keySet());
                 String boringDetail = "";
-                // fixme - need to cycle through requests to find culprit!
+
                 for (String mark: allKeys) {
-                    if(workedPrint.get(mark).equals(breakPrint.get(mark))) {
+                    String brokeResult = breakPrint.get(mark).toString();
+                    String workedResult = workedPrint.get(mark).toString();
+
+                    if(brokeResult.equals(workedResult)) {
                         continue;
                     }
 
+                    if(Math.abs(Integer.parseInt(brokeResult)) > 9999) {
+                        brokeResult = "X";
+                    }
+                    if(Math.abs(Integer.parseInt(workedResult)) > 9999) {
+                        workedResult = "Y";
+                    }
+
                     if (consistentBreakPrint.containsKey(mark) && consistentWorkedPrint.containsKey(mark)) {
-                        detail += "<li>" + StringEscapeUtils.escapeHtml4(mark) + ": " + "<b style='color: red'>" + StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> " + StringEscapeUtils.escapeHtml4(consistentWorkedPrint.get(mark).toString()) + "</b></li>";
+                        detail += "<tr><td>" + StringEscapeUtils.escapeHtml4(mark) + "</td><td>" + "" + brokeResult + " </td><td>" + workedResult + "</td></tr>\n";
                         reliable = true;
                     }
                     else if (consistentBreakPrint.containsKey(mark)) {
-                        boringDetail += "<li><span style='color: #6666ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> ??"+StringEscapeUtils.escapeHtml4(workedPrint.get(mark).toString()) + "??</b></li>";
+                        boringDetail += "<tr><td><i>" + StringEscapeUtils.escapeHtml4(mark)+"</i></td><td><i>" + brokeResult + "</i></td><td><i> *" + workedResult + "*</i></td></tr>\n";
                     }
                     else {
-                        boringDetail += "<li><span style='color: #6688ff'>" + StringEscapeUtils.escapeHtml4(mark)+"</span>: "+"<b style='color: red'>"+StringEscapeUtils.escapeHtml4(breakPrint.get(mark).toString()) + " </b>vs<b style='color: blue'> "+StringEscapeUtils.escapeHtml4(consistentWorkedPrint.get(mark).toString()) + "</b></li>";
+                        boringDetail += "<tr><td><i>" + StringEscapeUtils.escapeHtml4(mark)+"</i></td><td><i>*" + brokeResult + "*</i></td><td><i>" + workedResult + "</i></td></tr>\n";
                     }
 
                 }
                 detail += boringDetail;
-                detail += "</ul>";
+                detail += "</table>\n";
             }
             if (bestProbe == null || attacks[i].getProbe().getSeverity() >= bestProbe.getSeverity()) {
                 bestProbe = attacks[i].getProbe();
             }
         }
-
-        detail += "</ul>";
 
         return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail, reliable); //attacks[attacks.length-2].getProbe().getName()
     }
