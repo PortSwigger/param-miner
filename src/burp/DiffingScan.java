@@ -20,7 +20,7 @@ class DiffingScan {
             functions.add(new String[]{"Ruby injection", "1.abs", "1.abz", "1.abf"});
         }
 
-        functions.add(new String[]{"JavaScript injection", "isFinite(1)", "isFinitez(1)", "isFinitee(1)"});
+        functions.add(new String[]{"JavaScript injection", "isFinite(1)", "isFinitd(1)", "isFinitee(1)"});
         functions.add(new String[]{"Shell injection", "$((1/1))", "$((1/0))", "$((2/0))"});
         functions.add(new String[]{"Basic function injection", "abs(1)", "abz(1)", "abf(1)"});
 
