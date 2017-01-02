@@ -1,0 +1,11 @@
+Uuid: 9cff8c55432a45808432e26dbb2b41d8
+ExtensionType: 1
+Name: Backslash Powered Scanner
+ScreenVersion: 0.863
+SerialVersion: 3
+MinPlatformVersion: 0
+ProOnly: True
+Author: James 'albinowax' Kettle, PortSwigger Web Security
+ShortDescription: Finds unknown classes of injection vulnerabilities.
+EntryPoint: build/libs/backslash-powered-scanner-all.jar
+BuildCommand: gradle -PburpJar=$BURP_JAR fatJar
