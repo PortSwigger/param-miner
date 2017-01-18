@@ -5,7 +5,7 @@ repositories {
 }
 
 dependencies {
-    compile files("$burpJar")
+    compile 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
     compile 'org.apache.commons:commons-lang3:3.5'
 }
 

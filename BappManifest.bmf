@@ -8,4 +8,4 @@ ProOnly: True
 Author: James 'albinowax' Kettle, PortSwigger Web Security
 ShortDescription: Finds unknown classes of injection vulnerabilities.
 EntryPoint: build/libs/backslash-powered-scanner-all.jar
-BuildCommand: gradle -PburpJar=$BURP_JAR fatJar
+BuildCommand: gradle fatJar
