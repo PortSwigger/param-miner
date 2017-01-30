@@ -72,6 +72,7 @@ class PayloadInjector {
             return new ArrayList<>();
         }
 
+        // fixme: somehow, we get to here with one pair of requests with every measure equal?!
         attacks.add(mergedBreakAttack);
         attacks.add(mergedDoNotBreakAttack);
 

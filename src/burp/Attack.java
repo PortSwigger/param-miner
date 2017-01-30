@@ -15,11 +15,24 @@ class Attack {
     private IHttpRequestResponse firstRequest;
     private HashMap<String, Object> firstFingerprint;
 
+    HashMap<String, Object> getLastPrint() {
+        return lastPrint;
+    }
+
+    private HashMap<String, Object> lastPrint;
+
+    IHttpRequestResponse getLastRequest() {
+        return lastRequest;
+    }
+
+    private IHttpRequestResponse lastRequest;
+
     private final String[] keys = {"</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
     String payload;
     private Probe probe;
     private String anchor;
     private HashMap<String, Object> fingerprint;
+
 
     private IResponseKeywords responseKeywords = Utilities.helpers.analyzeResponseKeywords(Arrays.asList(keys));
     private IResponseVariations responseDetails = Utilities.helpers.analyzeResponseVariations();
@@ -28,17 +41,21 @@ class Attack {
 
     public Attack(IHttpRequestResponse req, Probe probe, String payload, String anchor) {
         this.firstRequest = req;
+        this.lastRequest = req;
         this.probe = probe;
         this.payload = payload;
         this.anchor = anchor;
         add(req.getResponse(), anchor);
         firstFingerprint = fingerprint;
+        this.lastPrint = fingerprint;
     }
 
     public Attack(IHttpRequestResponse req) {
         this.firstRequest = req;
+        this.lastRequest = req;
         add(req.getResponse(), "");
         firstFingerprint = fingerprint;
+        this.lastPrint = fingerprint;
     }
 
     public Attack() {}
@@ -80,7 +97,7 @@ class Attack {
         return probe;
     }
 
-    public Attack add(byte[] response, String anchor) {
+    private Attack add(byte[] response, String anchor) {
         assert (firstRequest != null);
 
 
@@ -127,6 +144,9 @@ class Attack {
         }
 
         fingerprint = generatedPrint;
+        lastRequest = attack.lastRequest;
+        this.lastPrint = attack.getPrint();
+
         return this;
     }
 

@@ -444,15 +444,15 @@ class Utilities {
         boolean reliable = false;
         String detail = "<br/><br/><b>Successful probes</b><br/>";
         for (int i=0; i<attacks.length; i++) {
-            requests[i] = attacks[i].getFirstRequest();
+            requests[i] = attacks[i].getLastRequest(); // was getFirstRequest
             if (i % 2 == 0) {
                 detail += " &#160;  &#160; <table><tr><td><b>"+StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName())+" &#160;  &#160; </b></td><td><b>"+ StringEscapeUtils.escapeHtml4(attacks[i].payload)+ " &#160; </b></td><td><b>";
             }
             else {
                 detail += StringEscapeUtils.escapeHtml4(attacks[i].payload)+"</b></td></tr>\n";
-                HashMap<String, Object> workedPrint = attacks[i].getFirstPrint();
+                HashMap<String, Object> workedPrint = attacks[i].getLastPrint(); // was getFirstPrint
                 HashMap<String, Object> consistentWorkedPrint = attacks[i].getPrint();
-                HashMap<String, Object> breakPrint = attacks[i-1].getFirstPrint();
+                HashMap<String, Object> breakPrint = attacks[i-1].getLastPrint(); // was getFirstPrint
                 HashMap<String, Object> consistentBreakPrint = attacks[i-1].getPrint();
 
                 Set<String> allKeys = new HashSet<>(consistentWorkedPrint.keySet());
