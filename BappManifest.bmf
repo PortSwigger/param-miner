@@ -1,6 +1,7 @@
 Uuid: 9cff8c55432a45808432e26dbb2b41d8
 ExtensionType: 1
 Name: Backslash Powered Scanner
+RepoName: backslash-powered-scanner
 ScreenVersion: 0.863
 SerialVersion: 3
 MinPlatformVersion: 0
