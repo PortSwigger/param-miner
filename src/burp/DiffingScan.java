@@ -175,13 +175,32 @@ class DiffingScan {
                             "z"+delimiter+","+delimiter+"z"+delimiter+";"+delimiter+"z",
                             "z"+delimiter+","+delimiter+"z"+delimiter+"."+delimiter+"z");
                     jsonValue.setEscapeStrings("z"+delimiter+","+delimiter+"z"+delimiter+":"+delimiter+"z");
-                    attacks.addAll(injector.fuzz(hardBase, jsonValue));
+                    ArrayList<Attack> jsonValueAttack = injector.fuzz(hardBase, jsonValue);
+                    attacks.addAll(jsonValueAttack);
 
                     Probe jsonKey = new Probe("JSON Injection (key)", 6, "z"+delimiter+":"+delimiter+"z"+delimiter+"z"+delimiter,
                             "z"+delimiter+":"+delimiter+"z"+delimiter+":"+delimiter,
                             "z"+delimiter+":"+delimiter+"z"+delimiter+"."+delimiter);
                     jsonKey.setEscapeStrings("z"+delimiter+":"+delimiter+"z"+delimiter+","+delimiter);
-                    attacks.addAll(injector.fuzz(hardBase, jsonKey));
+                    ArrayList<Attack> jsonKeyAttack = injector.fuzz(hardBase, jsonKey);
+                    attacks.addAll(jsonKeyAttack);
+
+                    // use $where to detect mongodb json injection
+                    String wherePrefix = null;
+                    String whereSuffix = "";
+                    if (!jsonValueAttack.isEmpty()) {
+                        wherePrefix = "z"+delimiter+","+delimiter+"$where"+delimiter+":"+delimiter;
+                    }
+                    else if (!jsonKeyAttack.isEmpty()) {
+                        wherePrefix = "z"+delimiter+":"+delimiter+"z"+delimiter+","+delimiter+"$where"+delimiter+":"+delimiter;
+                        whereSuffix = delimiter+","+delimiter+"z";
+                    }
+
+                    if (wherePrefix != null) {
+                        Probe mongo = new Probe("MongoDB Injection", 9, wherePrefix+"0z41"+whereSuffix, wherePrefix+"0v41"+whereSuffix);
+                        mongo.setEscapeStrings(wherePrefix+"0x41"+whereSuffix, wherePrefix+"0x42"+whereSuffix);
+                        attacks.addAll(injector.fuzz(hardBase, mongo));
+                    }
                 }
 
 
@@ -219,8 +238,8 @@ class DiffingScan {
                     ArrayList<Attack> dollarParseAttack = injector.fuzz(hardBase, dollarParse);
                     attacks.addAll(dollarParseAttack);
 
-                    Probe percentParse = new Probe("Interpolation - percent", 5, "%{{z", "z%{{z");
-                    percentParse.setEscapeStrings("%}}", "}}%z", "z%}}z");
+                    Probe percentParse = new Probe("Interpolation - percent", 5, "%{{41", "41%{{41");
+                    percentParse.setEscapeStrings("%}}", "}}%41", "41%}}41");
                     ArrayList<Attack> percentParseAttack = injector.fuzz(hardBase, percentParse);
                     attacks.addAll(percentParseAttack);
 
