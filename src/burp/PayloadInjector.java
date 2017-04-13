@@ -127,8 +127,9 @@ class PayloadInjector {
             request = burp.Utilities.helpers.addParameter(request, cacheBuster);
         }
 
-        return burp.Utilities.callbacks.makeHttpRequest(
-                baseRequestResponse.getHttpService(), request); // Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
+        IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(baseRequestResponse.getHttpService(), request);
+
+        return requestResponse;// Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
     }
 
 

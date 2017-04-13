@@ -24,6 +24,7 @@ class Utilities {
     static IBurpExtenderCallbacks callbacks;
     static IExtensionHelpers helpers;
     private static HashSet<String> phpFunctions = new HashSet<>();
+    public static ArrayList<String> paramNames = new ArrayList<>();
 
     private static final String CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz"; // ABCDEFGHIJKLMNOPQRSTUVWXYZ
     private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
@@ -41,6 +42,11 @@ class Utilities {
         }
         s.close();
 
+        Scanner params = new Scanner(getClass().getResourceAsStream("/params"));
+        while (params.hasNext()) {
+            paramNames.add(params.next());
+        }
+        params.close();
     }
 
     static String randomString(int len) {
@@ -322,10 +328,38 @@ class Utilities {
         return attack;
     }
 
+    static IHttpRequestResponse attemptRequest(IHttpService service, byte[] req) {
+        IHttpRequestResponse result = null;
+
+        for(int attempt=1; attempt<3; attempt++) {
+            try {
+                result = callbacks.makeHttpRequest(service, req);
+            } catch(RuntimeException e) {
+                Utilities.log(e.toString());
+                Utilities.log("Critical request error, retrying...");
+                continue;
+            }
+
+            if (result.getResponse() == null) {
+                Utilities.log("Request failed, retrying...");
+                //requestResponse.setResponse(new byte[0]);
+            }
+            else {
+                break;
+            }
+        }
+
+        if (result.getResponse() == null) {
+            Utilities.log("Request failed multiple times, giving up");
+        }
+
+        return result;
+    }
+
     static Attack buildTransformationAttack(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String leftAnchor, String payload, String rightAnchor) {
 
-        IHttpRequestResponse req = callbacks.makeHttpRequest(
-                baseRequestResponse.getHttpService(), insertionPoint.buildRequest(helpers.stringToBytes(insertionPoint.getBaseValue() + leftAnchor + payload +rightAnchor)));
+        IHttpRequestResponse req = attemptRequest(baseRequestResponse.getHttpService(),
+                insertionPoint.buildRequest(helpers.stringToBytes(insertionPoint.getBaseValue() + leftAnchor + payload + rightAnchor)));
 
         return new Attack(Utilities.highlightRequestResponse(req, leftAnchor, leftAnchor+payload+rightAnchor, insertionPoint), null, payload, "");
     }
