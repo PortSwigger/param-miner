@@ -1,5 +1,9 @@
 package burp;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -7,6 +11,8 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+
+import javax.swing.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
@@ -36,6 +42,7 @@ public class BurpExtender implements IBurpExtender {
         FastScan scan = new FastScan(callbacks);
         callbacks.registerScannerCheck(scan);
         callbacks.registerExtensionStateListener(scan);
+        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks));
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("Debug mode: " + Utilities.DEBUG);
@@ -341,4 +348,116 @@ class CustomScanIssue implements IScanIssue {
     public String getProtocol() {
         return null;
     }
+}
+
+class OfferParamGuess implements IContextMenuFactory {
+    private IBurpExtenderCallbacks callbacks;
+
+    public OfferParamGuess(final IBurpExtenderCallbacks callbacks) {
+        this.callbacks = callbacks;
+    }
+
+    @Override
+    public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
+        List<JMenuItem> options = new ArrayList<>();
+        if (invocation.getSelectedMessages()[0].getUrl().getQuery().contains("%26zq%253d")) {
+            JMenuItem probeButton = new JMenuItem("Identify backend parameters");
+            probeButton.addActionListener(new TriggerParamGuesser(invocation));
+            options.add(probeButton);
+        }
+        return options;
+    }
+}
+
+class TriggerParamGuesser implements ActionListener, ItemListener {
+    private IContextMenuInvocation invocation;
+    private IBurpExtenderCallbacks callbacks;
+
+    public TriggerParamGuesser(IContextMenuInvocation invocation) {
+        this.invocation = invocation;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        Runnable runnable = new ParamGuesser(invocation);
+        (new Thread(runnable)).start();
+    }
+
+    public void itemStateChanged(ItemEvent e) {
+
+    }
+}
+
+class ParamGuesser implements Runnable, IExtensionStateListener {
+
+    private IContextMenuInvocation invocation;
+
+    public ParamGuesser(IContextMenuInvocation invocation) {
+        this.invocation = invocation;
+    }
+
+    public void run() {
+        IHttpRequestResponse req =  invocation.getSelectedMessages()[0];
+        IRequestInfo info = Utilities.helpers.analyzeRequest(req);
+        List<IParameter> params = info.getParameters();
+
+        for (IParameter param: params) {
+            if(param.getValue().contains("%26zq%253d")) {
+                String originalValue = param.getValue().substring(0, param.getValue().indexOf("%26zq%253d"));
+                Utilities.out("Base value: "+originalValue);
+                ParamInsertionPoint insertionPoint = new ParamInsertionPoint(req.getRequest(), param.getName(), originalValue, param.getType());
+                ArrayList<Attack> paramGuesses = guessParams(req, insertionPoint);
+                if (!paramGuesses.isEmpty()) {
+                    Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+                }
+                break;
+            }
+        }
+
+    }
+
+    public void extensionUnloaded() {
+        Utilities.out("Aborting param bruteforce");
+        Utilities.unloaded.set(true);
+    }
+
+    public static ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+
+        String baseValue = insertionPoint.getBaseValue();
+        PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
+
+        Utilities.out("About to start guessing params");
+        Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+
+        for(int i=0; i<4; i++) {
+            base.addAttack(injector.buildAttack(baseValue+"&"+Utilities.randomString((i+1)*(i+1))+"=%3c%61%60%27%22%24%7b%7b%5c", false));
+        }
+
+        ArrayList<Attack> attacks = new ArrayList<>();
+        for(int i=269; i<271; i++) { // i<Utilities.paramNames.size();
+            String candidate =Utilities.paramNames.get(i);
+            Attack paramGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+            if(!Utilities.similar(base, paramGuess)) {
+                Attack confirmParamGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+                base.addAttack(injector.buildAttack(baseValue+"&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c", false));
+                if(!Utilities.similar(base, confirmParamGuess)) {
+                    Utilities.out("Valid param: "+candidate);
+                    Probe validParam = new Probe("Backend param: "+candidate, 4, "&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"=%3c%62%60%27%22%24%7b%7b%5c");
+                    validParam.setEscapeStrings("&"+Utilities.randomString(candidate.length())+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c");
+                    validParam.setRandomAnchor(false);
+                    ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+                    if (!confirmed.isEmpty()) {
+                        Utilities.out("Confirmed: "+candidate);
+                        attacks.addAll(confirmed);
+                    }
+                }
+                else {
+                    base.addAttack(paramGuess);
+                }
+            }
+
+        }
+
+        return attacks;
+    }
+
 }

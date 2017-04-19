@@ -58,43 +58,6 @@ class DiffingScan {
         return attacks;
     }
 
-    ArrayList<Attack> guessParams(PayloadInjector injector, String baseValue) {
-
-        Utilities.out("About to start guessing params");
-        Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);
-
-        for(int i=0; i<4; i++) {
-            base.addAttack(injector.buildAttack(baseValue+"&"+Utilities.randomString((i+1)*(i+1))+"=%3c%61%60%27%22%24%7b%7b%5c", false));
-        }
-
-        ArrayList<Attack> attacks = new ArrayList<>();
-        for(int i=1; i<Utilities.paramNames.size(); i++) {
-            String candidate =Utilities.paramNames.get(i);
-            Attack paramGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
-            if(!Utilities.similar(base, paramGuess)) {
-                Attack confirmParamGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
-                base.addAttack(injector.buildAttack(baseValue+"&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c", false));
-                if(!Utilities.similar(base, confirmParamGuess)) {
-                    Utilities.out("Valid param: "+candidate);
-                    Probe validParam = new Probe("Backend param: "+candidate, 4, "&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"=%3c%62%60%27%22%24%7b%7b%5c");
-                    validParam.setEscapeStrings("&"+Utilities.randomString(candidate.length())+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c");
-                    validParam.setRandomAnchor(false);
-                    ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                    if (!confirmed.isEmpty()) {
-                        Utilities.out("Confirmed: "+candidate);
-                        attacks.addAll(confirmed);
-                    }
-                }
-                else {
-                    base.addAttack(paramGuess);
-                }
-            }
-
-        }
-
-        return attacks;
-    }
-
     IScanIssue findReflectionIssues(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
@@ -110,7 +73,7 @@ class DiffingScan {
             ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
             attacks.addAll(backendParameterAttack);
             if (Utilities.TRY_HPP_FOLLOWUP && !backendParameterAttack.isEmpty()) {
-                attacks.addAll(guessParams(injector, baseValue));
+                attacks.addAll(ParamGuesser.guessParams(baseRequestResponse, insertionPoint));
             }
         }
 
