@@ -116,9 +116,6 @@ class PayloadInjector {
     }
 
     IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster) {
-        if(Utilities.unloaded.get()) {
-            throw new RuntimeException("Extension unloaded");
-        }
 
         byte[] request = insertionPoint.buildRequest(payload.getBytes());
 

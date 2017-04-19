@@ -19,7 +19,12 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 8;
     static AtomicBoolean unloaded = new AtomicBoolean(false);
-    boolean unload = false;
+
+    static final boolean TRY_HPP = true;
+    static final boolean TRY_HPP_FOLLOWUP = false;
+    static final boolean TRY_SYNTAX_ATTACKS = false;
+    static final boolean TRY_VALUE_PRESERVING_ATTACKS = false;
+    static final boolean TRY_EXPERIMENTAL_CONCAT_ATTACKS = false;
 
     static IBurpExtenderCallbacks callbacks;
     static IExtensionHelpers helpers;
@@ -329,6 +334,10 @@ class Utilities {
     }
 
     static IHttpRequestResponse attemptRequest(IHttpService service, byte[] req) {
+        if(unloaded.get()) {
+            throw new RuntimeException("Extension unloaded");
+        }
+
         IHttpRequestResponse result = null;
 
         for(int attempt=1; attempt<3; attempt++) {
@@ -477,6 +486,8 @@ class Utilities {
         Probe bestProbe = null;
         boolean reliable = false;
         String detail = "<br/><br/><b>Successful probes</b><br/>";
+        String reportedSeverity = "High";
+
         for (int i=0; i<attacks.length; i++) {
             requests[i] = attacks[i].getLastRequest(); // was getFirstRequest
             if (i % 2 == 0) {
@@ -529,12 +540,24 @@ class Utilities {
                 detail += boringDetail;
                 detail += "</table>\n";
             }
+
             if (bestProbe == null || attacks[i].getProbe().getSeverity() >= bestProbe.getSeverity()) {
                 bestProbe = attacks[i].getProbe();
+
+                int severity = bestProbe.getSeverity();
+                if (severity < 3) {
+                    reportedSeverity = "Low";
+                }
+                else if (severity < 7) {
+                    reportedSeverity = "Medium";
+                }
+
             }
         }
 
-        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail, reliable); //attacks[attacks.length-2].getProbe().getName()
+
+
+        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail, reliable, reportedSeverity); //attacks[attacks.length-2].getProbe().getName()
     }
 }
 

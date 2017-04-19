@@ -8,7 +8,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
-public class BurpExtender implements IBurpExtender, IExtensionStateListener {
+public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
     private static final String version = "0.865";
 
@@ -33,22 +33,27 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             throw new NoSuchMethodError();
         }
 
-        callbacks.registerScannerCheck(new FastScan(callbacks));
+        FastScan scan = new FastScan(callbacks);
+        callbacks.registerScannerCheck(scan);
+        callbacks.registerExtensionStateListener(scan);
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("Debug mode: " + Utilities.DEBUG);
         Utilities.out("Thorough mode: " + Utilities.THOROUGH_MODE);
         Utilities.out("Input transformation detection: " + Utilities.TRANSFORMATION_SCAN);
         Utilities.out("Suspicious input handling detection: " + Utilities.DIFFING_SCAN);
+        Utilities.out("    TRY_SYNTAX_ATTACKS "+Utilities.TRY_SYNTAX_ATTACKS);
+        Utilities.out("    TRY_VALUE_PRESERVING_ATTACKS "+Utilities.TRY_VALUE_PRESERVING_ATTACKS);
+        Utilities.out("    TRY_EXPERIMENTAL_CONCAT_ATTACKS "+Utilities.TRY_EXPERIMENTAL_CONCAT_ATTACKS);
+        Utilities.out("    TRY_HPP "+Utilities.TRY_HPP);
+        Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
+
     }
 
-    public void extensionUnloaded() {
-        Utilities.out("Unloading extension...");
-        Utilities.unloaded.set(true);
-    }
+
 }
 
-class FastScan implements IScannerCheck {
+class FastScan implements IScannerCheck, IExtensionStateListener {
     private TransformationScan transformationScan;
     private DiffingScan diffingScan;
     private IExtensionHelpers helpers;
@@ -59,6 +64,11 @@ class FastScan implements IScannerCheck {
         diffingScan = new DiffingScan();
         this.callbacks = callbacks;
         helpers = callbacks.getHelpers();
+    }
+
+    public void extensionUnloaded() {
+        Utilities.out("Unloading extension...");
+        Utilities.unloaded.set(true);
     }
 
     private IParameter getParameterFromInsertionPoint(IScannerInsertionPoint insertionPoint, byte[] request) {
@@ -141,10 +151,9 @@ class Fuzzable extends CustomScanIssue {
     private final static String DETAIL = "The application reacts to inputs in a way that suggests it might be vulnerable to some kind of server-side code injection. The probes are listed below in chronological order, with evidence. Response attributes that only stay consistent in one probe-set are italicised, with the variable attribute starred.";
     private final static String REMEDIATION = "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. Try to determine the root cause of the observed behaviour." +
             "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
-    private final static String SEVERITY = "High";
 
-    Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail, boolean reliable) {
-        super(requests[0].getHttpService(), url, requests, NAME + title, DETAIL + detail, SEVERITY, calculateConfidence(reliable), REMEDIATION);
+    Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail, boolean reliable, String severity) {
+        super(requests[0].getHttpService(), url, requests, NAME + title, DETAIL + detail, severity, calculateConfidence(reliable), REMEDIATION);
     }
 
     private static String calculateConfidence(boolean reliable) {

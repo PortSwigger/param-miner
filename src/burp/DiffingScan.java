@@ -58,30 +58,41 @@ class DiffingScan {
         return attacks;
     }
 
-    IScanIssue guessParams(PayloadInjector injector) {
-        Attack base = injector.buildAttack("&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+    ArrayList<Attack> guessParams(PayloadInjector injector, String baseValue) {
+
+        Utilities.out("About to start guessing params");
+        Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);
 
         for(int i=0; i<4; i++) {
-            base.addAttack(injector.buildAttack("&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false));
+            base.addAttack(injector.buildAttack(baseValue+"&"+Utilities.randomString((i+1)*(i+1))+"=%3c%61%60%27%22%24%7b%7b%5c", false));
         }
 
-        for(int i=150; i<160; i++) { //Utilities.paramNames.size();
+        ArrayList<Attack> attacks = new ArrayList<>();
+        for(int i=1; i<Utilities.paramNames.size(); i++) {
             String candidate =Utilities.paramNames.get(i);
-            Utilities.out("Trying "+candidate);
-            Attack paramGuess = injector.buildAttack("&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+            Attack paramGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
             if(!Utilities.similar(base, paramGuess)) {
-                Attack confirmParamGuess = injector.buildAttack("&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+                Attack confirmParamGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
+                base.addAttack(injector.buildAttack(baseValue+"&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c", false));
                 if(!Utilities.similar(base, confirmParamGuess)) {
                     Utilities.out("Valid param: "+candidate);
+                    Probe validParam = new Probe("Backend param: "+candidate, 4, "&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"=%3c%62%60%27%22%24%7b%7b%5c");
+                    validParam.setEscapeStrings("&"+Utilities.randomString(candidate.length())+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c");
+                    validParam.setRandomAnchor(false);
+                    ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+                    if (!confirmed.isEmpty()) {
+                        Utilities.out("Confirmed: "+candidate);
+                        attacks.addAll(confirmed);
+                    }
                 }
                 else {
                     base.addAttack(paramGuess);
                 }
             }
 
-
         }
-        return null;
+
+        return attacks;
     }
 
     IScanIssue findReflectionIssues(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
@@ -90,32 +101,50 @@ class DiffingScan {
         String baseValue = insertionPoint.getBaseValue();
         Attack softBase = new Attack(baseRequestResponse);
 
+        ArrayList<Attack> attacks = new ArrayList<>();
+
+        if (Utilities.TRY_HPP) {
+            Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "$zq%3c%61%60%27%22%24%7b%7b%5c&zq%3d", "!zq%3c%61%60%27%22%24%7b%7b%5c");
+            backendParameterInjection.setEscapeStrings("&zq%3d%3c%61%60%27%22%24%7b%7b%5c", "&zqx%3d%3c%61%60%27%22%24%7b%7b%5c"); // "#zq=%3c%61%60%27%22%24%7b%7b%5c"
+            backendParameterInjection.setRandomAnchor(false);
+            ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
+            attacks.addAll(backendParameterAttack);
+            if (Utilities.TRY_HPP_FOLLOWUP && !backendParameterAttack.isEmpty()) {
+                attacks.addAll(guessParams(injector, baseValue));
+            }
+        }
+
+        if (true) {
+            if (!attacks.isEmpty()) {
+                return Utilities.reportReflectionIssue(attacks.toArray((new Attack[attacks.size()])), baseRequestResponse);
+            }
+            else {
+                return null;
+            }
+        }
+
         // work out which payloads (if any) are worth trying
         Attack crudeFuzz = injector.buildAttack("`z'z\"${{%{{\\", true);
-        if(Utilities.verySimilar(softBase, crudeFuzz)) { return null;  }
+        if (Utilities.verySimilar(softBase, crudeFuzz)) {
+            return null;
+        }
 
         softBase.addAttack(injector.buildAttack(baseValue, false));
-        if(Utilities.verySimilar(softBase, crudeFuzz)) { return null;  }
+        if (Utilities.verySimilar(softBase, crudeFuzz)) {
+            return null;
+        }
 
         crudeFuzz.addAttack(injector.buildAttack("\\z`z'z\"${{%{{\\", true));
-        if(Utilities.verySimilar(softBase, crudeFuzz)) { return null;  }
+        if (Utilities.verySimilar(softBase, crudeFuzz)) {
+            return null;
+        }
 
-
-        ArrayList<Attack> attacks = new ArrayList<>();
         Attack hardBase = injector.buildAttack("", true);
         if (!Utilities.verySimilar(hardBase, crudeFuzz)) {
             hardBase.addAttack(injector.buildAttack("", true));
         }
 
-
-
-        Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "%3c%61%60%27%22%24%7b%7b%5c", "%3c%62%60%27%22%24%7b%7b%5c", "%3c%61%60%27%22%24%7b%7b%5c&");
-        backendParameterInjection.setEscapeStrings("&zq=%3c%61%60%27%22%24%7b%7b%5c", "#zq=%3c%61%60%27%22%24%7b%7b%5c");
-        backendParameterInjection.setRandomAnchor(false);
-        attacks.addAll(injector.fuzz(softBase, backendParameterInjection));
-        guessParams(injector);
-
-        if (!Utilities.verySimilar(hardBase, crudeFuzz)) {
+        if (Utilities.TRY_SYNTAX_ATTACKS && !Utilities.verySimilar(hardBase, crudeFuzz)) {
 
             boolean worthTryingInjections = false;
             if (!Utilities.THOROUGH_MODE) {
@@ -124,7 +153,7 @@ class DiffingScan {
                 worthTryingInjections = !injector.fuzz(hardBase, multiFuzz).isEmpty();
             }
 
-            if(Utilities.THOROUGH_MODE || worthTryingInjections) {
+            if( Utilities.THOROUGH_MODE || worthTryingInjections) {
                 ArrayList<String> potential_delimiters = new ArrayList<>();
 
                 // find the encapsulating quote type: ` ' "
@@ -285,54 +314,55 @@ class DiffingScan {
         }
 
         // does a request w/random input differ from the base request? (ie 'should I do soft attacks?')
-        if (!Utilities.verySimilar(softBase, hardBase)) {
+        if (Utilities.TRY_VALUE_PRESERVING_ATTACKS && !Utilities.verySimilar(softBase, hardBase)) {
 
+            if (Utilities.TRY_EXPERIMENTAL_CONCAT_ATTACKS && Utilities.THOROUGH_MODE) {
+                String[] potential_delimiters = {"'", "\""};
+                String[] concatenators = {"||", "+", " ", "."};
+                ArrayList<String[]> injectionSequence = new ArrayList<>();
+                for (String delimiter : potential_delimiters) {
+                    for (String concat : concatenators) {
+                        Probe concat_attack = new Probe("Soft-concatenation: " + delimiter + concat, 5,
+                                concat + delimiter + delimiter,
+                                delimiter + concat + concat,
+                                delimiter + concat + delimiter + delimiter,
+                                concat + delimiter + delimiter,
+                                delimiter + concat + delimiter + delimiter);
 
-            String[] potential_delimiters = {"'", "\""};
-            String[] concatenators = {"||", "+", " ", "."};
-            ArrayList<String[]> injectionSequence = new ArrayList<>();
-            for (String delimiter : potential_delimiters) {
-                for (String concat : concatenators) {
-                    Probe concat_attack = new Probe("Soft-concatenation: " + delimiter + concat, 5,
-                            concat + delimiter + delimiter,
-                            delimiter + concat + concat,
-                            delimiter + concat + delimiter + delimiter,
-                            concat + delimiter + delimiter,
-                            delimiter + concat + delimiter + delimiter);
-
-                    concat_attack.setEscapeStrings(
-                            delimiter + concat + delimiter,
-                            delimiter + concat + delimiter + delimiter + concat + delimiter,
-                            delimiter + concat + delimiter + delimiter + concat + delimiter + delimiter + concat + delimiter
-                    );
-                    concat_attack.setRandomAnchor(false);
-                    ArrayList<Attack> results = injector.fuzz(softBase, concat_attack);
-                    if (results.isEmpty()) {
-                        continue;
+                        concat_attack.setEscapeStrings(
+                                delimiter + concat + delimiter,
+                                delimiter + concat + delimiter + delimiter + concat + delimiter,
+                                delimiter + concat + delimiter + delimiter + concat + delimiter + delimiter + concat + delimiter
+                        );
+                        concat_attack.setRandomAnchor(false);
+                        ArrayList<Attack> results = injector.fuzz(softBase, concat_attack);
+                        if (results.isEmpty()) {
+                            continue;
+                        }
+                        attacks.addAll(results);
+                        injectionSequence.add(new String[]{delimiter, concat});
                     }
-                    attacks.addAll(results);
-                    injectionSequence.add(new String[]{delimiter, concat});
                 }
-            }
-            for (String[] injection : injectionSequence) {
-                String delim = injection[0];
-                String concat = injection[1];
-                // delim+concat+ +concat+delim
-                Probe basicFunction = new Probe("Soft function injection", 8, delim+concat+"substri('',0,0)"+concat+delim, delim+concat+"substrin('',0,0)"+concat+delim);
-                basicFunction.setEscapeStrings(delim+concat+"substr('',0,0)"+concat+delim, delim+concat+"substr('foo',0,0)"+concat+delim);
-                basicFunction.setRandomAnchor(false);
-                attacks.addAll(injector.fuzz(softBase, basicFunction));
+                for (String[] injection : injectionSequence) {
+                    String delim = injection[0];
+                    String concat = injection[1];
+                    // delim+concat+ +concat+delim
+                    Probe basicFunction = new Probe("Soft function injection", 8, delim + concat + "substri('',0,0)" + concat + delim, delim + concat + "substrin('',0,0)" + concat + delim);
+                    basicFunction.setEscapeStrings(delim + concat + "substr('',0,0)" + concat + delim, delim + concat + "substr('foo',0,0)" + concat + delim);
+                    basicFunction.setRandomAnchor(false);
+                    attacks.addAll(injector.fuzz(softBase, basicFunction));
 
-                Probe basicFunction2 = new Probe("Soft function injection 2", 8, delim+concat+"substri('',0,0)"+concat+delim, delim+concat+"substrin('',0,0)"+concat+delim);
-                basicFunction2.setEscapeStrings(delim+concat+"substring('',0,0)"+concat+delim, delim+concat+"substring('foo',0,0)"+concat+delim);
-                basicFunction2.setRandomAnchor(false);
-                attacks.addAll(injector.fuzz(softBase, basicFunction2));
+                    Probe basicFunction2 = new Probe("Soft function injection 2", 8, delim + concat + "substri('',0,0)" + concat + delim, delim + concat + "substrin('',0,0)" + concat + delim);
+                    basicFunction2.setEscapeStrings(delim + concat + "substring('',0,0)" + concat + delim, delim + concat + "substring('foo',0,0)" + concat + delim);
+                    basicFunction2.setRandomAnchor(false);
+                    attacks.addAll(injector.fuzz(softBase, basicFunction2));
 
-                Probe basicMethod = new Probe("Soft method injection", 8, delim+concat+"''.substri(0,0)"+concat+delim, delim+concat+"''.substrin(0,0)"+concat+delim);
-                basicMethod.setEscapeStrings(delim+concat+"''.substr(0,0)"+concat+delim, delim+concat+"''.substr(0,0)"+concat+delim);
-                basicMethod.setRandomAnchor(false);
-                attacks.addAll(injector.fuzz(softBase, basicMethod));
+                    Probe basicMethod = new Probe("Soft method injection", 8, delim + concat + "''.substri(0,0)" + concat + delim, delim + concat + "''.substrin(0,0)" + concat + delim);
+                    basicMethod.setEscapeStrings(delim + concat + "''.substr(0,0)" + concat + delim, delim + concat + "''.substr(0,0)" + concat + delim);
+                    basicMethod.setRandomAnchor(false);
+                    attacks.addAll(injector.fuzz(softBase, basicMethod));
 
+                }
             }
 
             if (StringUtils.isNumeric(baseValue)) {
