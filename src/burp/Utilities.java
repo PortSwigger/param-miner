@@ -335,6 +335,7 @@ class Utilities {
 
     static IHttpRequestResponse attemptRequest(IHttpService service, byte[] req) {
         if(unloaded.get()) {
+            Utilities.out("Extension unloaded - aborting attack");
             throw new RuntimeException("Extension unloaded");
         }
 
@@ -539,6 +540,11 @@ class Utilities {
                 }
                 detail += boringDetail;
                 detail += "</table>\n";
+
+                String tip = attacks[i].getProbe().getTip();
+                if (!"".equals(tip)) {
+                    detail += "&nbsp;<i>"+tip+"</i>";
+                }
             }
 
             if (bestProbe == null || attacks[i].getProbe().getSeverity() >= bestProbe.getSeverity()) {

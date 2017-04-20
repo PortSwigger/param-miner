@@ -14,6 +14,8 @@ class Probe {
 
     private String base = "'";
     private String name;
+
+    private String tip = "";
     private int severity;
     private ArrayList<String> breakStrings = new ArrayList<>();
     private ArrayList<String[]> escapeStrings = new ArrayList<>();
@@ -26,6 +28,14 @@ class Probe {
         this.name = name;
         this.severity = severity;
         this.breakStrings = new ArrayList<>(Arrays.asList(breakStrings));
+    }
+
+    public String getTip() {
+        return tip;
+    }
+
+    public void setTip(String tip) {
+        this.tip = tip;
     }
 
     public byte getPrefix() {

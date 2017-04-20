@@ -70,11 +70,13 @@ class DiffingScan {
             Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "$zq%3c%61%60%27%22%24%7b%7b%5c&zq%3d", "!zq%3c%61%60%27%22%24%7b%7b%5c");
             backendParameterInjection.setEscapeStrings("&zq%3d%3c%61%60%27%22%24%7b%7b%5c", "&zqx%3d%3c%61%60%27%22%24%7b%7b%5c"); // "#zq=%3c%61%60%27%22%24%7b%7b%5c"
             backendParameterInjection.setRandomAnchor(false);
+            backendParameterInjection.setTip("To scan for backend parameters, right click on the attached request and select 'Identify Backend Parameters'");
             ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
             attacks.addAll(backendParameterAttack);
             if (Utilities.TRY_HPP_FOLLOWUP && !backendParameterAttack.isEmpty()) {
                 attacks.addAll(ParamGuesser.guessParams(baseRequestResponse, insertionPoint));
             }
+
         }
 
         if (true) {

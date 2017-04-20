@@ -360,50 +360,55 @@ class OfferParamGuess implements IContextMenuFactory {
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
         List<JMenuItem> options = new ArrayList<>();
-        if (invocation.getSelectedMessages()[0].getUrl().getQuery().contains("%26zq%253d")) {
-            JMenuItem probeButton = new JMenuItem("Identify backend parameters");
-            probeButton.addActionListener(new TriggerParamGuesser(invocation));
+        IHttpRequestResponse req = invocation.getSelectedMessages()[0];
+        byte[] resp = req.getRequest();
+        if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
+            JMenuItem probeButton = new JMenuItem("*Identify backend parameters*");
+            probeButton.addActionListener(new TriggerParamGuesser(req));
             options.add(probeButton);
         }
         return options;
     }
 }
 
-class TriggerParamGuesser implements ActionListener, ItemListener {
-    private IContextMenuInvocation invocation;
-    private IBurpExtenderCallbacks callbacks;
+class TriggerParamGuesser implements ActionListener {
+    private IHttpRequestResponse req;
 
-    public TriggerParamGuesser(IContextMenuInvocation invocation) {
-        this.invocation = invocation;
+    TriggerParamGuesser(IHttpRequestResponse req) {
+        this.req = req;
     }
 
     public void actionPerformed(ActionEvent e) {
-        Runnable runnable = new ParamGuesser(invocation);
+        Runnable runnable = new ParamGuesser(req);
         (new Thread(runnable)).start();
-    }
-
-    public void itemStateChanged(ItemEvent e) {
-
     }
 }
 
 class ParamGuesser implements Runnable, IExtensionStateListener {
 
-    private IContextMenuInvocation invocation;
+    private IHttpRequestResponse req;
 
-    public ParamGuesser(IContextMenuInvocation invocation) {
-        this.invocation = invocation;
+    public ParamGuesser(IHttpRequestResponse req) {
+        this.req = req;
     }
 
     public void run() {
-        IHttpRequestResponse req =  invocation.getSelectedMessages()[0];
+
         IRequestInfo info = Utilities.helpers.analyzeRequest(req);
         List<IParameter> params = info.getParameters();
 
-        for (IParameter param: params) {
-            if(param.getValue().contains("%26zq%253d")) {
-                String originalValue = param.getValue().substring(0, param.getValue().indexOf("%26zq%253d"));
-                Utilities.out("Base value: "+originalValue);
+        for (IParameter param : params) {
+            String key = null;
+            String[] keys = {"%26zq%253d", "!zq%253c%2561"};
+            for (String test: keys) {
+                if (param.getValue().contains(test)) {
+                    key = test;
+                    break;
+                }
+            }
+
+            if (key != null) {
+                String originalValue = param.getValue().substring(0, param.getValue().indexOf(key));
                 ParamInsertionPoint insertionPoint = new ParamInsertionPoint(req.getRequest(), param.getName(), originalValue, param.getType());
                 ArrayList<Attack> paramGuesses = guessParams(req, insertionPoint);
                 if (!paramGuesses.isEmpty()) {
@@ -411,6 +416,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
                 break;
             }
+
         }
 
     }
@@ -425,7 +431,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String baseValue = insertionPoint.getBaseValue();
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
-        Utilities.out("About to start guessing params");
+        Utilities.out("Initiating parameter name bruteforce on "+ baseRequestResponse.getUrl().toString());
         Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);
 
         for(int i=0; i<4; i++) {
@@ -433,7 +439,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         ArrayList<Attack> attacks = new ArrayList<>();
-        for(int i=269; i<271; i++) { // i<Utilities.paramNames.size();
+        for(int i=0; i<Utilities.paramNames.size(); i++) { // i<Utilities.paramNames.size();
             String candidate =Utilities.paramNames.get(i);
             Attack paramGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
             if(!Utilities.similar(base, paramGuess)) {
@@ -456,7 +462,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
 
         }
-
+        Utilities.out("Parameter name bruteforce complete: "+baseRequestResponse.getUrl().toString());
         return attacks;
     }
 
