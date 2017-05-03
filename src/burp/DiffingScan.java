@@ -67,8 +67,8 @@ class DiffingScan {
         ArrayList<Attack> attacks = new ArrayList<>();
 
         if (Utilities.TRY_HPP) {
-            Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "$zq%3c%61%60%27%22%24%7b%7b%5c&zq%3d", "!zq%3c%61%60%27%22%24%7b%7b%5c");
-            backendParameterInjection.setEscapeStrings("&zq%3d%3c%61%60%27%22%24%7b%7b%5c", "&zqx%3d%3c%61%60%27%22%24%7b%7b%5c"); // "#zq=%3c%61%60%27%22%24%7b%7b%5c"
+            Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "$zq=%3c%61%60%27%22%24%7b%7b%5c&zq%3d", "|zq=%3c%61%60%27%22%24%7b%7b%5c", "!zq=%3c%61%60%27%22%24%7b%7b%5c");
+            backendParameterInjection.setEscapeStrings("&zq=%3c%61%60%27%22%24%7b%7b%5c", "&zq=x%3c%61%60%27%22%24%7b%7b%5c"); // "#zq=%3c%61%60%27%22%24%7b%7b%5c"
             backendParameterInjection.setRandomAnchor(false);
             backendParameterInjection.setTip("To scan for backend parameters, right click on the attached request and select 'Identify Backend Parameters'");
             ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
@@ -77,15 +77,6 @@ class DiffingScan {
                 attacks.addAll(ParamGuesser.guessParams(baseRequestResponse, insertionPoint));
             }
 
-        }
-
-        if (true) {
-            if (!attacks.isEmpty()) {
-                return Utilities.reportReflectionIssue(attacks.toArray((new Attack[attacks.size()])), baseRequestResponse);
-            }
-            else {
-                return null;
-            }
         }
 
         // work out which payloads (if any) are worth trying

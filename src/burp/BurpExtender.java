@@ -16,7 +16,7 @@ import javax.swing.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
-    private static final String version = "0.865";
+    private static final String version = "0.90";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -399,7 +399,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         for (IParameter param : params) {
             String key = null;
-            String[] keys = {"%26zq%253d", "!zq%253c%2561"};
+            String[] keys = {"%26zq=%253c", "!zq=%253c"};
             for (String test: keys) {
                 if (param.getValue().contains(test)) {
                     key = test;
@@ -439,30 +439,34 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         ArrayList<Attack> attacks = new ArrayList<>();
-        for(int i=0; i<Utilities.paramNames.size(); i++) { // i<Utilities.paramNames.size();
-            String candidate =Utilities.paramNames.get(i);
-            Attack paramGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
-            if(!Utilities.similar(base, paramGuess)) {
-                Attack confirmParamGuess = injector.buildAttack(baseValue+"&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", false);
-                base.addAttack(injector.buildAttack(baseValue+"&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c", false));
-                if(!Utilities.similar(base, confirmParamGuess)) {
-                    Utilities.out("Valid param: "+candidate);
-                    Probe validParam = new Probe("Backend param: "+candidate, 4, "&"+candidate+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"=%3c%62%60%27%22%24%7b%7b%5c");
-                    validParam.setEscapeStrings("&"+Utilities.randomString(candidate.length())+"=%3c%61%60%27%22%24%7b%7b%5c", "&"+candidate+"z=%3c%61%60%27%22%24%7b%7b%5c");
-                    validParam.setRandomAnchor(false);
-                    ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                    if (!confirmed.isEmpty()) {
-                        Utilities.out("Confirmed: "+candidate);
-                        attacks.addAll(confirmed);
+        try {
+            for (int i = 0; i < Utilities.paramNames.size(); i++) { // i<Utilities.paramNames.size();
+                String candidate = Utilities.paramNames.get(i);
+                Attack paramGuess = injector.buildAttack(baseValue + "&" + candidate + "=%3c%61%60%27%22%24%7b%7b%5c", false);
+                if (!Utilities.similar(base, paramGuess)) {
+                    Attack confirmParamGuess = injector.buildAttack(baseValue + "&" + candidate + "=%3c%61%60%27%22%24%7b%7b%5c", false);
+                    base.addAttack(injector.buildAttack(baseValue + "&" + candidate + "z=%3c%61%60%27%22%24%7b%7b%5c", false));
+                    if (!Utilities.similar(base, confirmParamGuess)) {
+                        Probe validParam = new Probe("Backend param: " + candidate, 4, "&" + candidate + "=%3c%61%60%27%22%24%7b%7b%5c", "&" + candidate + "=%3c%62%60%27%22%24%7b%7b%5c");
+                        validParam.setEscapeStrings("&" + Utilities.randomString(candidate.length()) + "=%3c%61%60%27%22%24%7b%7b%5c", "&" + candidate + "z=%3c%61%60%27%22%24%7b%7b%5c");
+                        validParam.setRandomAnchor(false);
+                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+                        if (!confirmed.isEmpty()) {
+                            Utilities.out("Identified backend parameter: " + candidate);
+                            attacks.addAll(confirmed);
+                        }
+                    } else {
+                        base.addAttack(paramGuess);
                     }
                 }
-                else {
-                    base.addAttack(paramGuess);
-                }
-            }
 
+            }
+            Utilities.out("Parameter name bruteforce complete: "+baseRequestResponse.getUrl().toString());
         }
-        Utilities.out("Parameter name bruteforce complete: "+baseRequestResponse.getUrl().toString());
+        catch (RuntimeException e) {
+            Utilities.out("Parameter name bruteforce aborted: "+baseRequestResponse.getUrl().toString());
+        }
+
         return attacks;
     }
 
