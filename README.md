@@ -5,6 +5,20 @@ For more information, please refer to the whitepaper at http://blog.portswigger.
 
 The code can be found at https://github.com/portswigger/backslash-powered-scanner Contributions and feature requests are welcome.
 
+# Changelog
+**0.9 20170520**
+ - Detect JSON Injection and escalate into RCE where possible
+ - Detect Server-Side HTTP Parameter Pollution
+ - Support bruteforcing backend parameter names
+ - Improve evidence clarity and reduce false positives
+ - Find vulnerabilities with subtler evidence
+ - Detect escape sequence injection
+ - Improve LFI detection
+ - Misc tweaks, bugfixes and efficiency improvements
+ 
+**0.86 20161004**
+ - First public release
+
 # Installation
 This extension requires Burp Suite Pro 1.7.10 or later. To install it, simply use the BApps tab in Burp.
 

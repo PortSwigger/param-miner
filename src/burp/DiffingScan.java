@@ -64,7 +64,7 @@ class DiffingScan {
         String baseValue = insertionPoint.getBaseValue();
         Attack softBase = new Attack(baseRequestResponse);
 
-        ArrayList<Attack> attacks = new ArrayList<>();
+        ArrayList<Attack> results = new ArrayList<>();
 
         if (Utilities.TRY_HPP) {
             Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "$zq=%3c%61%60%27%22%24%7b%7b%5c&zq%3d", "|zq=%3c%61%60%27%22%24%7b%7b%5c", "!zq=%3c%61%60%27%22%24%7b%7b%5c");
@@ -72,9 +72,9 @@ class DiffingScan {
             backendParameterInjection.setRandomAnchor(false);
             backendParameterInjection.setTip("To scan for backend parameters, right click on the attached request and select 'Identify Backend Parameters'");
             ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
-            attacks.addAll(backendParameterAttack);
+            results.addAll(backendParameterAttack);
             if (Utilities.TRY_HPP_FOLLOWUP && !backendParameterAttack.isEmpty()) {
-                attacks.addAll(ParamGuesser.guessParams(baseRequestResponse, insertionPoint));
+                results.addAll(ParamGuesser.guessParams(baseRequestResponse, insertionPoint));
             }
 
         }
@@ -133,41 +133,41 @@ class DiffingScan {
                 Probe[] potential_breakers = {trailer, apos, quote, backtick};
 
                 for (Probe breaker : potential_breakers) {
-                    ArrayList<Attack> results = injector.fuzz(hardBase, breaker);
-                    if (results.isEmpty()) {
+                    ArrayList<Attack> breakers = injector.fuzz(hardBase, breaker);
+                    if (breakers.isEmpty()) {
                         continue;
                     }
                     potential_delimiters.add(breaker.getBase());
-                    attacks.addAll(results);
+                    results.addAll(breakers);
                 }
 
                 if (potential_delimiters.isEmpty()) {
                     Probe quoteSlash = new Probe("Doublequote plus slash", 4, "\"z\\", "z\"z\\");
                     quoteSlash.setEscapeStrings("\"a\\zz", "z\\z", "z\"z/");
-                    attacks.addAll(injector.fuzz(hardBase, quoteSlash));
+                    results.addAll(injector.fuzz(hardBase, quoteSlash));
 
                     Probe aposSlash = new Probe("Singlequote plus slash", 4, "'z\\", "z'z\\");
                     aposSlash.setEscapeStrings("'a\\zz", "z\\z", "z'z/");
-                    attacks.addAll(injector.fuzz(hardBase, aposSlash));
+                    results.addAll(injector.fuzz(hardBase, aposSlash));
                 }
 
                 if (potential_delimiters.contains("\\")) {
                     Probe unicodeEscape = new Probe("Escape sequence - unicode", 3, "\\g0041", "\\z0041");
                     unicodeEscape.setEscapeStrings("\\u0041", "\\u0042");
-                    attacks.addAll(injector.fuzz(hardBase, unicodeEscape));
+                    results.addAll(injector.fuzz(hardBase, unicodeEscape));
 
                     Probe regexEscape = new Probe("Escape sequence - regex", 4, "\\g0041", "\\z0041");
                     regexEscape.setEscapeStrings("\\s0041", "\\n0041");
-                    attacks.addAll(injector.fuzz(hardBase, regexEscape));
+                    results.addAll(injector.fuzz(hardBase, regexEscape));
 
                     // todo follow up with [char]/e%00
                     Probe regexBreakoutAt = new Probe("Regex breakout - @", 5, "z@", "\\@z@");
                     regexBreakoutAt.setEscapeStrings("z\\@", "\\@z\\@");
-                    attacks.addAll(injector.fuzz(hardBase, regexBreakoutAt));
+                    results.addAll(injector.fuzz(hardBase, regexBreakoutAt));
 
                     Probe regexBreakoutSlash = new Probe("Regex breakout - /", 5, "z/", "\\/z/");
                     regexBreakoutSlash.setEscapeStrings("z\\/", "\\/z\\/");
-                    attacks.addAll(injector.fuzz(hardBase, regexBreakoutSlash));
+                    results.addAll(injector.fuzz(hardBase, regexBreakoutSlash));
 
                 }
 
@@ -179,11 +179,11 @@ class DiffingScan {
                     for (String concat : concatenators) {
                         Probe concat_attack = new Probe("Concatenation: " + delimiter + concat, 7, "z" + concat + delimiter + "z(z" + delimiter + "z");
                         concat_attack.setEscapeStrings("z(z" + delimiter + concat + delimiter + "z", "zx" + delimiter + concat + delimiter + "zy");
-                        ArrayList<Attack> results = injector.fuzz(hardBase, concat_attack);
-                        if (results.isEmpty()) {
+                        ArrayList<Attack> concatResults = injector.fuzz(hardBase, concat_attack);
+                        if (concatResults.isEmpty()) {
                             continue;
                         }
-                        attacks.addAll(results);
+                        results.addAll(concatResults);
                         injectionSequence.add(new String[]{delimiter, concat});
                     }
 
@@ -192,14 +192,14 @@ class DiffingScan {
                             "z"+delimiter+","+delimiter+"z"+delimiter+"."+delimiter+"z");
                     jsonValue.setEscapeStrings("z"+delimiter+","+delimiter+"z"+delimiter+":"+delimiter+"z");
                     ArrayList<Attack> jsonValueAttack = injector.fuzz(hardBase, jsonValue);
-                    attacks.addAll(jsonValueAttack);
+                    results.addAll(jsonValueAttack);
 
                     Probe jsonKey = new Probe("JSON Injection (key)", 6, "z"+delimiter+":"+delimiter+"z"+delimiter+"z"+delimiter,
                             "z"+delimiter+":"+delimiter+"z"+delimiter+":"+delimiter,
                             "z"+delimiter+":"+delimiter+"z"+delimiter+"."+delimiter);
                     jsonKey.setEscapeStrings("z"+delimiter+":"+delimiter+"z"+delimiter+","+delimiter);
                     ArrayList<Attack> jsonKeyAttack = injector.fuzz(hardBase, jsonKey);
-                    attacks.addAll(jsonKeyAttack);
+                    results.addAll(jsonKeyAttack);
 
                     // use $where to detect mongodb json injection
                     String wherePrefix = null;
@@ -215,7 +215,7 @@ class DiffingScan {
                     if (wherePrefix != null) {
                         Probe mongo = new Probe("MongoDB Injection", 9, wherePrefix+"0z41"+whereSuffix, wherePrefix+"0v41"+whereSuffix);
                         mongo.setEscapeStrings(wherePrefix+"0x41"+whereSuffix, wherePrefix+"0x42"+whereSuffix);
-                        attacks.addAll(injector.fuzz(hardBase, mongo));
+                        results.addAll(injector.fuzz(hardBase, mongo));
                     }
                 }
 
@@ -227,7 +227,7 @@ class DiffingScan {
                     String concat = injection[1];
                     ArrayList<Attack> functionProbeResults = exploreAvailableFunctions(injector, hardBase, delim + concat, concat + delim, true);
                     if (!functionProbeResults.isEmpty()) { //  && !functionProbeResults.get(-1).getProbe().getName().equals("Basic function injection")
-                        attacks.addAll(functionProbeResults);
+                        results.addAll(functionProbeResults);
                         break;
                     }
                 }
@@ -238,32 +238,32 @@ class DiffingScan {
             interp.setEscapeStrings("%}}$}}", "}}%z}}$z", "z%}}zz$}}z");
             ArrayList<Attack> interpResults = injector.fuzz(hardBase, interp);
             if (!interpResults.isEmpty()) {
-                attacks.addAll(interpResults);
+                results.addAll(interpResults);
 
                 Probe curlyParse = new Probe("Interpolation - curly", 5, "{{z", "z{{z");
                 curlyParse.setEscapeStrings("z}}z", "}}z", "z}}");
                 ArrayList<Attack> curlyParseAttack = injector.fuzz(hardBase, curlyParse);
 
                 if (!curlyParseAttack.isEmpty()) {
-                    attacks.addAll(curlyParseAttack);
-                    attacks.addAll(exploreAvailableFunctions(injector, hardBase, "{{", "}}", true));
+                    results.addAll(curlyParseAttack);
+                    results.addAll(exploreAvailableFunctions(injector, hardBase, "{{", "}}", true));
                 }
                 else {
                     Probe dollarParse = new Probe("Interpolation - dollar", 5, "${{z", "z${{z");
                     dollarParse.setEscapeStrings("$}}", "}}$z", "z$}}z");
                     ArrayList<Attack> dollarParseAttack = injector.fuzz(hardBase, dollarParse);
-                    attacks.addAll(dollarParseAttack);
+                    results.addAll(dollarParseAttack);
 
                     Probe percentParse = new Probe("Interpolation - percent", 5, "%{{41", "41%{{41");
                     percentParse.setEscapeStrings("%}}", "}}%41", "41%}}41");
                     ArrayList<Attack> percentParseAttack = injector.fuzz(hardBase, percentParse);
-                    attacks.addAll(percentParseAttack);
+                    results.addAll(percentParseAttack);
 
                     if (!dollarParseAttack.isEmpty()) {
-                        attacks.addAll(exploreAvailableFunctions(injector, hardBase, "${", "}", true));
-                        attacks.addAll(exploreAvailableFunctions(injector, hardBase, "", "", true));
+                        results.addAll(exploreAvailableFunctions(injector, hardBase, "${", "}", true));
+                        results.addAll(exploreAvailableFunctions(injector, hardBase, "", "", true));
                     } else if (!percentParseAttack.isEmpty()) {
-                        attacks.addAll(exploreAvailableFunctions(injector, hardBase, "%{", "}", true));
+                        results.addAll(exploreAvailableFunctions(injector, hardBase, "%{", "}", true));
                     }
                 }
             }
@@ -291,11 +291,11 @@ class DiffingScan {
                                 delimiter + concat + delimiter + delimiter + concat + delimiter + delimiter + concat + delimiter
                         );
                         concat_attack.setRandomAnchor(false);
-                        ArrayList<Attack> results = injector.fuzz(softBase, concat_attack);
-                        if (results.isEmpty()) {
+                        ArrayList<Attack> concatResults = injector.fuzz(softBase, concat_attack);
+                        if (concatResults.isEmpty()) {
                             continue;
                         }
-                        attacks.addAll(results);
+                        results.addAll(concatResults);
                         injectionSequence.add(new String[]{delimiter, concat});
                     }
                 }
@@ -306,37 +306,44 @@ class DiffingScan {
                     Probe basicFunction = new Probe("Soft function injection", 8, delim + concat + "substri('',0,0)" + concat + delim, delim + concat + "substrin('',0,0)" + concat + delim);
                     basicFunction.setEscapeStrings(delim + concat + "substr('',0,0)" + concat + delim, delim + concat + "substr('foo',0,0)" + concat + delim);
                     basicFunction.setRandomAnchor(false);
-                    attacks.addAll(injector.fuzz(softBase, basicFunction));
+                    results.addAll(injector.fuzz(softBase, basicFunction));
 
                     Probe basicFunction2 = new Probe("Soft function injection 2", 8, delim + concat + "substri('',0,0)" + concat + delim, delim + concat + "substrin('',0,0)" + concat + delim);
                     basicFunction2.setEscapeStrings(delim + concat + "substring('',0,0)" + concat + delim, delim + concat + "substring('foo',0,0)" + concat + delim);
                     basicFunction2.setRandomAnchor(false);
-                    attacks.addAll(injector.fuzz(softBase, basicFunction2));
+                    results.addAll(injector.fuzz(softBase, basicFunction2));
 
                     Probe basicMethod = new Probe("Soft method injection", 8, delim + concat + "''.substri(0,0)" + concat + delim, delim + concat + "''.substrin(0,0)" + concat + delim);
                     basicMethod.setEscapeStrings(delim + concat + "''.substr(0,0)" + concat + delim, delim + concat + "''.substr(0,0)" + concat + delim);
                     basicMethod.setRandomAnchor(false);
-                    attacks.addAll(injector.fuzz(softBase, basicMethod));
+                    results.addAll(injector.fuzz(softBase, basicMethod));
 
                 }
             }
 
+            /* this is the simplest payload set and could be used as a template */
+
+            // if the input X looks like a number
             if (StringUtils.isNumeric(baseValue)) {
 
+                // compare the results of appending /0 and /1
                 Probe div0 = new Probe("Divide by 0", 4, "/0", "/00", "/000");
                 div0.setEscapeStrings("/1", "-0", "/01", "-00");
                 div0.setRandomAnchor(false);
                 ArrayList<Attack> div0_results = injector.fuzz(softBase, div0);
+                results.addAll(div0_results);
+                // we could stop here, but why not try some followup payloads?
 
+                // if that probe worked...
                 if (!div0_results.isEmpty()) {
-                    attacks.addAll(div0_results);
-
+                    // follow up by injecting a sub-expression
                     Probe divArith = new Probe("Divide by expression", 5, "/(2-2)", "/(3-3)");
                     divArith.setEscapeStrings("/(2-1)", "/(1*1)");
                     divArith.setRandomAnchor(false);
-                    attacks.addAll(injector.fuzz(softBase, divArith));
+                    results.addAll(injector.fuzz(softBase, divArith));
 
-                    attacks.addAll(exploreAvailableFunctions(injector, softBase, "/", "", false));
+                    // if *that* worked, try injecting a function call
+                    results.addAll(exploreAvailableFunctions(injector, softBase, "/", "", false));
                 }
             }
 
@@ -346,26 +353,26 @@ class DiffingScan {
                 comment.setRandomAnchor(false);
                 ArrayList<Attack> commentAttack = injector.fuzz(softBase, comment);
                 if (!commentAttack.isEmpty()) {
-                    attacks.addAll(commentAttack);
+                    results.addAll(commentAttack);
 
                     Probe htmlTag = new Probe("HTML tag stripping (WAF?)", 4, ">zz<", "z>z<z", "z>><z");
                     htmlTag.setEscapeStrings("<zz>", "<-zz->", "<xyz>");
                     htmlTag.setRandomAnchor(false);
                     ArrayList<Attack> htmlTagAttack = injector.fuzz(softBase, htmlTag);
-                    attacks.addAll(htmlTagAttack);
+                    results.addAll(htmlTagAttack);
 
                     if (htmlTagAttack.isEmpty()) {
                         Probe htmlComment = new Probe("HTML comment injection (WAF?)", 4, "<!-zz-->", "<--zz-->", "<!--zz->");
                         htmlComment.setEscapeStrings("<!--zz-->", "<!--z-z-->", "<!-->z<-->");
                         htmlComment.setRandomAnchor(false);
                         ArrayList<Attack> htmlCommentAttack = injector.fuzz(softBase, htmlComment);
-                        attacks.addAll(htmlCommentAttack);
+                        results.addAll(htmlCommentAttack);
                     }
 
                     Probe procedure = new Probe("MySQL order-by", 7, " procedure analyse (0,0,0)-- -", " procedure analyze (0,0)-- -");
                     procedure.setEscapeStrings(" procedure analyse (0,0)-- -", " procedure analyse (0,0)-- -z");
                     procedure.setRandomAnchor(false);
-                    attacks.addAll(injector.fuzz(softBase, procedure));
+                    results.addAll(injector.fuzz(softBase, procedure));
                 }
 
 
@@ -375,8 +382,8 @@ class DiffingScan {
                 ArrayList<Attack> commaAbsAttack = injector.fuzz(softBase, commaAbs);
 
                 if (!commaAbsAttack.isEmpty()) {
-                    attacks.addAll(commaAbsAttack);
-                    attacks.addAll(exploreAvailableFunctions(injector, softBase, ",", "", false));
+                    results.addAll(commaAbsAttack);
+                    results.addAll(exploreAvailableFunctions(injector, softBase, ",", "", false));
                 }
             }
 
@@ -391,12 +398,12 @@ class DiffingScan {
                 dotSlash.setPrefix(Probe.PREPEND);
                 ArrayList<Attack> filePathManip = injector.fuzz(softBase, dotSlash);
                 if (!filePathManip.isEmpty()) {
-                    attacks.addAll(filePathManip);
+                    results.addAll(filePathManip);
                     Probe normalisedDotSlash = new Probe("File Path Manipulation (normalised)", 4, "../", "z/", "_/", "./../");
                     normalisedDotSlash.setEscapeStrings("./cow/../", "./foo/bar/../../", "./z/../");
                     normalisedDotSlash.setRandomAnchor(false);
                     normalisedDotSlash.setPrefix(Probe.PREPEND);
-                    attacks.addAll(injector.fuzz(softBase, normalisedDotSlash));
+                    results.addAll(injector.fuzz(softBase, normalisedDotSlash));
                 }
             }
 
@@ -404,12 +411,12 @@ class DiffingScan {
                 Probe functionCall = new Probe("Function hijacking", 6, "sprimtf", "sprintg", "exception", "malloc");
                 functionCall.setEscapeStrings("sprintf");
                 functionCall.setPrefix(Probe.REPLACE);
-                attacks.addAll(injector.fuzz(softBase, functionCall));
+                results.addAll(injector.fuzz(softBase, functionCall));
             }
         }
 
-        if (!attacks.isEmpty()) {
-            return Utilities.reportReflectionIssue(attacks.toArray((new Attack[attacks.size()])), baseRequestResponse);
+        if (!results.isEmpty()) {
+            return Utilities.reportReflectionIssue(results.toArray((new Attack[results.size()])), baseRequestResponse);
         }
         else {
             return null;
