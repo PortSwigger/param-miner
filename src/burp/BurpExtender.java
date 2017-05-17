@@ -298,4 +298,16 @@ class CustomScanIssue implements IScanIssue {
     public IHttpService getHttpService() {
         return httpService;
     }
+
+    public String getHost() {
+        return null;
+    }
+
+    public int getPort() {
+        return 0;
+    }
+
+    public String getProtocol() {
+        return null;
+    }
 }
