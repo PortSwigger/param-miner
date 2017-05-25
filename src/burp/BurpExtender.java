@@ -431,7 +431,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String baseValue = insertionPoint.getBaseValue();
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
-        Utilities.out("Initiating parameter name bruteforce on "+ baseRequestResponse.getUrl().toString());
+        String targetURL = baseRequestResponse.getHttpService().getHost();
+        Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
         Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);
 
         for(int i=0; i<4; i++) {
@@ -461,10 +462,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
 
             }
-            Utilities.out("Parameter name bruteforce complete: "+baseRequestResponse.getUrl().toString());
+            Utilities.out("Parameter name bruteforce complete: "+targetURL);
         }
         catch (RuntimeException e) {
-            Utilities.out("Parameter name bruteforce aborted: "+baseRequestResponse.getUrl().toString());
+            Utilities.out("Parameter name bruteforce aborted: "+targetURL);
         }
 
         return attacks;
