@@ -13,7 +13,7 @@ class Utilities {
 
     private static PrintWriter stdout;
     private static PrintWriter stderr;
-    static final boolean THOROUGH_MODE = true;
+    static final boolean THOROUGH_MODE = false;
     static final boolean DEBUG = false;
     static final boolean TRANSFORMATION_SCAN = false;
     static final boolean DIFFING_SCAN = true;
@@ -22,7 +22,7 @@ class Utilities {
 
     static final boolean TRY_HPP = true;
     static final boolean TRY_HPP_FOLLOWUP = false;
-    static final boolean TRY_SYNTAX_ATTACKS = true;
+    static final boolean TRY_SYNTAX_ATTACKS = false;
     static final boolean TRY_VALUE_PRESERVING_ATTACKS = true;
     static final boolean TRY_EXPERIMENTAL_CONCAT_ATTACKS = false;
     static final boolean TRY_MAGIC_VALUE_ATTACKS = true;

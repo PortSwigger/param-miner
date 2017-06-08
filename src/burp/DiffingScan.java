@@ -421,10 +421,10 @@ class DiffingScan {
                         corruptor.setCharAt(i, 'z');
                         corruptedMagic[i] = corruptor.toString();
                     }
-                    Probe magic = new Probe("Magic value: "+magicValue, 3, corruptedMagic);
-                    magic.setEscapeStrings(magicValue);
+                    Probe magic = new Probe("Magic value: "+magicValue, 3, magicValue);
+                    magic.setEscapeStrings(corruptedMagic);
                     magic.setPrefix(Probe.REPLACE);
-                    results.addAll(injector.fuzz(softBase, magic));
+                    results.addAll(injector.fuzz(hardBase, magic)); // should this use softbase or hardbase?
                 }
 
                 if((!Utilities.THOROUGH_MODE && Utilities.mightBeIdentifier(baseValue)) || (Utilities.THOROUGH_MODE && Utilities.mightBeFunction(baseValue))) {
