@@ -407,11 +407,28 @@ class DiffingScan {
                 }
             }
 
-            if((!Utilities.THOROUGH_MODE && Utilities.mightBeIdentifier(baseValue)) || (Utilities.THOROUGH_MODE && Utilities.mightBeFunction(baseValue))) {
-                Probe functionCall = new Probe("Function hijacking", 6, "sprimtf", "sprintg", "exception", "malloc");
-                functionCall.setEscapeStrings("sprintf");
-                functionCall.setPrefix(Probe.REPLACE);
-                results.addAll(injector.fuzz(softBase, functionCall));
+            if (Utilities.TRY_MAGIC_VALUE_ATTACKS) {
+
+                String[] magicValues = new String[]{"undefined", "null", "empty", "none"};
+                for (String magicValue: magicValues) {
+                    String[] corruptedMagic = new String[4];
+                    for (int i=0;i<4;i++) {
+                        StringBuilder corruptor = new StringBuilder(magicValue);
+                        corruptor.setCharAt(i, 'z');
+                        corruptedMagic[i] = corruptor.toString();
+                    }
+                    Probe magic = new Probe("Magic value: "+magicValue, 3, corruptedMagic);
+                    magic.setEscapeStrings(magicValue);
+                    magic.setPrefix(Probe.REPLACE);
+                    results.addAll(injector.fuzz(softBase, magic));
+                }
+
+                if((!Utilities.THOROUGH_MODE && Utilities.mightBeIdentifier(baseValue)) || (Utilities.THOROUGH_MODE && Utilities.mightBeFunction(baseValue))) {
+                    Probe functionCall = new Probe("Function hijacking", 6, "sprimtf", "sprintg", "exception", "malloc");
+                    functionCall.setEscapeStrings("sprintf");
+                    functionCall.setPrefix(Probe.REPLACE);
+                    results.addAll(injector.fuzz(softBase, functionCall));
+                }
             }
         }
 
