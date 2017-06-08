@@ -409,6 +409,7 @@ class DiffingScan {
 
             if (Utilities.TRY_MAGIC_VALUE_ATTACKS) {
 
+                // since this only has one value for escapestrings, we can't trust tentative diffs
                 String[] magicValues = new String[]{"undefined", "null", "empty", "none"};
                 for (String magicValue: magicValues) {
                     if (baseValue.equals(magicValue)) {
@@ -424,7 +425,8 @@ class DiffingScan {
                     Probe magic = new Probe("Magic value: "+magicValue, 3, magicValue);
                     magic.setEscapeStrings(corruptedMagic);
                     magic.setPrefix(Probe.REPLACE);
-                    results.addAll(injector.fuzz(hardBase, magic)); // should this use softbase or hardbase?
+                    magic.setUseCacheBuster(true);
+                    results.addAll(injector.fuzz(hardBase, magic));
                 }
 
                 if((!Utilities.THOROUGH_MODE && Utilities.mightBeIdentifier(baseValue)) || (Utilities.THOROUGH_MODE && Utilities.mightBeFunction(baseValue))) {

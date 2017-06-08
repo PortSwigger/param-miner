@@ -107,7 +107,7 @@ class PayloadInjector {
         }
 
 
-        IHttpRequestResponse req = buildRequest(payload, !randomAnchor);
+        IHttpRequestResponse req = buildRequest(payload, probe.useCacheBuster());
         if(randomAnchor) {
             req = Utilities.highlightRequestResponse(req, anchor, anchor, insertionPoint);
         }

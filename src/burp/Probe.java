@@ -21,6 +21,12 @@ class Probe {
     private ArrayList<String[]> escapeStrings = new ArrayList<>();
     private byte prefix = APPEND;
     private boolean randomAnchor = true;
+
+    public boolean useCacheBuster() {
+        return useCacheBuster;
+    }
+
+    private boolean useCacheBuster = false;
     private int nextBreak = -1;
     private int nextEscape = -1;
 
@@ -52,7 +58,13 @@ class Probe {
 
     public void setRandomAnchor(boolean randomAnchor) {
         this.randomAnchor = randomAnchor;
+        useCacheBuster = !randomAnchor;
     }
+
+    public void setUseCacheBuster(boolean useCacheBuster) {
+        this.useCacheBuster = useCacheBuster;
+    }
+
 
     public String getBase() {
         return base;
