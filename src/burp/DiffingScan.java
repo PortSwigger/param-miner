@@ -409,23 +409,24 @@ class DiffingScan {
 
             if (Utilities.TRY_MAGIC_VALUE_ATTACKS) {
 
-                // since this only has one value for escapestrings, we can't trust tentative diffs
                 String[] magicValues = new String[]{"undefined", "null", "empty", "none"};
                 for (String magicValue: magicValues) {
                     if (baseValue.equals(magicValue)) {
                         continue;
                     }
 
-                    String[] corruptedMagic = new String[4];
+                    String[] corruptedMagic = new String[5];
                     for (int i=0;i<4;i++) {
                         StringBuilder corruptor = new StringBuilder(magicValue);
                         corruptor.setCharAt(i, 'z');
                         corruptedMagic[i] = corruptor.toString();
                     }
+                    corruptedMagic[4] = "help"; // send a real word to filter out things like usernames and hostnames where 'null' is plausible
                     Probe magic = new Probe("Magic value: "+magicValue, 3, magicValue);
                     magic.setEscapeStrings(corruptedMagic);
                     magic.setPrefix(Probe.REPLACE);
                     magic.setUseCacheBuster(true);
+                    magic.setRequireConsistentEvidence(true);
                     results.addAll(injector.fuzz(hardBase, magic));
                 }
 

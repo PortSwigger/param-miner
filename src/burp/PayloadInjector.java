@@ -49,16 +49,19 @@ class PayloadInjector {
             Attack tempBreakAttack = buildAttackFromProbe(probe, probe.getNextBreak());
             mergedBreakAttack.addAttack(tempBreakAttack);
 
-            if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
+            if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)
+                    || (probe.getRequireConsistentEvidence() && Utilities.similar(mergedDoNotBreakAttack, tempBreakAttack))) {
                 return new ArrayList<>();
             }
 
             tempDoNotBreakAttack = buildAttackFromProbe(probe, probe.getNextEscapeSet()[chosen_escape]);
             mergedDoNotBreakAttack.addAttack(tempDoNotBreakAttack);
 
-            if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
+            if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)
+                    || (probe.getRequireConsistentEvidence() && Utilities.similar(mergedBreakAttack, tempDoNotBreakAttack))) {
                 return new ArrayList<>();
             }
+
         }
 
         // this final probe pair is sent out of order, to prevent alternation false positives
@@ -68,11 +71,11 @@ class PayloadInjector {
         mergedBreakAttack.addAttack(tempBreakAttack);
 
         // point is to exploit response attributes that vary in "don't break" responses (but are static in 'break' responses)
-        if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)) {
+        if(Utilities.similarIsh(mergedDoNotBreakAttack, mergedBreakAttack, tempDoNotBreakAttack, tempBreakAttack)
+                || (probe.getRequireConsistentEvidence() && Utilities.similar(mergedBreakAttack, tempDoNotBreakAttack))) {
             return new ArrayList<>();
         }
 
-        // fixme: somehow, we get to here with one pair of requests with every measure equal?!
         attacks.add(mergedBreakAttack);
         attacks.add(mergedDoNotBreakAttack);
 

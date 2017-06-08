@@ -21,14 +21,26 @@ class Probe {
     private ArrayList<String[]> escapeStrings = new ArrayList<>();
     private byte prefix = APPEND;
     private boolean randomAnchor = true;
+    private boolean useCacheBuster = false;
+    private int nextBreak = -1;
+    private int nextEscape = -1;
+
+    public boolean getRequireConsistentEvidence() {
+        return requireConsistentEvidence;
+    }
+
+    public void setRequireConsistentEvidence(boolean requireConsistentEvidence) {
+        this.requireConsistentEvidence = requireConsistentEvidence;
+    }
+
+    private boolean requireConsistentEvidence = false;
+
 
     public boolean useCacheBuster() {
         return useCacheBuster;
     }
 
-    private boolean useCacheBuster = false;
-    private int nextBreak = -1;
-    private int nextEscape = -1;
+
 
     public Probe(String name, int severity, String... breakStrings) {
         this.name = name;
