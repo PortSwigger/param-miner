@@ -411,6 +411,10 @@ class DiffingScan {
 
                 String[] magicValues = new String[]{"undefined", "null", "empty", "none"};
                 for (String magicValue: magicValues) {
+                    if (baseValue.equals(magicValue)) {
+                        continue;
+                    }
+
                     String[] corruptedMagic = new String[4];
                     for (int i=0;i<4;i++) {
                         StringBuilder corruptor = new StringBuilder(magicValue);
