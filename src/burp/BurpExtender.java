@@ -16,7 +16,7 @@ import javax.swing.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
-    private static final String version = "0.90";
+    private static final String version = "0.91";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -54,6 +54,7 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    TRY_EXPERIMENTAL_CONCAT_ATTACKS "+Utilities.TRY_EXPERIMENTAL_CONCAT_ATTACKS);
         Utilities.out("    TRY_HPP "+Utilities.TRY_HPP);
         Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
+        Utilities.out("    TRY_MAGIC_VALUE_ATTACKS "+Utilities.TRY_MAGIC_VALUE_ATTACKS);
 
     }
 
@@ -430,7 +431,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         String baseValue = insertionPoint.getBaseValue();
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
-
         String targetURL = baseRequestResponse.getHttpService().getHost();
         Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
         Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+"=%3c%61%60%27%22%24%7b%7b%5c", false);

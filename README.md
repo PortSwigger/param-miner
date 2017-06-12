@@ -6,6 +6,9 @@ For more information, please refer to the whitepaper at http://blog.portswigger.
 The code can be found at https://github.com/portswigger/backslash-powered-scanner Contributions and feature requests are welcome.
 
 # Changelog
+**0.91 20170612**
+ - Detect alternative code paths triggered by keywords like 'null', 'undefined' etc
+ 
 **0.9 20170520**
  - Detect JSON Injection and escalate into RCE where possible
  - Detect Server-Side HTTP Parameter Pollution
