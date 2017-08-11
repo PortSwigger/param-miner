@@ -70,7 +70,7 @@ class DiffingScan {
             Probe backendParameterInjection = new Probe("Backend Parameter Injection", 2, "$zq=%3c%61%60%27%22%24%7b%7b%5c&zq%3d", "|zq=%3c%61%60%27%22%24%7b%7b%5c", "!zq=%3c%61%60%27%22%24%7b%7b%5c");
             backendParameterInjection.setEscapeStrings("&zq=%3c%61%60%27%22%24%7b%7b%5c", "&zq=x%3c%61%60%27%22%24%7b%7b%5c"); // "#zq=%3c%61%60%27%22%24%7b%7b%5c"
             backendParameterInjection.setRandomAnchor(false);
-            backendParameterInjection.setTip("To scan for backend parameters, right click on the attached request and select 'Identify Backend Parameters'");
+            backendParameterInjection.setTip("To scan for backend parameters, right click on the attached request and select 'Identify Backend Parameters'. Scan progress is visible in this extension's output tab, and new scanner issues will be created for any parameters identified.");
             ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
             results.addAll(backendParameterAttack);
             if (Utilities.TRY_HPP_FOLLOWUP && !backendParameterAttack.isEmpty()) {
