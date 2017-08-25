@@ -288,7 +288,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
             outputStream.write('{');
             outputStream.write('"');
             outputStream.write(payload);
-            outputStream.write(Utilities.helpers.stringToBytes("\":\"" + value + "\","));
+            outputStream.write(Utilities.helpers.stringToBytes("\":\"" + Utilities.helpers.bytesToString(payload) + value + "\","));
             outputStream.write(body);
             return Utilities.fixContentLength(outputStream.toByteArray());
         }
@@ -531,19 +531,16 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         try {
-            final String payload = "<a`'\\\"${{\\\\";
+            final String payload = "qn<a`'\\\"${{\\\\";
 
             IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload);
 
             PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
             Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
-            Attack base = injector.buildAttack(Utilities.randomString(6), false);
-            for(int i=0; i<4; i++) {
-                base.addAttack(injector.buildAttack(Utilities.randomString((i+1)*(i+1)), false));
-            }
+            Attack base = getBaselineAttack(injector);
 
-            for (int i = 0; i < Utilities.paramNames.size(); i++) {
+            for (int i = 0; i < 300; i++) { // Utilities.paramNames.size()
                 String candidate = Utilities.paramNames.get(i);
                 if (witnessedParams.contains(candidate)) {
                     continue;
@@ -553,9 +550,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 if (!Utilities.similar(base, paramGuess)) {
                     //Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest()); // rest to base
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
-                    base.addAttack(injector.buildAttack(candidate + "z", false));
+                    Attack failAttack = injector.buildAttack(candidate + "z", false);
+                    base.addAttack(failAttack);
                     if (!Utilities.similar(base, confirmParamGuess)) {
-                        Utilities.out(targetURL+" potential: "+candidate);
                         Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
                         validParam.setEscapeStrings(Utilities.randomString(candidate.length()), candidate + "z");
                         validParam.setRandomAnchor(false);
@@ -565,9 +562,20 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             Utilities.out(targetURL+" identified parameter: " + candidate);
                             attacks.addAll(confirmed);
                         }
+                        else {
+                            Utilities.out(targetURL+" failed to confirm: "+candidate);
+                        }
                     } else {
-                        Utilities.out(targetURL+" false alarm with: "+candidate);
-                        base.addAttack(paramGuess);
+                        // we can use stored input reflection - the input is rejected, the other technique will work
+                        byte[] failResp = failAttack.getFirstRequest().getResponse();
+                        if(Utilities.getMatches(failResp, Utilities.helpers.stringToBytes(candidate+"qn"), failResp.length).size() > 0) {
+                            Utilities.out(targetURL+" identified persistent parameter: " + candidate);
+                            base = getBaselineAttack(injector); // re-benchmark
+                        }
+                        else {
+                            Utilities.out(targetURL + " couldn't replicate: " + candidate);
+                            base.addAttack(paramGuess);
+                        }
                     }
                 }
 
@@ -580,6 +588,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         return attacks;
+    }
+
+    private static Attack getBaselineAttack(PayloadInjector injector) {
+        Attack base = injector.buildAttack(Utilities.randomString(6), false);
+        for(int i=0; i<4; i++) {
+            base.addAttack(injector.buildAttack(Utilities.randomString((i+1)*(i+1)), false));
+        }
+        return base;
     }
 
     private static IScannerInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload) {
