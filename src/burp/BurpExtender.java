@@ -405,57 +405,60 @@ class OfferParamGuess implements IContextMenuFactory {
 
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
+        IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
         List<JMenuItem> options = new ArrayList<>();
-        IHttpRequestResponse req = invocation.getSelectedMessages()[0];
-        byte[] resp = req.getRequest();
-        if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
-            JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
-            backendProbeButton.addActionListener(new TriggerParamGuesser(req, true, IParameter.PARAM_URL));
-            options.add(backendProbeButton);
-        }
-
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
-        probeButton.addActionListener(new TriggerParamGuesser(req, false, IParameter.PARAM_URL));
+        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL));
         options.add(probeButton);
 
-        if(resp[0] == 'P') {
-            IRequestInfo info = Utilities.helpers.analyzeRequest(req);
-            List<IParameter> params = info.getParameters();
+        if (reqs.length == 1) {
+            IHttpRequestResponse req = reqs[0];
+            byte[] resp = req.getRequest();
+            if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
+                JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
+                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL));
+                options.add(backendProbeButton);
+            }
 
-            HashSet<Byte> paramTypes = new HashSet<>();
-            for (IParameter param : params) {
-                if (param.getType() != IParameter.PARAM_URL) {
-                    paramTypes.add(param.getType());
+            if (resp[0] == 'P') {
+                IRequestInfo info = Utilities.helpers.analyzeRequest(req);
+                List<IParameter> params = info.getParameters();
+
+                HashSet<Byte> paramTypes = new HashSet<>();
+                for (IParameter param : params) {
+                    if (param.getType() != IParameter.PARAM_URL) {
+                        paramTypes.add(param.getType());
+                    }
+                }
+
+                for (Byte type : paramTypes) {
+                    JMenuItem postProbeButton = new JMenuItem("Guess body parameter: " + type);
+                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type));
+                    options.add(postProbeButton);
                 }
             }
-
-            for (Byte type: paramTypes) {
-                JMenuItem postProbeButton = new JMenuItem("Guess body parameter: "+type);
-                postProbeButton.addActionListener(new TriggerParamGuesser(req, false, type));
-                options.add(postProbeButton);
-            }
         }
-
-
 
         return options;
     }
 }
 
 class TriggerParamGuesser implements ActionListener {
-    private IHttpRequestResponse req;
+    private IHttpRequestResponse[] reqs;
     private boolean backend;
     private byte type;
 
-    TriggerParamGuesser(IHttpRequestResponse req, boolean backend, byte type) {
+    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type) {
         this.backend = backend;
-        this.req = req;
+        this.reqs = reqs;
         this.type = type;
     }
 
     public void actionPerformed(ActionEvent e) {
-        Runnable runnable = new ParamGuesser(req, backend, type);
-        (new Thread(runnable)).start();
+        for (IHttpRequestResponse req: reqs) {
+            Runnable runnable = new ParamGuesser(req, backend, type);
+            (new Thread(runnable)).start();
+        }
     }
 }
 
@@ -517,6 +520,16 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
 
+        IRequestInfo info = Utilities.helpers.analyzeRequest(baseRequestResponse.getRequest());
+        List<IParameter> params = info.getParameters();
+
+        HashSet<String> witnessedParams = new HashSet<>();
+        for (IParameter param : params) {
+            if (param.getType() == type) {
+                witnessedParams.add(param.getName());
+            }
+        }
+
         try {
             final String payload = "<a`'\\\"${{\\\\";
 
@@ -532,23 +545,28 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             for (int i = 0; i < Utilities.paramNames.size(); i++) {
                 String candidate = Utilities.paramNames.get(i);
+                if (witnessedParams.contains(candidate)) {
+                    continue;
+                }
+
                 Attack paramGuess = injector.buildAttack(candidate, false);
                 if (!Utilities.similar(base, paramGuess)) {
+                    //Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest()); // rest to base
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
                     base.addAttack(injector.buildAttack(candidate + "z", false));
                     if (!Utilities.similar(base, confirmParamGuess)) {
-                        Utilities.out("Potential: "+candidate);
-                        Probe validParam = new Probe("Found param: " + candidate, 4, candidate);
+                        Utilities.out(targetURL+" potential: "+candidate);
+                        Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
                         validParam.setEscapeStrings(Utilities.randomString(candidate.length()), candidate + "z");
                         validParam.setRandomAnchor(false);
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
-                            Utilities.out("Identified parameter: " + candidate);
+                            Utilities.out(targetURL+" identified parameter: " + candidate);
                             attacks.addAll(confirmed);
                         }
                     } else {
-                        Utilities.out("False alarm with: "+candidate);
+                        Utilities.out(targetURL+" false alarm with: "+candidate);
                         base.addAttack(paramGuess);
                     }
                 }
