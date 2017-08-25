@@ -4,6 +4,8 @@ import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
@@ -230,7 +232,7 @@ class Utilities {
         return matches;
     }
 
-    private static int getBodyStart(byte[] response) {
+    public static int getBodyStart(byte[] response) {
         int i = 0;
         int newlines_seen = 0;
         while (i < response.length) {
@@ -273,6 +275,117 @@ class Utilities {
         }
 
         return start;
+    }
+
+    public static String getHeader(byte[] request, String header) {
+        int[] offsets = getHeaderOffsets(request, header);
+        String value = helpers.bytesToString(Arrays.copyOfRange(request, offsets[1], offsets[2]));
+        return value;
+    }
+
+    public static byte[] setHeader(byte[] request, String header, String value) {
+        int[] offsets = getHeaderOffsets(request, header);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            outputStream.write( Arrays.copyOfRange(request, 0, offsets[1]));
+            outputStream.write(helpers.stringToBytes(value));
+            outputStream.write(Arrays.copyOfRange(request, offsets[2], request.length));
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Request creation unexpectedly failed");
+        } catch (NullPointerException e) {
+            Utilities.out("header locating fail");
+            throw new RuntimeException("Can't find the header");
+        }
+    }
+
+    public static String encodeJSON(String input) {
+        input = input.replace("\\", "\\\\");
+        input = input.replace("\"", "\\\"");
+        return input;
+    }
+
+    public static int[] getHeaderOffsets(byte[] request, String header) {
+        int i = 0;
+        int end = request.length;
+        while (i < end) {
+            int line_start = i;
+            while (i < end && request[i++] != ' ') {
+            }
+            byte[] header_name = Arrays.copyOfRange(request, line_start, i - 2);
+            int headerValueStart = i;
+            while (i < end && request[i++] != '\n') {
+            }
+            if (i == end) {
+                break;
+            }
+
+            String header_str = helpers.bytesToString(header_name);
+
+            if (header.equals(header_str)) {
+                int[] offsets = {line_start, headerValueStart, i - 2};
+                return offsets;
+            }
+
+            if (i + 2 < end && request[i] == '\r' && request[i + 1] == '\n') {
+                break;
+            }
+        }
+        return null;
+    }
+
+    // todo refactor to use getHeaderOffsets
+    // fixme fails if the modified header is the last header
+    public static byte[] addOrReplaceHeader(byte[] request, String header, String value) {
+        try {
+            int i = 0;
+            int end = request.length;
+            while (i < end && request[i++] != '\n') {
+            }
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+            while (i < end) {
+                int line_start = i;
+                while (i < end && request[i++] != ' ') {
+                }
+                byte[] header_name = Arrays.copyOfRange(request, line_start, i - 2);
+                int headerValueStart = i;
+                while (i < end && request[i++] != '\n') {
+                }
+                if (i == end) {
+                    break;
+                }
+
+                if(i+2<end && request[i] == '\r' && request[i+1] == '\n') {
+                    outputStream.write(Arrays.copyOfRange(request, 0, i));
+                    outputStream.write(helpers.stringToBytes(header + ": " + value+"\r\n"));
+                    outputStream.write(Arrays.copyOfRange(request, i, end));
+                    return outputStream.toByteArray();
+                }
+
+                String header_str = helpers.bytesToString(header_name);
+
+                if (header.equals(header_str)) {
+
+                    outputStream.write(Arrays.copyOfRange(request, 0, headerValueStart));
+                    outputStream.write(helpers.stringToBytes(value));
+                    outputStream.write(Arrays.copyOfRange(request, i-2, end));
+                    return outputStream.toByteArray();
+                }
+            }
+            outputStream.write(Arrays.copyOfRange(request, 0, end-2));
+            outputStream.write(helpers.stringToBytes(header + ": " + value+"\r\n\r\n"));
+            return outputStream.toByteArray();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Request creation unexpectedly failed");
+        }
+    }
+
+    public static byte[] fixContentLength(byte[] request) {
+        int start = Utilities.getBodyStart(request);
+        int contentLength = request.length - start;
+        return setHeader(request, "Content-Length", Integer.toString(contentLength));
     }
 
     static List<IParameter> getExtraInsertionPoints(byte[] request) { //
