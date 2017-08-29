@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 
@@ -516,19 +517,42 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
+    static ArrayList<String> getParamsFromResponse(IHttpRequestResponse baseRequestResponse) {
+        byte[] resp = baseRequestResponse.getResponse();
+        int bodyStart = Utilities.getBodyStart(resp);
+        String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(resp, bodyStart, resp.length));
+        ArrayList<String> found = new ArrayList<>();
+        try {
+            GsonBuilder builder = new GsonBuilder();
+            Map parsed = builder.create().fromJson(body, Map.class);
+            Utilities.out("Analysed response params: ");
+            for (Object key : parsed.keySet()) {
+                found.add(key.toString());
+            }
+        }
+        catch (Exception e) {
+
+        }
+
+        return found;
+    }
+
     static ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
 
         IRequestInfo info = Utilities.helpers.analyzeRequest(baseRequestResponse.getRequest());
-        List<IParameter> params = info.getParameters();
+        List<IParameter> currentParams = info.getParameters();
 
         HashSet<String> witnessedParams = new HashSet<>();
-        for (IParameter param : params) {
+        for (IParameter param : currentParams) {
             if (param.getType() == type) {
                 witnessedParams.add(param.getName());
             }
         }
+
+        ArrayList<String> params = getParamsFromResponse(baseRequestResponse);
+        params.addAll(Utilities.paramNames);
 
         try {
             final String payload = "qn<a`'\\\"${{\\\\";
@@ -540,8 +564,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
             Attack base = getBaselineAttack(injector);
 
-            for (int i = 0; i < 300; i++) { // Utilities.paramNames.size()
-                String candidate = Utilities.paramNames.get(i);
+            for (int i = 0; i < 1000; i++) { // params.size()
+                String candidate = params.get(i);
                 if (witnessedParams.contains(candidate)) {
                     continue;
                 }
@@ -570,6 +594,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         byte[] failResp = failAttack.getFirstRequest().getResponse();
                         if(Utilities.getMatches(failResp, Utilities.helpers.stringToBytes(candidate+"qn"), failResp.length).size() > 0) {
                             Utilities.out(targetURL+" identified persistent parameter: " + candidate);
+                            // todo report a scanner issue for this
                             base = getBaselineAttack(injector); // re-benchmark
                         }
                         else {
