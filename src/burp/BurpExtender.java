@@ -273,24 +273,29 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     byte[] headers;
     byte[] body;
+    HashMap base;
 
     public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
         super(request, name, Utilities.encodeJSON(value), type);
         int start = Utilities.getBodyStart(request);
         headers = Arrays.copyOfRange(request, 0, start);
-        body = Arrays.copyOfRange(request, start + 1, request.length);
+        body = Arrays.copyOfRange(request, start, request.length);
+        base = new GsonBuilder().create().fromJson(Utilities.helpers.bytesToString(body), HashMap.class);
     }
 
     @Override
     public byte[] buildRequest(byte[] payload) {
+        String json = "{\""+Utilities.helpers.bytesToString(payload)+"\":\""+Utilities.helpers.bytesToString(payload) + value+"\"}";
+        Utilities.out(json);
+        HashMap parsed = new GsonBuilder().create().fromJson(json, HashMap.class);
+        HashMap resultMap = new HashMap<>();
+        resultMap.putAll(base);
+        resultMap.putAll(parsed);
+        String mergedJson = new GsonBuilder().create().toJson(resultMap);
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
-            outputStream.write('{');
-            outputStream.write('"');
-            outputStream.write(payload);
-            outputStream.write(Utilities.helpers.stringToBytes("\":\"" + Utilities.helpers.bytesToString(payload) + value + "\","));
-            outputStream.write(body);
+            outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
             return Utilities.fixContentLength(outputStream.toByteArray());
         }
         catch (IOException e) {
@@ -610,6 +615,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
         catch (RuntimeException e) {
             Utilities.out("Parameter name bruteforce aborted: "+targetURL);
+            Utilities.out(e.getMessage());
         }
 
         return attacks;
