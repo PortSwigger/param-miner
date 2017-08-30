@@ -280,7 +280,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     HashMap base;
 
     public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
-        super(request, name, Utilities.encodeJSON(value), type);
+        super(request, name, value, type); // Utilities.encodeJSON(value)
         int start = Utilities.getBodyStart(request);
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
@@ -289,12 +289,24 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
     @Override
     public byte[] buildRequest(byte[] payload) {
-        String json = "{\""+Utilities.helpers.bytesToString(payload)+"\":\""+Utilities.helpers.bytesToString(payload) + value+"\"}";
-        Utilities.out(json);
-        HashMap parsed = new GsonBuilder().create().fromJson(json, HashMap.class);
-        HashMap resultMap = new HashMap<>();
+
+        ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
+        Utilities.out(keys.toString());
+        String finalKey = keys.get(keys.size()-1);
+        keys.remove(finalKey);
+        keys.remove("");
+
+        HashMap resultMap = new HashMap();
         resultMap.putAll(base);
-        resultMap.putAll(parsed);
+        HashMap injectionPoint = resultMap;
+
+        for (String key: keys) {
+            injectionPoint.putIfAbsent(key, new HashMap());
+            injectionPoint = (HashMap) injectionPoint.get(key);
+
+        }
+        injectionPoint.put(finalKey, Utilities.helpers.bytesToString(payload) + value);
+
         String mergedJson = new GsonBuilder().create().toJson(resultMap);
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -526,16 +538,19 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
-    static ArrayList<String> getAllKeys(JsonObject object, String prefix) {
+    static ArrayList<String> getAllKeys(JsonElement json, String prefix) {
         ArrayList<String> keys = new ArrayList<>();
-        for (Map.Entry<String,JsonElement> entry: object.entrySet()) {
-            if (entry.getValue().isJsonObject()){
-                keys.addAll(getAllKeys(entry.getValue().getAsJsonObject(), prefix+"^"+entry.getKey()));
+
+        // todo handle arrays
+        if (json.isJsonObject()) {
+            for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
+                keys.addAll(getAllKeys(entry.getValue(), prefix+":"+entry.getKey()));
             }
-            else {
-                keys.add(prefix+"^"+entry.getKey());
-            }
+        } else {
+            keys.add(prefix);
         }
+
+
         return keys;
     }
 
@@ -545,10 +560,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(resp, bodyStart, resp.length));
         ArrayList<String> found = new ArrayList<>();
         try {
-            // todo handle arrays too
             JsonParser parser = new JsonParser();
-            JsonObject parsed = parser.parse(body).getAsJsonObject();
-            found = getAllKeys(parsed, "");
+            found = getAllKeys(parser.parse(body), "");
             for (String key: found) {
                 Utilities.out(key);
             }
@@ -587,7 +600,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
             Attack base = getBaselineAttack(injector);
 
-            for (int i = 0; i < 1000; i++) { // params.size()
+            for (int i = 0; i < 10; i++) { // params.size()
                 String candidate = params.get(i);
                 if (witnessedParams.contains(candidate)) {
                     continue;
