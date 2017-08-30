@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -522,17 +526,31 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
+    static ArrayList<String> getAllKeys(JsonObject object, String prefix) {
+        ArrayList<String> keys = new ArrayList<>();
+        for (Map.Entry<String,JsonElement> entry: object.entrySet()) {
+            if (entry.getValue().isJsonObject()){
+                keys.addAll(getAllKeys(entry.getValue().getAsJsonObject(), prefix+"^"+entry.getKey()));
+            }
+            else {
+                keys.add(prefix+"^"+entry.getKey());
+            }
+        }
+        return keys;
+    }
+
     static ArrayList<String> getParamsFromResponse(IHttpRequestResponse baseRequestResponse) {
         byte[] resp = baseRequestResponse.getResponse();
         int bodyStart = Utilities.getBodyStart(resp);
         String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(resp, bodyStart, resp.length));
         ArrayList<String> found = new ArrayList<>();
         try {
-            GsonBuilder builder = new GsonBuilder();
-            Map parsed = builder.create().fromJson(body, Map.class);
-            Utilities.out("Analysed response params: ");
-            for (Object key : parsed.keySet()) {
-                found.add(key.toString());
+            // todo handle arrays too
+            JsonParser parser = new JsonParser();
+            JsonObject parsed = parser.parse(body).getAsJsonObject();
+            found = getAllKeys(parsed, "");
+            for (String key: found) {
+                Utilities.out(key);
             }
         }
         catch (Exception e) {
