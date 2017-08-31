@@ -78,6 +78,12 @@ class Utilities {
         }
     }
 
+    static String getBody(byte[] response) {
+        int bodyStart = Utilities.getBodyStart(response);
+        String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(response, bodyStart, response.length));
+        return body;
+    }
+
     static String generateCanary() {
         return randomString(4+rnd.nextInt(7)) + Integer.toString(rnd.nextInt(9));
     }

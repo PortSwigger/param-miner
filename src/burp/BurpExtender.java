@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.internal.LinkedTreeMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -217,110 +218,6 @@ class InputTransformation extends CustomScanIssue {
     }
 }
 
-class ParamInsertionPoint implements IScannerInsertionPoint {
-    byte[] request;
-    String name;
-    String value;
-    byte type;
-
-    ParamInsertionPoint(byte[] request, String name, String value, byte type) {
-        this.request = request;
-        this.name = name;
-        this.value = value;
-        this.type = type;
-    }
-
-    @Override
-    public String getInsertionPointName() {
-        return name;
-    }
-
-    @Override
-    public String getBaseValue() {
-        return value;
-    }
-
-    @Override
-    public byte[] buildRequest(byte[] payload) {
-        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
-        return Utilities.helpers.updateParameter(request, newParam);
-    }
-
-    @Override
-    public int[] getPayloadOffsets(byte[] payload) {
-        //IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
-        return new int[]{0, 0};
-        //return new int[]{newParam.getValueStart(), newParam.getValueEnd()};
-    }
-
-    @Override
-    public byte getInsertionPointType() {
-        return type;
-        //return IScannerInsertionPoint.INS_PARAM_BODY;
-        // return IScannerInsertionPoint.INS_EXTENSION_PROVIDED;
-    }
-}
-
-class ParamNameInsertionPoint extends ParamInsertionPoint {
-
-    public ParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
-        super(request, name, value, type);
-    }
-
-    @Override
-    public byte[] buildRequest(byte[] payload) {
-        IParameter newParam = Utilities.helpers.buildParameter(Utilities.helpers.bytesToString(payload), Utilities.encodeParam(value), type);
-        return Utilities.helpers.updateParameter(request, newParam);
-    }
-}
-
-class JsonParamNameInsertionPoint extends ParamInsertionPoint {
-    byte[] headers;
-    byte[] body;
-    HashMap base;
-
-    public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
-        super(request, name, value, type); // Utilities.encodeJSON(value)
-        int start = Utilities.getBodyStart(request);
-        headers = Arrays.copyOfRange(request, 0, start);
-        body = Arrays.copyOfRange(request, start, request.length);
-        base = new GsonBuilder().create().fromJson(Utilities.helpers.bytesToString(body), HashMap.class);
-    }
-
-    @Override
-    public byte[] buildRequest(byte[] payload) {
-
-        ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
-        Utilities.out(keys.toString());
-        String finalKey = keys.get(keys.size()-1);
-        keys.remove(finalKey);
-        keys.remove("");
-
-        HashMap resultMap = new HashMap();
-        resultMap.putAll(base);
-        HashMap injectionPoint = resultMap;
-
-        for (String key: keys) {
-            injectionPoint.putIfAbsent(key, new HashMap());
-            injectionPoint = (HashMap) injectionPoint.get(key);
-
-        }
-        injectionPoint.put(finalKey, Utilities.helpers.bytesToString(payload) + value);
-
-        String mergedJson = new GsonBuilder().create().toJson(resultMap);
-        try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(headers);
-            outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
-            return Utilities.fixContentLength(outputStream.toByteArray());
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Request creation unexpectedly failed");
-        }
-    }
-}
-
-
 class CustomScanIssue implements IScanIssue {
     private IHttpService httpService;
     private URL url;
@@ -418,297 +315,119 @@ class CustomScanIssue implements IScanIssue {
     }
 }
 
-class OfferParamGuess implements IContextMenuFactory {
-    private IBurpExtenderCallbacks callbacks;
 
-    public OfferParamGuess(final IBurpExtenderCallbacks callbacks) {
-        this.callbacks = callbacks;
+
+class ParamInsertionPoint implements IScannerInsertionPoint {
+    byte[] request;
+    String name;
+    String value;
+    byte type;
+
+    ParamInsertionPoint(byte[] request, String name, String value, byte type) {
+        this.request = request;
+        this.name = name;
+        this.value = value;
+        this.type = type;
     }
 
     @Override
-    public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
-        IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
-        List<JMenuItem> options = new ArrayList<>();
-        JMenuItem probeButton = new JMenuItem("Guess GET parameters");
-        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL));
-        options.add(probeButton);
+    public String getInsertionPointName() {
+        return name;
+    }
 
-        if (reqs.length == 1) {
-            IHttpRequestResponse req = reqs[0];
-            byte[] resp = req.getRequest();
-            if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
-                JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
-                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL));
-                options.add(backendProbeButton);
-            }
+    @Override
+    public String getBaseValue() {
+        return value;
+    }
 
-            if (resp[0] == 'P') {
-                IRequestInfo info = Utilities.helpers.analyzeRequest(req);
-                List<IParameter> params = info.getParameters();
+    @Override
+    public byte[] buildRequest(byte[] payload) {
+        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
+        return Utilities.helpers.updateParameter(request, newParam);
+    }
 
-                HashSet<Byte> paramTypes = new HashSet<>();
-                for (IParameter param : params) {
-                    if (param.getType() != IParameter.PARAM_URL) {
-                        paramTypes.add(param.getType());
-                    }
-                }
+    @Override
+    public int[] getPayloadOffsets(byte[] payload) {
+        //IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
+        return new int[]{0, 0};
+        //return new int[]{newParam.getValueStart(), newParam.getValueEnd()};
+    }
 
-                for (Byte type : paramTypes) {
-                    JMenuItem postProbeButton = new JMenuItem("Guess body parameter: " + type);
-                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type));
-                    options.add(postProbeButton);
-                }
-            }
-        }
-
-        return options;
+    @Override
+    public byte getInsertionPointType() {
+        return type;
+        //return IScannerInsertionPoint.INS_PARAM_BODY;
+        // return IScannerInsertionPoint.INS_EXTENSION_PROVIDED;
     }
 }
 
-class TriggerParamGuesser implements ActionListener {
-    private IHttpRequestResponse[] reqs;
-    private boolean backend;
-    private byte type;
+class ParamNameInsertionPoint extends ParamInsertionPoint {
 
-    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type) {
-        this.backend = backend;
-        this.reqs = reqs;
-        this.type = type;
+    public ParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
+        super(request, name, value, type);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        for (IHttpRequestResponse req: reqs) {
-            Runnable runnable = new ParamGuesser(req, backend, type);
-            (new Thread(runnable)).start();
+    @Override
+    public byte[] buildRequest(byte[] payload) {
+        IParameter newParam = Utilities.helpers.buildParameter(Utilities.helpers.bytesToString(payload), Utilities.encodeParam(value), type);
+        return Utilities.helpers.updateParameter(request, newParam);
+    }
+}
+
+class JsonParamNameInsertionPoint extends ParamInsertionPoint {
+    byte[] headers;
+    byte[] body;
+    HashMap base;
+
+    public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
+        super(request, name, value, type); // Utilities.encodeJSON(value)
+        int start = Utilities.getBodyStart(request);
+        headers = Arrays.copyOfRange(request, 0, start);
+        body = Arrays.copyOfRange(request, start, request.length);
+        base = new GsonBuilder().create().fromJson(Utilities.helpers.bytesToString(body), HashMap.class);
+    }
+
+    @Override
+    public byte[] buildRequest(byte[] payload) {
+
+        ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
+        String finalKey = keys.get(keys.size()-1);
+        keys.remove(finalKey);
+        //keys.remove("");
+
+        // create a new map
+        LinkedTreeMap resultMap = new LinkedTreeMap();
+        resultMap.putAll(base);
+        LinkedTreeMap injectionPoint = resultMap;
+        for (String key: keys) {
+            if(injectionPoint.containsKey(key)) {
+                LinkedTreeMap newPoint = new LinkedTreeMap();
+                newPoint.putAll((Map) injectionPoint.get(key));
+                injectionPoint.put(key, newPoint);
+            }
+            else {
+                injectionPoint.put(key, new LinkedTreeMap());
+            }
+
+            injectionPoint = (LinkedTreeMap) injectionPoint.get(key);
+        }
+        injectionPoint.put(finalKey, finalKey + value);
+
+        String mergedJson = new GsonBuilder().create().toJson(resultMap);
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            outputStream.write(headers);
+            outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
+            return Utilities.fixContentLength(outputStream.toByteArray());
+        }
+        catch (IOException e) {
+            throw new RuntimeException("Request creation unexpectedly failed");
         }
     }
 }
 
-class ParamGuesser implements Runnable, IExtensionStateListener {
-
-    private IHttpRequestResponse req;
-    private boolean backend;
-    private byte type;
-
-    public ParamGuesser(IHttpRequestResponse req, boolean backend, byte type) {
-        this.req = req;
-        this.backend = backend;
-        this.type = type;
-    }
-
-    public void run() {
-
-        IRequestInfo info = Utilities.helpers.analyzeRequest(req);
-        List<IParameter> params = info.getParameters();
-
-        if(backend) {
-
-            for (IParameter param : params) {
-                String key = null;
-                String[] keys = {"%26zq=%253c", "!zq=%253c"};
-                for (String test : keys) {
-                    if (param.getValue().contains(test)) {
-                        key = test;
-                        break;
-                    }
-                }
-
-                if (key != null) {
-                    String originalValue = param.getValue().substring(0, param.getValue().indexOf(key));
-                    ParamInsertionPoint insertionPoint = new ParamInsertionPoint(req.getRequest(), param.getName(), originalValue, param.getType());
-                    ArrayList<Attack> paramGuesses = guessBackendParams(req, insertionPoint);
-                    if (!paramGuesses.isEmpty()) {
-                        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
-                    }
-                    break;
-                }
-
-            }
-        }
-        else {
-            ArrayList<Attack> paramGuesses = guessParams(req, type);
-            if (!paramGuesses.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
-            }
-        }
-    }
-
-    public void extensionUnloaded() {
-        Utilities.out("Aborting param bruteforce");
-        Utilities.unloaded.set(true);
-    }
-
-    static ArrayList<String> getAllKeys(JsonElement json, String prefix) {
-        ArrayList<String> keys = new ArrayList<>();
-
-        // todo handle arrays
-        if (json.isJsonObject()) {
-            for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
-                keys.addAll(getAllKeys(entry.getValue(), prefix+":"+entry.getKey()));
-            }
-        } else {
-            keys.add(prefix);
-        }
 
 
-        return keys;
-    }
 
-    static ArrayList<String> getParamsFromResponse(IHttpRequestResponse baseRequestResponse) {
-        byte[] resp = baseRequestResponse.getResponse();
-        int bodyStart = Utilities.getBodyStart(resp);
-        String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(resp, bodyStart, resp.length));
-        ArrayList<String> found = new ArrayList<>();
-        try {
-            JsonParser parser = new JsonParser();
-            found = getAllKeys(parser.parse(body), "");
-            for (String key: found) {
-                Utilities.out(key);
-            }
-        }
-        catch (Exception e) {
 
-        }
 
-        return found;
-    }
-
-    static ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
-        ArrayList<Attack> attacks = new ArrayList<>();
-        String targetURL = baseRequestResponse.getHttpService().getHost();
-
-        IRequestInfo info = Utilities.helpers.analyzeRequest(baseRequestResponse.getRequest());
-        List<IParameter> currentParams = info.getParameters();
-
-        HashSet<String> witnessedParams = new HashSet<>();
-        for (IParameter param : currentParams) {
-            if (param.getType() == type) {
-                witnessedParams.add(param.getName());
-            }
-        }
-
-        ArrayList<String> params = getParamsFromResponse(baseRequestResponse);
-        params.addAll(Utilities.paramNames);
-
-        try {
-            final String payload = "qn<a`'\\\"${{\\\\";
-
-            IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload);
-
-            PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
-
-            Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
-            Attack base = getBaselineAttack(injector);
-
-            for (int i = 0; i < 10; i++) { // params.size()
-                String candidate = params.get(i);
-                if (witnessedParams.contains(candidate)) {
-                    continue;
-                }
-
-                Attack paramGuess = injector.buildAttack(candidate, false);
-                if (!Utilities.similar(base, paramGuess)) {
-                    //Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest()); // rest to base
-                    Attack confirmParamGuess = injector.buildAttack(candidate, false);
-                    Attack failAttack = injector.buildAttack(candidate + "z", false);
-                    base.addAttack(failAttack);
-                    if (!Utilities.similar(base, confirmParamGuess)) {
-                        Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
-                        validParam.setEscapeStrings(Utilities.randomString(candidate.length()), candidate + "z");
-                        validParam.setRandomAnchor(false);
-                        validParam.setPrefix(Probe.REPLACE);
-                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                        if (!confirmed.isEmpty()) {
-                            Utilities.out(targetURL+" identified parameter: " + candidate);
-                            attacks.addAll(confirmed);
-                        }
-                        else {
-                            Utilities.out(targetURL+" failed to confirm: "+candidate);
-                        }
-                    } else {
-                        // we can use stored input reflection - the input is rejected, the other technique will work
-                        byte[] failResp = failAttack.getFirstRequest().getResponse();
-                        if(Utilities.getMatches(failResp, Utilities.helpers.stringToBytes(candidate+"qn"), failResp.length).size() > 0) {
-                            Utilities.out(targetURL+" identified persistent parameter: " + candidate);
-                            // todo report a scanner issue for this
-                            base = getBaselineAttack(injector); // re-benchmark
-                        }
-                        else {
-                            Utilities.out(targetURL + " couldn't replicate: " + candidate);
-                            base.addAttack(paramGuess);
-                        }
-                    }
-                }
-
-            }
-            Utilities.out("Parameter name bruteforce complete: "+targetURL);
-
-        }
-        catch (RuntimeException e) {
-            Utilities.out("Parameter name bruteforce aborted: "+targetURL);
-            Utilities.out(e.getMessage());
-        }
-
-        return attacks;
-    }
-
-    private static Attack getBaselineAttack(PayloadInjector injector) {
-        Attack base = injector.buildAttack(Utilities.randomString(6), false);
-        for(int i=0; i<4; i++) {
-            base.addAttack(injector.buildAttack(Utilities.randomString((i+1)*(i+1)), false));
-        }
-        return base;
-    }
-
-    private static IScannerInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload) {
-        return type == IParameter.PARAM_JSON ?
-                        new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type) :
-                        new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type);
-    }
-
-    static ArrayList<Attack> guessBackendParams(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-
-        String baseValue = insertionPoint.getBaseValue();
-        PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
-        String targetURL = baseRequestResponse.getHttpService().getHost();
-        Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
-        final String breaker = "=%3c%61%60%27%22%24%7b%7b%5c";
-        Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+ breaker, false);
-
-        for(int i=0; i<4; i++) {
-            base.addAttack(injector.buildAttack(baseValue+"&"+Utilities.randomString((i+1)*(i+1))+ breaker, false));
-        }
-
-        ArrayList<Attack> attacks = new ArrayList<>();
-        try {
-            for (int i = 0; i < Utilities.paramNames.size(); i++) { // i<Utilities.paramNames.size();
-                String candidate = Utilities.paramNames.get(i);
-                Attack paramGuess = injector.buildAttack(baseValue + "&" + candidate + breaker, false);
-                if (!Utilities.similar(base, paramGuess)) {
-                    Attack confirmParamGuess = injector.buildAttack(baseValue + "&" + candidate + breaker, false);
-                    base.addAttack(injector.buildAttack(baseValue + "&" + candidate + "z"+breaker, false));
-                    if (!Utilities.similar(base, confirmParamGuess)) {
-                        Probe validParam = new Probe("Backend param: " + candidate, 4, "&" + candidate + breaker, "&" + candidate + "=%3c%62%60%27%22%24%7b%7b%5c");
-                        validParam.setEscapeStrings("&" + Utilities.randomString(candidate.length()) + breaker, "&" + candidate + "z"+breaker);
-                        validParam.setRandomAnchor(false);
-                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                        if (!confirmed.isEmpty()) {
-                            Utilities.out("Identified backend parameter: " + candidate);
-                            attacks.addAll(confirmed);
-                        }
-                    } else {
-                        base.addAttack(paramGuess);
-                    }
-                }
-
-            }
-            Utilities.out("Parameter name bruteforce complete: "+targetURL);
-        }
-        catch (RuntimeException e) {
-            Utilities.out("Parameter name bruteforce aborted: "+targetURL);
-        }
-
-        return attacks;
-    }
-
-}
