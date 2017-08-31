@@ -72,7 +72,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         if (json.isJsonObject()) {
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
                 if (witnessedParams.contains(entry.getKey())) {
-                    Utilities.out("Found '"+entry.getKey()+"', eating prefix '"+prefix+"'");
+                    //Utilities.out("Found '"+entry.getKey()+"', eating prefix '"+prefix+"'");
                     prefix = "";
                 }
 
@@ -98,9 +98,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             JsonParser parser = new JsonParser();
             Set<String> params = parser.parse(Utilities.getBody(baseRequestResponse.getRequest())).getAsJsonObject().keySet();
             found = getAllKeys(parser.parse(body), "", params);
-            for (String key: found) {
-                Utilities.out(key);
-            }
         }
         catch (Exception e) {
 
@@ -124,6 +121,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         ArrayList<String> params = getParamsFromResponse(baseRequestResponse, witnessedParams);
+        if (params.size() > 0) {
+            Utilities.out("Loaded "+params.size() +" params from response JSON");
+        }
         params.addAll(Utilities.paramNames);
 
         try {
@@ -167,7 +167,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         byte[] failResp = failAttack.getFirstRequest().getResponse();
                         if(Utilities.getMatches(failResp, Utilities.helpers.stringToBytes(candidate+"qn"), failResp.length).size() > 0) {
                             Utilities.out(targetURL+" identified persistent parameter: " + candidate);
-                            // todo report a scanner issue for this
+                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), failAttack.getFirstRequest(), "Persistent param: "+candidate, "Look for "+candidate+"qn in the response", "High", "Firm", "Investigate"));
                             base = getBaselineAttack(injector); // re-benchmark
                         }
                         else {
@@ -183,7 +183,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
         catch (RuntimeException e) {
             Utilities.out("Parameter name bruteforce aborted: "+targetURL);
+            e.printStackTrace();
             Utilities.out(e.getMessage());
+            Utilities.out(e.getStackTrace()[0].toString());
         }
 
         return attacks;

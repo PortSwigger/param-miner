@@ -247,6 +247,27 @@ class CustomScanIssue implements IScanIssue {
         this.remediation = remediation;
     }
 
+    CustomScanIssue(
+            IHttpService httpService,
+            URL url,
+            IHttpRequestResponse httpMessages,
+            String name,
+            String detail,
+            String severity,
+            String confidence,
+            String remediation) {
+        this.name = name;
+        this.detail = detail;
+        this.severity = severity;
+        this.httpService = httpService;
+        this.url = url;
+        this.httpMessages = new IHttpRequestResponse[1];
+        this.httpMessages[0] = httpMessages;
+
+        this.confidence = confidence;
+        this.remediation = remediation;
+    }
+
     @Override
     public URL getUrl() {
         return url;

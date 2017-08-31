@@ -96,7 +96,7 @@ class Utilities {
         return out;
     }
 
-    private static URL getURL(IHttpRequestResponse request) {
+    public static URL getURL(IHttpRequestResponse request) {
         IHttpService service = request.getHttpService();
         URL url;
         try {
