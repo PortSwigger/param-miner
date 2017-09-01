@@ -65,21 +65,27 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
-    static ArrayList<String> getAllKeys(JsonElement json, String prefix, Set<String> witnessedParams) {
+    static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
 
         // todo handle arrays
         if (json.isJsonObject()) {
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
-                if (witnessedParams.contains(entry.getKey())) {
-                    //Utilities.out("Found '"+entry.getKey()+"', eating prefix '"+prefix+"'");
-                    prefix = "";
+                if (witnessedParams.containsKey(entry.getKey())) {
+                    Utilities.out("Recognised '"+entry.getKey()+"', replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
+                    prefix = witnessedParams.get(entry.getKey());
+                    break;
                 }
-
-                keys.addAll(getAllKeys(entry.getValue(), prefix+":"+entry.getKey(), witnessedParams));
             }
+
+            for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
+                keys.addAll(getAllKeys(entry.getValue(), prefix + ":" + entry.getKey(), witnessedParams));
+            }
+
+            keys.add(prefix);
+
         } else {
-            if(prefix.split(":").length==2) {
+            if (prefix.startsWith(":")) {
                 prefix = prefix.substring(1);
             }
             keys.add(prefix);
@@ -96,8 +102,26 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ArrayList<String> found = new ArrayList<>();
         try {
             JsonParser parser = new JsonParser();
-            Set<String> params = parser.parse(Utilities.getBody(baseRequestResponse.getRequest())).getAsJsonObject().keySet();
-            found = getAllKeys(parser.parse(body), "", params);
+            HashMap<String, String> requestParams = new HashMap<>();
+
+            // todo give precedence to shallower keys
+            ArrayList<String> rawRequestParams = getAllKeys(parser.parse(Utilities.getBody(baseRequestResponse.getRequest())), "", new HashMap<String, String>());
+            for (String entry: rawRequestParams) {
+                int keyStart = entry.lastIndexOf(':');
+                String prefix;
+                String key;
+                if (keyStart != -1) {
+                    prefix = entry.substring(0, keyStart);
+                    key = entry.substring(keyStart + 1);
+                }
+                else {
+                    prefix = "";
+                    key = entry;
+                }
+                requestParams.putIfAbsent(key, prefix);
+            }
+
+            found = getAllKeys(parser.parse(body), "", requestParams);
         }
         catch (Exception e) {
 
@@ -136,7 +160,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
             Attack base = getBaselineAttack(injector);
 
-            for (int i = 0; i < 300; i++) { // params.size()
+            for (int i = 0; i < 100; i++) { // params.size()
                 String candidate = params.get(i);
                 if (witnessedParams.contains(candidate)) {
                     continue;
