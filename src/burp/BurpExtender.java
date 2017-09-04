@@ -418,7 +418,9 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     @SuppressWarnings("unchecked")
     private Object replicateNode(Object baseNode, String nextKey) {
         if (nextKey.matches("\\d+")) {
-            Object[] replacementArray = ((Object[]) baseNode).clone();
+            ArrayList replacementArray = new ArrayList();
+            replacementArray.addAll((ArrayList) baseNode);
+            //Object[] replacementArray = ((Object[]) baseNode).clone();
             return replacementArray;
         }
         else {
@@ -452,14 +454,14 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
             if (key.matches("\\d+")) {
                 int index = Integer.parseInt(key);
-                Object[] injectionPoint = (Object[]) next;
-                if (injectionPoint[index] != null) {
-                    injectionPoint[index] = replicateNode(injectionPoint[index], nextKey);
+                ArrayList injectionPoint = (ArrayList) next;
+                if (injectionPoint.get(index) != null) {
+                    injectionPoint.set(index, replicateNode(injectionPoint.get(index), nextKey));
                 }
                 else {
-                    injectionPoint[index] = makeNode(nextKey);
+                    injectionPoint.set(index, makeNode(nextKey));
                 }
-                next = injectionPoint[index];
+                next = injectionPoint.get(index);
             } else {
                 LinkedTreeMap injectionPoint = (LinkedTreeMap) next;
                 if (injectionPoint.containsKey(key)) {
