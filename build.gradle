@@ -8,6 +8,7 @@ dependencies {
     compile 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
     compile 'org.apache.commons:commons-lang3:3.5'
     compile 'com.google.code.gson:gson:2.8.1'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
 }
 
 sourceSets {

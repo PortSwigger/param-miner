@@ -11,6 +11,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
 import com.google.gson.internal.LinkedTreeMap;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -396,14 +398,14 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     byte[] headers;
     byte[] body;
-    HashMap base;
+    String baseInput;
 
     public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
         super(request, name, value, type); // Utilities.encodeJSON(value)
         int start = Utilities.getBodyStart(request);
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
-        base = new GsonBuilder().create().fromJson(Utilities.helpers.bytesToString(body), HashMap.class);
+        baseInput = Utilities.helpers.bytesToString(body);
     }
 
     private Object makeNode(String nextKey) {
@@ -411,80 +413,62 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
             return new Object[1];
         }
         else {
-            return new LinkedTreeMap();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object replicateNode(Object baseNode, String nextKey) {
-        if (nextKey.matches("\\d+")) {
-            ArrayList replacementArray = new ArrayList();
-            replacementArray.addAll((ArrayList) baseNode);
-            //Object[] replacementArray = ((Object[]) baseNode).clone();
-            return replacementArray;
-        }
-        else {
-            LinkedTreeMap replacementMap = new LinkedTreeMap();
-            replacementMap.putAll((Map) baseNode);
-            return replacementMap;
+            return new HashMap();
         }
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public byte[] buildRequest(byte[] payload)  {
-
-        ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
-        String finalKey = keys.get(keys.size()-1);
-        //keys.remove(finalKey);
-        //keys.remove("");
-
-        LinkedTreeMap resultMap = new LinkedTreeMap();
-        resultMap.putAll(base);
-        Object next = resultMap;
-
-
-        for (int i = 0; i < keys.size() - 1; i++) {
-
-            // find the next injection point
-            // either create it
-            // or duplicate it
-            String key = keys.get(i);
-            String nextKey = keys.get(i + 1);
-
-            if (key.matches("\\d+")) {
-                int index = Integer.parseInt(key);
-                ArrayList injectionPoint = (ArrayList) next;
-                if (injectionPoint.get(index) != null) {
-                    injectionPoint.set(index, replicateNode(injectionPoint.get(index), nextKey));
-                }
-                else {
-                    injectionPoint.set(index, makeNode(nextKey));
-                }
-                next = injectionPoint.get(index);
-            } else {
-                LinkedTreeMap injectionPoint = (LinkedTreeMap) next;
-                if (injectionPoint.containsKey(key)) {
-                    injectionPoint.put(key, replicateNode(injectionPoint.get(key), nextKey));
-                } else {
-                    injectionPoint.put(key, makeNode(nextKey));
-                }
-                next = injectionPoint.get(key);
-            }
-        }
-        LinkedTreeMap<String, String> ohdear = (LinkedTreeMap) next;
-        ohdear.put(finalKey, finalKey + value);
-
-        String mergedJson = new GsonBuilder().create().toJson(resultMap);
-        Utilities.out(mergedJson);
+    public byte[] buildRequest(byte[] payload) throws RuntimeException {
         try {
+            //HashMap base = new GsonBuilder().create().fromJson(baseInput, HashMap.class);
+
+            HashMap base = new ObjectMapper().readValue(baseInput, HashMap.class);
+            ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
+            String finalKey = keys.get(keys.size()-1);
+            //keys.remove(finalKey);
+            //keys.remove("");
+
+            HashMap resultMap = new HashMap();
+            resultMap.putAll(base);
+            Object next = resultMap;
+
+
+            for (int i = 0; i < keys.size() - 1; i++) {
+
+                String key = keys.get(i);
+                String nextKey = keys.get(i + 1);
+
+                if (key.matches("\\d+")) {
+                    int index = Integer.parseInt(key);
+                    ArrayList injectionPoint = (ArrayList) next;
+                    if (injectionPoint.get(index) == null) {
+                        injectionPoint.set(index, makeNode(nextKey));
+                    }
+                    next = injectionPoint.get(index);
+                } else {
+                    HashMap injectionPoint = (HashMap) next;
+                    if (!injectionPoint.containsKey(key)) {
+                        injectionPoint.put(key, makeNode(nextKey));
+                    }
+                    next = injectionPoint.get(key);
+                }
+            }
+            HashMap<String, String> ohdear = (HashMap) next;
+            ohdear.put(finalKey, finalKey + value);
+
+            //String mergedJson = new GsonBuilder().create().toJson(resultMap);
+            String mergedJson = new ObjectMapper().writeValueAsString(resultMap);
+            //Utilities.out(mergedJson);
+
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
             outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
             return Utilities.fixContentLength(outputStream.toByteArray());
+
         }
-        catch (IOException e) {
-            throw new RuntimeException("Request creation unexpectedly failed");
+        catch (Exception e) {
+            throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
         }
     }
 }
