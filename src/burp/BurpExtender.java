@@ -7,18 +7,16 @@ import java.awt.event.ItemListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.gson.internal.LinkedTreeMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import com.google.gson.GsonBuilder;
 
 import javax.swing.*;
 
@@ -408,33 +406,75 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         base = new GsonBuilder().create().fromJson(Utilities.helpers.bytesToString(body), HashMap.class);
     }
 
+    private Object makeNode(String nextKey) {
+        if (nextKey.matches("\\d+")) {
+            return new Object[1];
+        }
+        else {
+            return new LinkedTreeMap();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object replicateNode(Object baseNode, String nextKey) {
+        if (nextKey.matches("\\d+")) {
+            Object[] replacementArray = ((Object[]) baseNode).clone();
+            return replacementArray;
+        }
+        else {
+            LinkedTreeMap replacementMap = new LinkedTreeMap();
+            replacementMap.putAll((Map) baseNode);
+            return replacementMap;
+        }
+    }
+
     @Override
-    public byte[] buildRequest(byte[] payload) {
+    @SuppressWarnings("unchecked")
+    public byte[] buildRequest(byte[] payload)  {
 
         ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
         String finalKey = keys.get(keys.size()-1);
-        keys.remove(finalKey);
+        //keys.remove(finalKey);
         //keys.remove("");
 
-        // create a new map
         LinkedTreeMap resultMap = new LinkedTreeMap();
         resultMap.putAll(base);
-        LinkedTreeMap injectionPoint = resultMap;
-        for (String key: keys) {
-            if(injectionPoint.containsKey(key)) {
-                LinkedTreeMap newPoint = new LinkedTreeMap();
-                newPoint.putAll((Map) injectionPoint.get(key));
-                injectionPoint.put(key, newPoint);
-            }
-            else {
-                injectionPoint.put(key, new LinkedTreeMap());
-            }
+        Object next = resultMap;
 
-            injectionPoint = (LinkedTreeMap) injectionPoint.get(key);
+
+        for (int i = 0; i < keys.size() - 1; i++) {
+
+            // find the next injection point
+            // either create it
+            // or duplicate it
+            String key = keys.get(i);
+            String nextKey = keys.get(i + 1);
+
+            if (key.matches("\\d+")) {
+                int index = Integer.parseInt(key);
+                Object[] injectionPoint = (Object[]) next;
+                if (injectionPoint[index] != null) {
+                    injectionPoint[index] = replicateNode(injectionPoint[index], nextKey);
+                }
+                else {
+                    injectionPoint[index] = makeNode(nextKey);
+                }
+                next = injectionPoint[index];
+            } else {
+                LinkedTreeMap injectionPoint = (LinkedTreeMap) next;
+                if (injectionPoint.containsKey(key)) {
+                    injectionPoint.put(key, replicateNode(injectionPoint.get(key), nextKey));
+                } else {
+                    injectionPoint.put(key, makeNode(nextKey));
+                }
+                next = injectionPoint.get(key);
+            }
         }
-        injectionPoint.put(finalKey, finalKey + value);
+        LinkedTreeMap<String, String> ohdear = (LinkedTreeMap) next;
+        ohdear.put(finalKey, finalKey + value);
 
         String mergedJson = new GsonBuilder().create().toJson(resultMap);
+        Utilities.out(mergedJson);
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);

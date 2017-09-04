@@ -1,5 +1,6 @@
 package burp;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
@@ -84,10 +85,20 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             keys.add(prefix);
 
-        } else {
+        } else if (json.isJsonArray()) {
+            JsonArray hm = json.getAsJsonArray();
+            int i = 0;
+            for (JsonElement x: hm) {
+                keys.addAll(getAllKeys(x, prefix + ":" + Integer.toString(i++), witnessedParams));
+            }
+        }
+
+
+        else {
             if (prefix.startsWith(":")) {
                 prefix = prefix.substring(1);
             }
+            Utilities.out(prefix);
             keys.add(prefix);
         }
 
