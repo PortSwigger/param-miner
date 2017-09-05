@@ -134,6 +134,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     key = entry;
                 }
                 requestParams.putIfAbsent(key, prefix);
+                witnessedParams.add(key);
+                witnessedParams.add(prefix);
             }
 
             found = getAllKeys(parser.parse(body), "", requestParams);
