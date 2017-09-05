@@ -424,7 +424,8 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
             //HashMap base = new GsonBuilder().create().fromJson(baseInput, HashMap.class);
 
             HashMap base = new ObjectMapper().readValue(baseInput, HashMap.class);
-            ArrayList<String> keys = new ArrayList<>(Arrays.asList(Utilities.helpers.bytesToString(payload).split(":")));
+            String unparsed = Utilities.helpers.bytesToString(payload);
+            ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
             String finalKey = keys.get(keys.size()-1);
             //keys.remove(finalKey);
             //keys.remove("");
@@ -455,7 +456,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 }
             }
             HashMap<String, String> ohdear = (HashMap) next;
-            ohdear.put(finalKey, finalKey + value);
+            ohdear.put(finalKey, Utilities.mangle(unparsed) + value);
 
             //String mergedJson = new GsonBuilder().create().toJson(resultMap);
             String mergedJson = new ObjectMapper().writeValueAsString(resultMap);

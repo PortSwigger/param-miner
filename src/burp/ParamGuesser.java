@@ -163,8 +163,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         //params.addAll(Utilities.paramNames);
 
         try {
-            final String marker = "qze";
-            final String payload = marker+"<a`'\\\"${{\\\\";
+            final String payload = "<a`'\\\"${{\\\\";
 
 
             IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload);
@@ -184,14 +183,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     continue;
                 }
 
-                lastAttack = paramGuess;
                 paramGuess = injector.buildAttack(candidate, false);
 
                 if (!Utilities.similar(base, paramGuess)) {
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
                     failAttack = injector.buildAttack(candidate + "z", false);
                     base.addAttack(failAttack);
-                    lastAttack = failAttack;
                     if (!Utilities.similar(base, confirmParamGuess)) {
                         Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
                         validParam.setEscapeStrings(candidate+Utilities.randomString(3), candidate+Utilities.randomString(2));
@@ -211,24 +208,22 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
 
-                // fixme thinks reflection is persistent
-                if (lastAttack != null) {
-                    byte[] failResp = lastAttack.getFirstRequest().getResponse();
-                    for (int k = 1; k < i && k<4; k++) {
-                        String lastPayload = params.get(i - k);
-                        lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
-                        if (reportedInputs.contains(lastPayload)) {
-                            continue;
-                        }
-                        Utilities.out("Checking index -"+k+" for "+lastPayload+marker);
-                        if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(lastPayload + marker), false, 1, failResp.length - 1) != -1) {
-                            Utilities.out(targetURL + " identified persistent parameter: " + lastPayload);
-                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), lastAttack.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + lastPayload + marker + " in the response", "High", "Firm", "Investigate"));
-                            base = getBaselineAttack(injector); // re-benchmark
-                            reportedInputs.add(lastPayload);
-                        }
+                byte[] failResp = paramGuess.getFirstRequest().getResponse();
+                for (int k = 1; k < i && k<4; k++) {
+                    String lastPayload = params.get(i - k);
+                    String canary = Utilities.mangle(lastPayload);
+                    lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
+                    if (reportedInputs.contains(lastPayload)) {
+                        continue;
+                    }
+                    if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
+                        Utilities.out(targetURL + " identified persistent parameter: " + lastPayload);
+                        Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + canary + " in the response", "High", "Firm", "Investigate"));
+                        base = getBaselineAttack(injector); // re-benchmark
+                        reportedInputs.add(lastPayload);
                     }
                 }
+
 
 
             }

@@ -65,11 +65,11 @@ class Utilities {
         return sb.toString();
     }
 
-    static String randomString(int len, String seed) {
+    static String mangle(String seed) {
         Random seededRandom = new Random(seed.hashCode());
-        StringBuilder sb = new StringBuilder(len);
+        StringBuilder sb = new StringBuilder(7);
         sb.append(START_CHARSET.charAt(seededRandom.nextInt(START_CHARSET.length())));
-        for (int i = 1; i < len; i++)
+        for (int i = 1; i < 5; i++)
             sb.append(CHARSET.charAt(seededRandom.nextInt(CHARSET.length())));
         return sb.toString();
     }
