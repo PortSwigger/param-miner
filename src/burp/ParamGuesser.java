@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.PrintStream;
 import java.util.*;
 
 /**
@@ -159,17 +160,23 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         if (params.size() > 0) {
             Utilities.out("Loaded "+params.size() +" params from response JSON");
         }
-        params.addAll(Utilities.paramNames);
+        //params.addAll(Utilities.paramNames);
 
         try {
-            final String payload = "qn<a`'\\\"${{\\\\";
+            final String marker = "qze";
+            final String payload = marker+"<a`'\\\"${{\\\\";
+
 
             IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload);
 
             PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
             Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
+            HashSet<String> reportedInputs = new HashSet<>();
             Attack base = getBaselineAttack(injector);
+            Attack paramGuess = null;
+            Attack lastAttack;
+            Attack failAttack;
 
             for (int i = 0; i < 100; i++) { // params.size()
                 String candidate = params.get(i);
@@ -177,16 +184,17 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     continue;
                 }
 
-                Attack paramGuess = injector.buildAttack(candidate, false);
+                lastAttack = paramGuess;
+                paramGuess = injector.buildAttack(candidate, false);
 
                 if (!Utilities.similar(base, paramGuess)) {
-                    //Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest()); // rest to base
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
-                    Attack failAttack = injector.buildAttack(candidate + "z", false);
+                    failAttack = injector.buildAttack(candidate + "z", false);
                     base.addAttack(failAttack);
+                    lastAttack = failAttack;
                     if (!Utilities.similar(base, confirmParamGuess)) {
                         Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
-                        validParam.setEscapeStrings(Utilities.randomString(candidate.length()), candidate + "z");
+                        validParam.setEscapeStrings(candidate+Utilities.randomString(3), candidate+Utilities.randomString(2));
                         validParam.setRandomAnchor(false);
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
@@ -198,19 +206,30 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             Utilities.out(targetURL+" failed to confirm: "+candidate);
                         }
                     } else {
-                        // we can use stored input reflection - the input is rejected, the other technique will work
-                        byte[] failResp = failAttack.getFirstRequest().getResponse();
-                        if(Utilities.getMatches(failResp, Utilities.helpers.stringToBytes(candidate+"qn"), failResp.length).size() > 0) {
-                            Utilities.out(targetURL+" identified persistent parameter: " + candidate);
-                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), failAttack.getFirstRequest(), "Persistent param: "+candidate, "Look for "+candidate+"qn in the response", "High", "Firm", "Investigate"));
-                            base = getBaselineAttack(injector); // re-benchmark
+                        Utilities.out(targetURL + " couldn't replicate: " + candidate);
+                        base.addAttack(paramGuess);
+                    }
+                }
+
+                // fixme thinks reflection is persistent
+                if (lastAttack != null) {
+                    byte[] failResp = lastAttack.getFirstRequest().getResponse();
+                    for (int k = 1; k < i && k<4; k++) {
+                        String lastPayload = params.get(i - k);
+                        lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
+                        if (reportedInputs.contains(lastPayload)) {
+                            continue;
                         }
-                        else {
-                            Utilities.out(targetURL + " couldn't replicate: " + candidate);
-                            base.addAttack(paramGuess);
+                        Utilities.out("Checking index -"+k+" for "+lastPayload+marker);
+                        if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(lastPayload + marker), false, 1, failResp.length - 1) != -1) {
+                            Utilities.out(targetURL + " identified persistent parameter: " + lastPayload);
+                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), lastAttack.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + lastPayload + marker + " in the response", "High", "Firm", "Investigate"));
+                            base = getBaselineAttack(injector); // re-benchmark
+                            reportedInputs.add(lastPayload);
                         }
                     }
                 }
+
 
             }
             Utilities.out("Parameter name bruteforce complete: "+targetURL);
@@ -219,8 +238,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         catch (RuntimeException e) {
             Utilities.out("Parameter name bruteforce aborted: "+targetURL);
             e.printStackTrace();
+            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
             Utilities.out(e.getMessage());
-            Utilities.out(e.getStackTrace()[0].toString());
+            return attacks;
         }
 
         return attacks;

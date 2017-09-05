@@ -65,6 +65,15 @@ class Utilities {
         return sb.toString();
     }
 
+    static String randomString(int len, String seed) {
+        Random seededRandom = new Random(seed.hashCode());
+        StringBuilder sb = new StringBuilder(len);
+        sb.append(START_CHARSET.charAt(seededRandom.nextInt(START_CHARSET.length())));
+        for (int i = 1; i < len; i++)
+            sb.append(CHARSET.charAt(seededRandom.nextInt(CHARSET.length())));
+        return sb.toString();
+    }
+
     static void out(String message) {
         stdout.println(message);
     }
@@ -204,6 +213,7 @@ class Utilities {
         }
 
         int start = 0;
+        Utilities.out("#"+response.length);
         while (start < response.length) {
             start = helpers.indexOf(response, match, true, start, response.length);
             if (start == -1)
