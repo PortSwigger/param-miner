@@ -409,24 +409,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         baseInput = Utilities.helpers.bytesToString(body);
     }
 
-    private int parseArrayIndex(String key) {
-        try {
-            if (key.length() > 2 && key.startsWith("[") && key.endsWith("]")) {
-                return Integer.parseInt(key.substring(1, key.length() - 1));
-            }
-        }
-        catch (NumberFormatException e) {
-
-        }
-        return -1;
-    }
-
     private Object makeNode(ArrayList<String> keys, int i, String unparsed) {
         if (i+1 == keys.size()) {
             return Utilities.mangle(unparsed) + value;
         }
-        else if (parseArrayIndex(keys.get(i+1)) != -1) {
-            return new ArrayList(parseArrayIndex(keys.get(i+1)));
+        else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
+            return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
         }
         else {
             return new HashMap();
@@ -440,7 +428,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
             HashMap base = new ObjectMapper().readValue(baseInput, HashMap.class);
             String unparsed = Utilities.helpers.bytesToString(payload);
             ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
-            // Utilities.out(unparsed);
+            Utilities.out(unparsed);
 
             HashMap resultMap = new HashMap();
             resultMap.putAll(base);
@@ -451,7 +439,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 String key = keys.get(i);
                 boolean setValue = i+1 == keys.size();
 
-                int index = parseArrayIndex(key);
+                int index = Utilities.parseArrayIndex(key);
                 if (index != -1) {
                     ArrayList injectionPoint = (ArrayList) next;
                     if (injectionPoint.size() < index+1) {

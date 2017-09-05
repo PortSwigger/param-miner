@@ -145,6 +145,27 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return found;
     }
 
+    static String getKey(String param) {
+        String[] keys = param.split(":");
+        for (int i=keys.length-1; i>=0; i--) {
+            if (Utilities.parseArrayIndex(keys[i]) == -1) {
+                return keys[i];
+            }
+        }
+        return param;
+    }
+
+    static String permute(String param) {
+        String[] keys = param.split(":");
+        for (int i=keys.length-1; i>=0; i--) {
+            if (Utilities.parseArrayIndex(keys[i]) == -1) {
+                keys[i] += Utilities.randomString(3);
+                break;
+            }
+        }
+        return String.join(":", keys);
+    }
+
     static ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
@@ -158,6 +179,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 witnessedParams.add(param.getName());
             }
         }
+
+
 
         ArrayList<String> params = getParamsFromResponse(baseRequestResponse, witnessedParams);
         if (params.size() > 0) {
@@ -179,9 +202,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack paramGuess;
             Attack failAttack;
 
-            for (int i = 0; i < 100 && i<params.size(); i++) { // params.size()
+            for (int i = 0; i < 500 && i<params.size(); i++) { // params.size()
                 String candidate = params.get(i);
-                if (witnessedParams.contains(candidate)) {
+                String finalKey = getKey(candidate);
+                Utilities.out("Final key: "+finalKey);
+                if (witnessedParams.contains(candidate) ||
+                        witnessedParams.contains(finalKey)) {
                     continue;
                 }
 
@@ -189,7 +215,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 if (!Utilities.similar(base, paramGuess)) {
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
-                    failAttack = injector.buildAttack(candidate + "z", false);
+                    failAttack = injector.buildAttack(permute(candidate), false);
 
                     // this to prevent error messages obscuring persistent inputs
                     findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i);
@@ -197,7 +223,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     base.addAttack(failAttack);
                     if (!Utilities.similar(base, confirmParamGuess)) {
                         Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
-                        validParam.setEscapeStrings(candidate+Utilities.randomString(3), candidate+Utilities.randomString(2));
+                        validParam.setEscapeStrings(permute(candidate), permute(candidate));
                         validParam.setRandomAnchor(false);
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);

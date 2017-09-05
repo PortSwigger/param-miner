@@ -116,6 +116,18 @@ class Utilities {
         return url;
     }
 
+    static int parseArrayIndex(String key) {
+        try {
+            if (key.length() > 2 && key.startsWith("[") && key.endsWith("]")) {
+                return Integer.parseInt(key.substring(1, key.length() - 1));
+            }
+        }
+        catch (NumberFormatException e) {
+
+        }
+        return -1;
+    }
+
 
     static boolean mightBeOrderBy(String name, String value) {
         return (name.toLowerCase().contains("order") ||
