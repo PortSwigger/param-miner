@@ -408,8 +408,20 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         baseInput = Utilities.helpers.bytesToString(body);
     }
 
+    private int parseArrayIndex(String key) {
+        try {
+            if (key.length() > 2 && key.startsWith("[") && key.endsWith("]")) {
+                return Integer.parseInt(key.substring(1, key.length() - 1));
+            }
+        }
+        catch (NumberFormatException e) {
+
+        }
+        return -1;
+    }
+
     private Object makeNode(String nextKey) {
-        if (nextKey.matches("\\d+")) {
+        if (parseArrayIndex(nextKey) != -1) {
             return new Object[1];
         }
         else {
@@ -440,8 +452,8 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 String key = keys.get(i);
                 String nextKey = keys.get(i + 1);
 
-                if (key.matches("\\d+")) {
-                    int index = Integer.parseInt(key);
+                int index = parseArrayIndex(key);
+                if (index != -1) {
                     ArrayList injectionPoint = (ArrayList) next;
                     if (injectionPoint.get(index) == null) {
                         injectionPoint.set(index, makeNode(nextKey));

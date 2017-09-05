@@ -70,7 +70,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
 
-        // todo handle arrays
         if (json.isJsonObject()) {
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
                 if (witnessedParams.containsKey(entry.getKey())) {
@@ -90,7 +89,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             JsonArray hm = json.getAsJsonArray();
             int i = 0;
             for (JsonElement x: hm) {
-                keys.addAll(getAllKeys(x, prefix + ":" + Integer.toString(i++), witnessedParams));
+                keys.addAll(getAllKeys(x, prefix + ":[" + Integer.toString(i++)+"]", witnessedParams));
             }
         }
 
