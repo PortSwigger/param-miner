@@ -98,7 +98,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             if (prefix.startsWith(":")) {
                 prefix = prefix.substring(1);
             }
-            Utilities.out(prefix);
+            // Utilities.out(prefix);
             keys.add(prefix);
         }
 
@@ -107,6 +107,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     static ArrayList<String> getParamsFromResponse(IHttpRequestResponse baseRequestResponse, HashSet<String> witnessedParams) {
+        if (baseRequestResponse.getResponse() == null) {
+            Utilities.out("No baserequest has no response - fetching...");
+            baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
+        }
         String body = Utilities.getBody(baseRequestResponse.getResponse());
 
 
