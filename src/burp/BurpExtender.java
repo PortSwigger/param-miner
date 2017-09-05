@@ -6,6 +6,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.*;
@@ -420,9 +421,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         return -1;
     }
 
-    private Object makeNode(String nextKey) {
-        if (parseArrayIndex(nextKey) != -1) {
-            return new ArrayList(1);
+    private Object makeNode(ArrayList<String> keys, int i, String unparsed) {
+        if (i+1 == keys.size()) {
+            return Utilities.mangle(unparsed) + value;
+        }
+        else if (parseArrayIndex(keys.get(i+1)) != -1) {
+            return new ArrayList(parseArrayIndex(keys.get(i+1)));
         }
         else {
             return new HashMap();
@@ -436,53 +440,40 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
             HashMap base = new ObjectMapper().readValue(baseInput, HashMap.class);
             String unparsed = Utilities.helpers.bytesToString(payload);
             ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
-            String finalKey = keys.get(keys.size()-1);
+            // Utilities.out(unparsed);
 
             HashMap resultMap = new HashMap();
             resultMap.putAll(base);
             Object next = resultMap;
 
-            Utilities.out(unparsed);
-            for (int i = 0; i < keys.size() - 1; i++) {
+            for (int i = 0; i < keys.size(); i++) {
 
                 String key = keys.get(i);
-                String nextKey = keys.get(i + 1);
+                boolean setValue = i+1 == keys.size();
 
                 int index = parseArrayIndex(key);
                 if (index != -1) {
                     ArrayList injectionPoint = (ArrayList) next;
-                    if (injectionPoint.get(index) == null) {
-                        injectionPoint.set(index, makeNode(nextKey));
+                    if (injectionPoint.size() < index+1) {
+                        for(int k=injectionPoint.size(); k<index; k++) {
+                            injectionPoint.add(Utilities.generateCanary());
+                        }
+                        injectionPoint.add(makeNode(keys, i, unparsed));
+                    }
+                    else if (injectionPoint.get(index) == null || setValue) {
+                        injectionPoint.set(index, makeNode(keys, i, unparsed));
                     }
                     next = injectionPoint.get(index);
                 } else {
                     HashMap injectionPoint = (HashMap) next;
-                    if (!injectionPoint.containsKey(key)) {
-                        injectionPoint.put(key, makeNode(nextKey));
+                    if (!injectionPoint.containsKey(key) || setValue) {
+                        injectionPoint.put(key, makeNode(keys, i, unparsed));
                     }
                     next = injectionPoint.get(key);
                 }
             }
 
-            String breaker = Utilities.mangle(unparsed) + value;
-            int index = parseArrayIndex(finalKey);
-            if (index != -1 ) {
-                ArrayList injectionPoint = (ArrayList) next;
-                if (injectionPoint.isEmpty()) { // todo pad to correct index
-                    injectionPoint.add(breaker);
-                }
-                else {
-                    injectionPoint.set(index, breaker);
-                }
-            }
-            else {
-                HashMap<String, String> ohdear = (HashMap) next;
-                ohdear.put(finalKey, breaker);
-            }
-
-            //String mergedJson = new GsonBuilder().create().toJson(resultMap);
             String mergedJson = new ObjectMapper().writeValueAsString(resultMap);
-            //Utilities.out(mergedJson);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
@@ -491,6 +482,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
         }
         catch (Exception e) {
+            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
             throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
         }
     }

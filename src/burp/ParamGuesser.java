@@ -172,17 +172,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
             HashSet<String> reportedInputs = new HashSet<>();
             Attack base = getBaselineAttack(injector);
-            Attack paramGuess = null;
-            Attack lastAttack;
+            Attack paramGuess;
             Attack failAttack;
 
             for (int i = 0; i < 100 && i<params.size(); i++) { // params.size()
                 String candidate = params.get(i);
                 if (witnessedParams.contains(candidate)) {
-                    continue;
-                }
-
-                if (!candidate.contains("[")) {
                     continue;
                 }
 
