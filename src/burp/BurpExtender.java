@@ -422,7 +422,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
     private Object makeNode(String nextKey) {
         if (parseArrayIndex(nextKey) != -1) {
-            return new Object[1];
+            return new ArrayList(1);
         }
         else {
             return new HashMap();
@@ -433,20 +433,16 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
         try {
-            //HashMap base = new GsonBuilder().create().fromJson(baseInput, HashMap.class);
-
             HashMap base = new ObjectMapper().readValue(baseInput, HashMap.class);
             String unparsed = Utilities.helpers.bytesToString(payload);
             ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
             String finalKey = keys.get(keys.size()-1);
-            //keys.remove(finalKey);
-            //keys.remove("");
 
             HashMap resultMap = new HashMap();
             resultMap.putAll(base);
             Object next = resultMap;
 
-
+            Utilities.out(unparsed);
             for (int i = 0; i < keys.size() - 1; i++) {
 
                 String key = keys.get(i);
@@ -467,8 +463,22 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                     next = injectionPoint.get(key);
                 }
             }
-            HashMap<String, String> ohdear = (HashMap) next;
-            ohdear.put(finalKey, Utilities.mangle(unparsed) + value);
+
+            String breaker = Utilities.mangle(unparsed) + value;
+            int index = parseArrayIndex(finalKey);
+            if (index != -1 ) {
+                ArrayList injectionPoint = (ArrayList) next;
+                if (injectionPoint.isEmpty()) { // todo pad to correct index
+                    injectionPoint.add(breaker);
+                }
+                else {
+                    injectionPoint.set(index, breaker);
+                }
+            }
+            else {
+                HashMap<String, String> ohdear = (HashMap) next;
+                ohdear.put(finalKey, breaker);
+            }
 
             //String mergedJson = new GsonBuilder().create().toJson(resultMap);
             String mergedJson = new ObjectMapper().writeValueAsString(resultMap);

@@ -176,9 +176,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack lastAttack;
             Attack failAttack;
 
-            for (int i = 0; i < 100; i++) { // params.size()
+            for (int i = 0; i < 100 && i<params.size(); i++) { // params.size()
                 String candidate = params.get(i);
                 if (witnessedParams.contains(candidate)) {
+                    continue;
+                }
+
+                if (!candidate.contains("[")) {
                     continue;
                 }
 
@@ -187,6 +191,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 if (!Utilities.similar(base, paramGuess)) {
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
                     failAttack = injector.buildAttack(candidate + "z", false);
+
+                    // this to prevent error messages obscuring persistent inputs
+                    findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i);
+
                     base.addAttack(failAttack);
                     if (!Utilities.similar(base, confirmParamGuess)) {
                         Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
@@ -207,20 +215,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
 
-                byte[] failResp = paramGuess.getFirstRequest().getResponse();
-                for (int k = 1; k < i && k<4; k++) {
-                    String lastPayload = params.get(i - k);
-                    String canary = Utilities.mangle(lastPayload);
-                    lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
-                    if (reportedInputs.contains(lastPayload)) {
-                        continue;
-                    }
-                    if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
-                        Utilities.out(targetURL + " identified persistent parameter: " + lastPayload);
-                        Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + canary + " in the response", "High", "Firm", "Investigate"));
-                        base = getBaselineAttack(injector); // re-benchmark
-                        reportedInputs.add(lastPayload);
-                    }
+                if (findPersistent(baseRequestResponse, targetURL, params, reportedInputs, paramGuess, i)) {
+                    base = getBaselineAttack(injector);
                 }
 
 
@@ -238,6 +234,25 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         return attacks;
+    }
+
+    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, String targetURL, ArrayList<String> params, HashSet<String> reportedInputs, Attack paramGuess, int i) {
+        byte[] failResp = paramGuess.getFirstRequest().getResponse();
+        for (int k = 1; k < i && k<4; k++) {
+            String lastPayload = params.get(i - k);
+            String canary = Utilities.mangle(lastPayload);
+            lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
+            if (reportedInputs.contains(lastPayload)) {
+                continue;
+            }
+            if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
+                Utilities.out(targetURL + " identified persistent parameter: " + lastPayload);
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + canary + " in the response", "High", "Firm", "Investigate"));
+                reportedInputs.add(lastPayload);
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Attack getBaselineAttack(PayloadInjector injector) {
