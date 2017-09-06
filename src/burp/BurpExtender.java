@@ -70,6 +70,29 @@ public class BurpExtender implements IBurpExtender {
 
 }
 
+class HarvestClues implements  IScannerCheck {
+
+    @Override
+    public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+        return new ArrayList<>();
+
+    }
+
+    @Override
+    public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
+
+
+        return new ArrayList<>();
+    }
+
+    @Override
+    public int consolidateDuplicateIssues(IScanIssue existingIssue, IScanIssue newIssue) {
+        if (existingIssue.getIssueName().equals(newIssue.getIssueName()) && existingIssue.getIssueDetail().equals(newIssue.getIssueDetail()))
+            return -1;
+        else return 0;
+    }
+}
+
 class FastScan implements IScannerCheck, IExtensionStateListener {
     private TransformationScan transformationScan;
     private DiffingScan diffingScan;
