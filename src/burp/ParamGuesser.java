@@ -89,6 +89,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     static ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
+        if (baseRequestResponse.getResponse() == null) {
+            Utilities.out("Baserequest has no response - fetching...");
+            baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
+        }
+
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
 
@@ -105,11 +110,17 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         // todo get all seen responses (&requests, later)
         // sort by number of matched keys
         // response >  seen w/link > seen > wordlist
+        JsonParser parser = new JsonParser();
+        ArrayList<String> rawRequestParams = Json.getAllKeys(parser.parse(Utilities.getBody(baseRequestResponse.getRequest())), "", new HashMap<String, String>());
+        String body = Utilities.getBody(baseRequestResponse.getResponse());
 
-        ArrayList<String> params = Json.getParamsFromResponse(baseRequestResponse, witnessedParams);
+        // for each saved response...
+        ArrayList<String> params = Json.getLinkedParams(body, rawRequestParams, witnessedParams);
+
         if (params.size() > 0) {
             Utilities.out("Loaded "+params.size() +" params from response JSON");
         }
+
         //params.addAll(Utilities.paramNames);
 
         try {
