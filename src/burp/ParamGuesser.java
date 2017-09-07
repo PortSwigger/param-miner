@@ -1,7 +1,7 @@
 package burp;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import javax.swing.*;
@@ -18,8 +18,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     private IHttpRequestResponse req;
     private boolean backend;
     private byte type;
+    private ParamGrabber paramGrabber;
 
-    public ParamGuesser(IHttpRequestResponse req, boolean backend, byte type) {
+    public ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber) {
+        this.paramGrabber = paramGrabber;
         this.req = req;
         this.backend = backend;
         this.type = type;
@@ -88,7 +90,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return String.join(":", keys);
     }
 
-    static ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
+    ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
         if (baseRequestResponse.getResponse() == null) {
             Utilities.out("Baserequest has no response - fetching...");
             baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
@@ -99,6 +101,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         IRequestInfo info = Utilities.helpers.analyzeRequest(baseRequestResponse.getRequest());
         List<IParameter> currentParams = info.getParameters();
+        ArrayList<String> params = new ArrayList<>();
 
         HashSet<String> witnessedParams = new HashSet<>();
         for (IParameter param : currentParams) {
@@ -108,17 +111,31 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         // todo get all seen responses (&requests, later)
-        // sort by number of matched keys
-        // response >  seen w/link > seen > wordlist
-        JsonParser parser = new JsonParser();
-        ArrayList<String> rawRequestParams = Json.getAllKeys(parser.parse(Utilities.getBody(baseRequestResponse.getRequest())), "", new HashMap<String, String>());
-        String body = Utilities.getBody(baseRequestResponse.getResponse());
+        try {
+            // calculate request parameters
+            ArrayList<String> rawRequestParams = Json.getAllKeys(new JsonParser().parse(Utilities.getBody(baseRequestResponse.getRequest())), "", new HashMap<>());
+            HashMap<String, String> requestParams = new HashMap<>();
+            for (String entry: rawRequestParams) { // todo give precedence to shallower keys
+                String[] parsed = Json.parseKey(entry);
+                requestParams.putIfAbsent(parsed[1], parsed[0]);
+                witnessedParams.add(parsed[1]);
+                witnessedParams.add(parsed[0]);
+            }
 
-        // for each saved response...
-        ArrayList<String> params = Json.getLinkedParams(body, rawRequestParams, witnessedParams);
+            // todo add the current response
+            // todo sort by matched key count: response >  seen w/link > seen > wordlist
+            for (JsonElement resp: paramGrabber.getSaved()) {
+                ArrayList<String> keys = Json.getAllKeys(resp, "", requestParams);
+                params.addAll(keys);
+            }
 
-        if (params.size() > 0) {
-            Utilities.out("Loaded "+params.size() +" params from response JSON");
+
+            if (params.size() > 0) {
+                Utilities.out("Loaded " + params.size() + " params from response JSON");
+            }
+        }
+        catch (JsonParseException e) {
+
         }
 
         //params.addAll(Utilities.paramNames);
@@ -140,7 +157,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             for (int i = 0; i < 500 && i<params.size(); i++) { // params.size()
                 String candidate = params.get(i);
                 String finalKey = getKey(candidate);
-                Utilities.out("Final key: "+finalKey);
                 if (witnessedParams.contains(candidate) ||
                         witnessedParams.contains(finalKey)) {
                     continue;
@@ -278,9 +294,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
 class OfferParamGuess implements IContextMenuFactory {
     private IBurpExtenderCallbacks callbacks;
+    private ParamGrabber paramGrabber;
 
-    public OfferParamGuess(final IBurpExtenderCallbacks callbacks) {
+    public OfferParamGuess(final IBurpExtenderCallbacks callbacks, ParamGrabber paramGrabber) {
         this.callbacks = callbacks;
+        this.paramGrabber = paramGrabber;
     }
 
     @Override
@@ -288,7 +306,7 @@ class OfferParamGuess implements IContextMenuFactory {
         IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
         List<JMenuItem> options = new ArrayList<>();
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
-        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL));
+        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber));
         options.add(probeButton);
 
         if (reqs.length == 1) {
@@ -296,7 +314,7 @@ class OfferParamGuess implements IContextMenuFactory {
             byte[] resp = req.getRequest();
             if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
                 JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
-                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL));
+                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber));
                 options.add(backendProbeButton);
             }
 
@@ -338,7 +356,7 @@ class OfferParamGuess implements IContextMenuFactory {
                     }
 
                     JMenuItem postProbeButton = new JMenuItem("Guess " + humanType + " parameter");
-                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type));
+                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber));
                     options.add(postProbeButton);
                 }
             }
@@ -352,8 +370,10 @@ class TriggerParamGuesser implements ActionListener {
     private IHttpRequestResponse[] reqs;
     private boolean backend;
     private byte type;
+    private ParamGrabber paramGrabber;
 
-    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type) {
+    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber) {
+        this.paramGrabber = paramGrabber;
         this.backend = backend;
         this.reqs = reqs;
         this.type = type;
@@ -361,7 +381,7 @@ class TriggerParamGuesser implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         for (IHttpRequestResponse req: reqs) {
-            Runnable runnable = new ParamGuesser(req, backend, type);
+            Runnable runnable = new ParamGuesser(req, backend, type, paramGrabber);
             (new Thread(runnable)).start();
         }
     }

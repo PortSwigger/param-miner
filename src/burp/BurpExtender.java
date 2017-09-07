@@ -1,27 +1,16 @@
 package burp;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
-import com.google.gson.internal.LinkedTreeMap;
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.swing.*;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
@@ -51,7 +40,10 @@ public class BurpExtender implements IBurpExtender {
         FastScan scan = new FastScan(callbacks);
         callbacks.registerScannerCheck(scan);
         callbacks.registerExtensionStateListener(scan);
-        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks));
+
+        ParamGrabber paramGrabber = new ParamGrabber();
+        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber));
+        callbacks.registerScannerCheck(paramGrabber);
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("Debug mode: " + Utilities.DEBUG);
@@ -70,17 +62,41 @@ public class BurpExtender implements IBurpExtender {
 
 }
 
-class HarvestClues implements  IScannerCheck {
+class ParamGrabber implements  IScannerCheck {
+
+    public HashSet<JsonElement> getSaved() {
+        return saved;
+    }
+
+    HashSet<JsonElement> saved;
+    HashSet<ArrayList<String>> done;
+
+    ParamGrabber() {
+        saved = new HashSet<>();
+        done = new HashSet<>();
+    }
 
     @Override
     public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         return new ArrayList<>();
-
     }
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
+        String body = Utilities.getBody(baseRequestResponse.getResponse());
+        try {
+            JsonParser parser = new JsonParser();
+            JsonElement json = parser.parse(body);
+            ArrayList<String> keys = Json.getAllKeys(json, "", new HashMap<>());
+            if (!done.contains(keys)) {
+                Utilities.out("Importing observed data...");
+                done.add(keys);
+                saved.add(json);
+            }
+        }
+        catch (JsonParseException e) {
 
+        }
 
         return new ArrayList<>();
     }

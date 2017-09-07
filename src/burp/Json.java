@@ -14,6 +14,30 @@ import java.util.Map;
  */
 public class Json {
 
+    /*static ArrayList<String> justGetKeys(String json) {
+        JsonParser parser = new JsonParser();
+        parser.parse(json);
+        return getAllKeys(parser.parse(json), "", new HashMap<>());
+    }
+
+    static ArrayList<String> remapKeys(ArrayList<String> keys, ArrayList<String> rawRequestParams) {
+        HashMap<String, String> requestParams = new HashMap<>();
+
+        // todo give precedence to shallower keys
+        for (String entry: rawRequestParams) {
+            String[] parsed = parseKey(entry);
+            for (String key: keys) {
+        //        key.replace(parsed)
+            }
+            requestParams.putIfAbsent(parsed[1], parsed[0]);
+        }
+
+
+        for (String key: keys) {
+
+        }
+    }*/
+
     static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
 
@@ -75,21 +99,10 @@ public class Json {
 
 
 
-    static ArrayList<String> getLinkedParams(String body, ArrayList<String> rawRequestParams, HashSet<String> witnessedParams) {
+    static ArrayList<String> getLinkedParams(JsonElement json, HashMap<String, String> requestParams) {
         ArrayList<String> found = new ArrayList<>();
         try {
-            JsonParser parser = new JsonParser();
-            HashMap<String, String> requestParams = new HashMap<>();
-
-            // todo give precedence to shallower keys
-            for (String entry: rawRequestParams) {
-                String[] parsed = parseKey(entry);
-                requestParams.putIfAbsent(parsed[1], parsed[0]);
-                witnessedParams.add(parsed[1]);
-                witnessedParams.add(parsed[0]);
-            }
-
-            found = getAllKeys(parser.parse(body), "", requestParams);
+            found = getAllKeys(json, "", requestParams);
         }
         catch (Exception e) {
 
