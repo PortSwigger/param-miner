@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by james on 30/08/2017.
@@ -110,7 +111,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
         }
 
-        // todo get all seen responses (&requests, later)
+        // todo also use observed requests
         try {
             // calculate request parameters
             ArrayList<String> rawRequestParams = Json.getAllKeys(new JsonParser().parse(Utilities.getBody(baseRequestResponse.getRequest())), "", new HashMap<>());
@@ -129,16 +130,18 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 params.addAll(keys);
             }
 
-
             if (params.size() > 0) {
-                Utilities.out("Loaded " + params.size() + " params from response JSON");
+                Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response JSON");
             }
         }
         catch (JsonParseException e) {
 
         }
 
-        //params.addAll(Utilities.paramNames);
+        // params.addAll(Utilities.paramNames)
+
+        // de-dupe without losing the ordering, hopefully
+        params = new ArrayList<>(new LinkedHashSet<>(params));
 
         try {
             final String payload = "<a`'\\\"${{\\\\";
@@ -155,6 +158,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack failAttack;
 
             for (int i = 0; i < 500 && i<params.size(); i++) { // params.size()
+
                 String candidate = params.get(i);
                 String finalKey = getKey(candidate);
                 if (witnessedParams.contains(candidate) ||

@@ -84,18 +84,19 @@ class ParamGrabber implements  IScannerCheck {
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
         String body = Utilities.getBody(baseRequestResponse.getResponse());
-        try {
-            JsonParser parser = new JsonParser();
-            JsonElement json = parser.parse(body);
-            ArrayList<String> keys = Json.getAllKeys(json, "", new HashMap<>());
-            if (!done.contains(keys)) {
-                Utilities.out("Importing observed data...");
-                done.add(keys);
-                saved.add(json);
-            }
-        }
-        catch (JsonParseException e) {
+        if (!body.equals("")) {
+            try {
+                JsonParser parser = new JsonParser();
+                JsonElement json = parser.parse(body);
+                ArrayList<String> keys = Json.getAllKeys(json, "", new HashMap<>());
+                if (!done.contains(keys)) {
+                    Utilities.out("Importing observed data...");
+                    done.add(keys);
+                    saved.add(json);
+                }
+            } catch (JsonParseException e) {
 
+            }
         }
 
         return new ArrayList<>();
