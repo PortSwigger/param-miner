@@ -2,6 +2,7 @@ package burp;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
@@ -14,13 +15,26 @@ import java.util.Map;
  */
 public class Json {
 
-    static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
+    static ArrayList<String> getAllKeys(JsonElement json, HashMap<String, String> witnessedParams){
+        try {
+            return getAllKeys(json, "", witnessedParams);
+        }
+        catch (JsonParseException e) {
+            return new ArrayList<>();
+        }
+    }
+
+    static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
+        return getAllKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
+    }
+
+    private static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
 
         if (json.isJsonObject()) {
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
                 if (witnessedParams.containsKey(entry.getKey())) {
-                    Utilities.out("Recognised '"+entry.getKey()+"', replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
+                    // Utilities.out("Recognised '"+entry.getKey()+"', replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
                     prefix = witnessedParams.get(entry.getKey());
                     break;
                 }

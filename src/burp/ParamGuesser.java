@@ -112,76 +112,68 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         // todo also use observed requests
-        try {
-            // calculate request parameters
-            ArrayList<String> rawRequestParams = Json.getAllKeys(new JsonParser().parse(Utilities.getBody(baseRequestResponse.getRequest())), "", new HashMap<>());
-            HashMap<String, String> requestParams = new HashMap<>();
-            for (String entry: rawRequestParams) { // todo give precedence to shallower keys
-                String[] parsed = Json.parseKey(entry);
-                requestParams.putIfAbsent(parsed[1], parsed[0]);
-                witnessedParams.add(parsed[1]);
-                witnessedParams.add(parsed[0]);
+
+        // calculate request parameters
+        ArrayList<String> rawRequestParams = Json.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>());
+        HashMap<String, String> requestParams = new HashMap<>();
+        for (String entry: rawRequestParams) { // todo give precedence to shallower keys
+            String[] parsed = Json.parseKey(entry);
+            requestParams.putIfAbsent(parsed[1], parsed[0]);
+            witnessedParams.add(parsed[1]);
+            witnessedParams.add(parsed[0]);
+        }
+
+       params.addAll(Json.getAllKeys(baseRequestResponse.getResponse(), requestParams));
+
+        HashMap<Integer, Set<String>> responses = new HashMap<>();
+        for (JsonElement resp: paramGrabber.getSaved()) {
+            HashSet<String> keys = new HashSet<>(Json.getAllKeys(resp, requestParams));
+            int matches = 0;
+            for (String requestKey: requestParams.keySet()) {
+                if (keys.contains(requestKey)) {
+                    matches++;
+                }
             }
 
-            try {
-                params.addAll(Json.getAllKeys(new JsonParser().parse(Utilities.getBody(baseRequestResponse.getResponse())), "", requestParams));
-            }
-            catch (JsonParseException e) {
-
-            }
-
-            HashMap<Integer, Set<String>> responses = new HashMap<>();
-            for (JsonElement resp: paramGrabber.getSaved()) {
-                HashSet<String> keys = new HashSet<>(Json.getAllKeys(resp, "", requestParams));
-                int matches = 0;
-                for (String requestKey: requestParams.keySet()) {
-                    if (keys.contains(requestKey)) {
-                        matches++;
+            // if there are no matches, don't bother with prefixes
+            // todo use root (or non-leaf) objects only
+            if(matches < 2) {
+                HashSet<String> filteredKeys = new HashSet<>();
+                for(String key: keys) {
+                    String lastKey = Json.parseKey(key)[1];
+                    if (Utilities.parseArrayIndex(lastKey) < 3) {
+                        filteredKeys.add(Json.parseKey(key)[1]);
                     }
                 }
-
-                // if there are no matches, don't bother with prefixes
-                // todo use root (or non-leaf) objects only
-                if(matches < 2) {
-                    HashSet<String> filteredKeys = new HashSet<>();
-                    for(String key: keys) {
-                        String lastKey = Json.parseKey(key)[1];
-                        if (Utilities.parseArrayIndex(lastKey) < 3) {
-                            filteredKeys.add(Json.parseKey(key)[1]);
-                        }
-                    }
-                    keys = filteredKeys;
-                }
-
-                Integer matchKey = matches;
-                if(responses.containsKey(matchKey)) {
-                    responses.get(matchKey).addAll(keys);
-                }
-                else {
-                    responses.put(matchKey, keys);
-                }
+                keys = filteredKeys;
             }
 
-
-            final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
-            sorted.addAll(responses.keySet());
-            for(Integer key: sorted) {
-                Utilities.out("Loading keys with "+key+" matches");
-                ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
-                sortedByLength.sort(new LengthCompare());
-                for (String i: sortedByLength) {
-                    Utilities.out(i);
-                }
-                params.addAll(sortedByLength);
+            Integer matchKey = matches;
+            if(responses.containsKey(matchKey)) {
+                responses.get(matchKey).addAll(keys);
             }
-
-            if (params.size() > 0) {
-                Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response JSON");
+            else {
+                responses.put(matchKey, keys);
             }
         }
-        catch (JsonParseException e) {
 
+
+        final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
+        sorted.addAll(responses.keySet());
+        for(Integer key: sorted) {
+            Utilities.out("Loading keys with "+key+" matches");
+            ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
+            sortedByLength.sort(new LengthCompare());
+            for (String i: sortedByLength) {
+                Utilities.out(i);
+            }
+            params.addAll(sortedByLength);
         }
+
+        if (params.size() > 0) {
+            Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response JSON");
+        }
+
 
         // params.addAll(Utilities.paramNames)
 
@@ -201,8 +193,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack base = getBaselineAttack(injector);
             Attack paramGuess;
             Attack failAttack;
+            int max = params.size();
 
-            for (int i = 0; i < 500 && i<params.size(); i++) { // params.size()
+            for (int i = 0; i<max; i++) {
 
                 String candidate = params.get(i);
                 //if(1==1) break;
@@ -239,6 +232,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     } else {
                         Utilities.out(targetURL + " couldn't replicate: " + candidate);
                         base.addAttack(paramGuess);
+                    }
+                }
+
+                for(String key: Json.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
+                    if (!params.contains(key) && (!Json.parseKey(key)[1].equals(candidate))) {
+                        Utilities.out("Found new key: "+key);
+                        params.add(i+1, key);
+                        max++;
                     }
                 }
 

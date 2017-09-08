@@ -88,7 +88,7 @@ class ParamGrabber implements  IScannerCheck {
             try {
                 JsonParser parser = new JsonParser();
                 JsonElement json = parser.parse(body);
-                ArrayList<String> keys = Json.getAllKeys(json, "", new HashMap<>());
+                ArrayList<String> keys = Json.getAllKeys(json, new HashMap<>());
                 if (!done.contains(keys)) {
                     Utilities.out("Importing observed data...");
                     done.add(keys);
