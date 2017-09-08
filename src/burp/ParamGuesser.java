@@ -123,11 +123,56 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 witnessedParams.add(parsed[0]);
             }
 
-            // todo add the current response
-            // todo sort by matched key count: response >  seen w/link > seen > wordlist
+            try {
+                params.addAll(Json.getAllKeys(new JsonParser().parse(Utilities.getBody(baseRequestResponse.getResponse())), "", requestParams));
+            }
+            catch (JsonParseException e) {
+
+            }
+
+            HashMap<Integer, Set<String>> responses = new HashMap<>();
             for (JsonElement resp: paramGrabber.getSaved()) {
-                ArrayList<String> keys = Json.getAllKeys(resp, "", requestParams);
-                params.addAll(keys);
+                HashSet<String> keys = new HashSet<>(Json.getAllKeys(resp, "", requestParams));
+                int matches = 0;
+                for (String requestKey: requestParams.keySet()) {
+                    if (keys.contains(requestKey)) {
+                        matches++;
+                    }
+                }
+
+                // if there are no matches, don't bother with prefixes
+                // todo use root (or non-leaf) objects only
+                if(matches < 2) {
+                    HashSet<String> filteredKeys = new HashSet<>();
+                    for(String key: keys) {
+                        String lastKey = Json.parseKey(key)[1];
+                        if (Utilities.parseArrayIndex(lastKey) < 3) {
+                            filteredKeys.add(Json.parseKey(key)[1]);
+                        }
+                    }
+                    keys = filteredKeys;
+                }
+
+                Integer matchKey = matches;
+                if(responses.containsKey(matchKey)) {
+                    responses.get(matchKey).addAll(keys);
+                }
+                else {
+                    responses.put(matchKey, keys);
+                }
+            }
+
+
+            final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
+            sorted.addAll(responses.keySet());
+            for(Integer key: sorted) {
+                Utilities.out("Loading keys with "+key+" matches");
+                ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
+                sortedByLength.sort(new LengthCompare());
+                for (String i: sortedByLength) {
+                    Utilities.out(i);
+                }
+                params.addAll(sortedByLength);
             }
 
             if (params.size() > 0) {
@@ -160,6 +205,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             for (int i = 0; i < 500 && i<params.size(); i++) { // params.size()
 
                 String candidate = params.get(i);
+                //if(1==1) break;
+
                 String finalKey = getKey(candidate);
                 if (witnessedParams.contains(candidate) ||
                         witnessedParams.contains(finalKey)) {
@@ -367,6 +414,12 @@ class OfferParamGuess implements IContextMenuFactory {
         }
 
         return options;
+    }
+}
+
+class LengthCompare implements Comparator<String> {
+    public int compare(String o1, String o2) {
+        return Integer.compare(o1.length(), o2.length());
     }
 }
 

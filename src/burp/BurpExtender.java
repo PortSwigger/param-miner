@@ -440,6 +440,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     byte[] headers;
     byte[] body;
     String baseInput;
+    JsonElement root;
 
     public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
         super(request, name, value, type); // Utilities.encodeJSON(value)
@@ -447,6 +448,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
         baseInput = Utilities.helpers.bytesToString(body);
+        root = new JsonParser().parse(baseInput);
     }
 
     private Object makeNode(ArrayList<String> keys, int i, String unparsed) {
@@ -465,15 +467,30 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
         try {
-            HashMap base = new ObjectMapper().readValue(baseInput, HashMap.class);
             String unparsed = Utilities.helpers.bytesToString(payload);
             ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
             Utilities.out(unparsed);
 
-            HashMap resultMap = new HashMap();
-            resultMap.putAll(base);
-            Object next = resultMap;
+            boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
+            Object base;
+            if (isArray) {
+                if (root.isJsonArray()) {
+                    base = new ObjectMapper().readValue(baseInput, ArrayList.class);
+                }
+                else {
+                    base = new ArrayList();
+                }
+            }
+            else {
+                if(root.isJsonObject()) {
+                    base = new ObjectMapper().readValue(baseInput, HashMap.class);
+                }
+                else {
+                    base = new HashMap();
+                }
+            }
 
+            Object next = base;
             for (int i = 0; i < keys.size(); i++) {
 
                 String key = keys.get(i);
@@ -501,7 +518,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 }
             }
 
-            String mergedJson = new ObjectMapper().writeValueAsString(resultMap);
+            String mergedJson = new ObjectMapper().writeValueAsString(base);
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
