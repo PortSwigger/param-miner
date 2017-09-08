@@ -174,10 +174,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response JSON");
         }
 
-
         // params.addAll(Utilities.paramNames)
 
-        // de-dupe without losing the ordering, hopefully
+        // de-dupe without losing the ordering
         params = new ArrayList<>(new LinkedHashSet<>(params));
 
         try {
@@ -240,6 +239,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         Utilities.out("Found new key: "+key);
                         params.add(i+1, key);
                         max++;
+                        // todo save for use with future attacks
                     }
                 }
 

@@ -17,7 +17,7 @@ public class Json {
 
     static ArrayList<String> getAllKeys(JsonElement json, HashMap<String, String> witnessedParams){
         try {
-            return getAllKeys(json, "", witnessedParams);
+            return getAllKeys(json, null, witnessedParams);
         }
         catch (JsonParseException e) {
             return new ArrayList<>();
@@ -28,41 +28,58 @@ public class Json {
         return getAllKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
     }
 
+    // fixme still returns keys starting with ':' sometimes
     private static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
 
         if (json.isJsonObject()) {
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
                 if (witnessedParams.containsKey(entry.getKey())) {
-                    // Utilities.out("Recognised '"+entry.getKey()+"', replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
-                    prefix = witnessedParams.get(entry.getKey());
+                    //Utilities.out("Recognised '"+entry.getKey()+", replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
+                    if(witnessedParams.get(entry.getKey()).equals("")) {
+                        prefix = null;
+                    }
+                    else {
+                        prefix = witnessedParams.get(entry.getKey());
+                    }
                     break;
                 }
             }
 
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
-                keys.addAll(getAllKeys(entry.getValue(), prefix + ":" + entry.getKey(), witnessedParams));
+                String tempPrefix = entry.getKey();
+                if (prefix != null) {
+                    tempPrefix = prefix+":"+tempPrefix;
+                }
+                keys.addAll(getAllKeys(entry.getValue(), tempPrefix, witnessedParams));
             }
 
-            keys.add(prefix);
+            if(prefix != null) {
+                keys.add(prefix);
+            }
 
         } else if (json.isJsonArray()) {
             JsonArray hm = json.getAsJsonArray();
             int i = 0;
             for (JsonElement x: hm) {
-                keys.addAll(getAllKeys(x, prefix + ":[" + Integer.toString(i++)+"]", witnessedParams));
+                String tempPrefix = "[" + Integer.toString(i++)+"]";
+                if (prefix != null) {
+                    tempPrefix = prefix+":"+tempPrefix;
+                }
+                keys.addAll(getAllKeys(x, tempPrefix, witnessedParams));
             }
         }
 
 
         else {
-            if (prefix.startsWith(":")) {
-                prefix = prefix.substring(1);
-            }
+            //if (prefix.startsWith(":")) {
+            //    prefix = prefix.substring(1);
+            //}
             // Utilities.out(prefix);
-            keys.add(prefix);
+            if (prefix != null) {
+                keys.add(prefix);
+            }
         }
-
 
         return keys;
     }
