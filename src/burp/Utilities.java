@@ -69,7 +69,7 @@ class Utilities {
         Random seededRandom = new Random(seed.hashCode());
         StringBuilder sb = new StringBuilder(7);
         sb.append(START_CHARSET.charAt(seededRandom.nextInt(START_CHARSET.length())));
-        for (int i = 1; i < 5; i++)
+        for (int i = 1; i < 8; i++)
             sb.append(CHARSET.charAt(seededRandom.nextInt(CHARSET.length())));
         return sb.toString();
     }
