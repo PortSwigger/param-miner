@@ -225,7 +225,7 @@ class Utilities {
         }
 
         int start = 0;
-        Utilities.out("#"+response.length);
+        // Utilities.out("#"+response.length);
         while (start < response.length) {
             start = helpers.indexOf(response, match, true, start, response.length);
             if (start == -1)
