@@ -1,9 +1,6 @@
 package burp;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,10 +19,16 @@ public class Json {
         catch (JsonParseException e) {
             return new ArrayList<>();
         }
+
     }
 
     static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
-        return getAllKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
+        try {
+            return getAllKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
+        }
+        catch (JsonParseException e) {
+            return new ArrayList<>();
+        }
     }
 
     // fixme still returns keys starting with ':' sometimes

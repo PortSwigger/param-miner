@@ -1,15 +1,12 @@
 package burp;
 
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by james on 30/08/2017.
@@ -111,9 +108,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
         }
 
-        // todo also use observed requests
-
-        // calculate request parameters
         ArrayList<String> rawRequestParams = Json.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>());
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: rawRequestParams) { // todo give precedence to shallower keys
@@ -123,10 +117,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             witnessedParams.add(parsed[0]);
         }
 
-       params.addAll(Json.getAllKeys(baseRequestResponse.getResponse(), requestParams));
+        params.addAll(Json.getAllKeys(baseRequestResponse.getResponse(), requestParams));
 
         HashMap<Integer, Set<String>> responses = new HashMap<>();
-        for (JsonElement resp: paramGrabber.getSaved()) {
+        for (JsonElement resp: paramGrabber.getSavedJson()) {
             HashSet<String> keys = new HashSet<>(Json.getAllKeys(resp, requestParams));
             int matches = 0;
             for (String requestKey: requestParams.keySet()) {
@@ -164,9 +158,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Loading keys with "+key+" matches");
             ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
             sortedByLength.sort(new LengthCompare());
-            for (String i: sortedByLength) {
-                Utilities.out(i);
-            }
+            //for (String i: sortedByLength) {
+            //    Utilities.out(i);
+            //}
             params.addAll(sortedByLength);
         }
 
@@ -174,7 +168,16 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response JSON");
         }
 
-        // params.addAll(Utilities.paramNames)
+        params.addAll(paramGrabber.getSavedGET());
+
+        params.addAll(Utilities.paramNames);
+
+        // only use keys if the request isn't JSON
+        if (type != IParameter.PARAM_JSON) {
+            for(int i=0;i<params.size();i++) {
+                params.set(i, Json.parseKey(params.get(i))[1]);
+            }
+        }
 
         // de-dupe without losing the ordering
         params = new ArrayList<>(new LinkedHashSet<>(params));
@@ -192,7 +195,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack base = getBaselineAttack(injector);
             Attack paramGuess;
             Attack failAttack;
-            int max = params.size();
+            int max = Math.max(params.size(), 300);
 
             for (int i = 0; i<max; i++) {
 
@@ -236,10 +239,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 for(String key: Json.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
                     if (!params.contains(key) && (!Json.parseKey(key)[1].equals(candidate))) {
-                        Utilities.out("Found new key: "+key);
+                        //Utilities.out("Found new key: "+key);
                         params.add(i+1, key);
                         max++;
-                        // todo save for use with future attacks
+                        paramGrabber.saveParams(paramGuess.getFirstRequest());
                     }
                 }
 
