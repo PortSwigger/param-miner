@@ -91,8 +91,8 @@ class ParamSpammerFactory implements IIntruderPayloadGeneratorFactory {
                 outputStream.write(b);
             }
         }
-
-        IHttpRequestResponse req = Utilities.callbacks.makeHttpRequest(attack.getHttpService(), outputStream.toByteArray());
+        baseLine = Utilities.fixContentLength(outputStream.toByteArray());
+        IHttpRequestResponse req = Utilities.callbacks.makeHttpRequest(attack.getHttpService(), baseLine);
         ArrayList<String> params = ParamGuesser.calculatePayloads(req, IParameter.PARAM_BODY, grabber);
         return new ParamSpammer(params);
     }
