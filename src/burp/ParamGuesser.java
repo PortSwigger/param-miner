@@ -88,15 +88,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return String.join(":", keys);
     }
 
-    ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
-        if (baseRequestResponse.getResponse() == null) {
-            Utilities.out("Baserequest has no response - fetching...");
-            baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
-        }
-
-        ArrayList<Attack> attacks = new ArrayList<>();
-        String targetURL = baseRequestResponse.getHttpService().getHost();
-
+    static ArrayList<String> calculatePayloads(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber) {
         IRequestInfo info = Utilities.helpers.analyzeRequest(baseRequestResponse.getRequest());
         List<IParameter> currentParams = info.getParameters();
         ArrayList<String> params = new ArrayList<>();
@@ -182,6 +174,38 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         // de-dupe without losing the ordering
         params = new ArrayList<>(new LinkedHashSet<>(params));
 
+        // don't both using parameters that are already present
+        Iterator<String> refiner = params.iterator();
+        while (refiner.hasNext()) {
+            String candidate = refiner.next();
+            String finalKey = getKey(candidate);
+            if (witnessedParams.contains(candidate) ||
+                    witnessedParams.contains(finalKey)) {
+                refiner.remove();
+            }
+
+        }
+
+
+        return params;
+    }
+
+    ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
+        if (baseRequestResponse.getResponse() == null) {
+            Utilities.out("Baserequest has no response - fetching...");
+            baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
+        }
+
+        ArrayList<Attack> attacks = new ArrayList<>();
+        String targetURL = baseRequestResponse.getHttpService().getHost();
+        ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
+
+        HashMap<String, String> requestParams = new HashMap<>();
+        for (String entry: Json.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
+            String[] parsed = Json.parseKey(entry);
+            requestParams.putIfAbsent(parsed[1], parsed[0]);
+        }
+
         try {
             final String payload = "<a`'\\\"${{\\\\";
 
@@ -201,12 +225,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 String candidate = params.get(i);
                 //if(1==1) break;
-
-                String finalKey = getKey(candidate);
-                if (witnessedParams.contains(candidate) ||
-                        witnessedParams.contains(finalKey)) {
-                    continue;
-                }
 
                 paramGuess = injector.buildAttack(candidate, false);
 
@@ -238,8 +256,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
 
                 for(String key: Json.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
-                    if (!params.contains(key) && (!Json.parseKey(key)[1].equals(candidate))) {
-                        //Utilities.out("Found new key: "+key);
+                    String[] parsed = Json.parseKey(key);
+                    if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate))) {
+                        Utilities.out("Found new key: "+key);
                         params.add(i+1, key);
                         max++;
                         paramGrabber.saveParams(paramGuess.getFirstRequest());

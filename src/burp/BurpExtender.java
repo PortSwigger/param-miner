@@ -47,6 +47,7 @@ public class BurpExtender implements IBurpExtender {
 
         ParamGrabber paramGrabber = new ParamGrabber();
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber));
+        callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
         callbacks.registerScannerCheck(paramGrabber);
 
         Utilities.out("Loaded " + name + " v" + version);
@@ -64,6 +65,62 @@ public class BurpExtender implements IBurpExtender {
     }
 
 
+}
+
+class ParamSpammerFactory implements IIntruderPayloadGeneratorFactory {
+
+    ParamGrabber grabber;
+
+    public ParamSpammerFactory(ParamGrabber grabber) {
+        this.grabber = grabber;
+    }
+
+    @Override
+    public String getGeneratorName() {
+        return "Observed Parameter Spammer";
+    }
+
+    @Override
+    public IIntruderPayloadGenerator createNewInstance(IIntruderAttack attack) {
+        attack.getRequestTemplate();
+        byte[] baseLine = attack.getRequestTemplate();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        //byte foo = (byte) 0xa7;
+        for(byte b: baseLine) {
+            if (b != (byte) 0xa7) { // §
+                outputStream.write(b);
+            }
+        }
+
+        IHttpRequestResponse req = Utilities.callbacks.makeHttpRequest(attack.getHttpService(), outputStream.toByteArray());
+        ArrayList<String> params = ParamGuesser.calculatePayloads(req, IParameter.PARAM_BODY, grabber);
+        return new ParamSpammer(params);
+    }
+}
+
+class ParamSpammer implements IIntruderPayloadGenerator {
+
+    private ArrayList<String> params;
+    private int index = 0;
+
+    public ParamSpammer(ArrayList<String> params) {
+        this.params = params;
+    }
+
+    @Override
+    public boolean hasMorePayloads() {
+        return (params.size() > index+1);
+    }
+
+    @Override
+    public byte[] getNextPayload(byte[] baseValue) {
+        return Utilities.helpers.stringToBytes(params.get(index++));
+    }
+
+    @Override
+    public void reset() {
+        index = 0;
+    }
 }
 
 class ParamGrabber implements  IScannerCheck {
@@ -506,10 +563,9 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     @Override
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
+        String unparsed = Utilities.helpers.bytesToString(payload);
         try {
-            String unparsed = Utilities.helpers.bytesToString(payload);
             ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
-            //Utilities.out(unparsed);
 
             boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
             Object base;
@@ -567,8 +623,10 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
         }
         catch (Exception e) {
+            Utilities.out("Error with "+unparsed);
             e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-            throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
+            return buildRequest(Utilities.helpers.stringToBytes("error_"+unparsed.replace(":", "_")));
+            // throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
         }
     }
 }
