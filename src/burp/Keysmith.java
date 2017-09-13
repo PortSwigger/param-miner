@@ -59,6 +59,19 @@ public class Keysmith {
         return parsed.toString().substring(1);
     }
 
+    static String unparseParam(String param) {
+        StringBuilder unparsed = new StringBuilder();
+        String[] split = param.split(":");
+        unparsed.append(split[0]);
+        for (int i=1;i<split.length;i++) {
+            unparsed.append("[");
+            unparsed.append(split[i]);
+            unparsed.append("]");
+        }
+
+        return unparsed.toString();
+    }
+
     static ArrayList<String> getHtmlKeys(String body) {
         HashSet<String> params = new HashSet<>();
         Document doc = Jsoup.parse(body);

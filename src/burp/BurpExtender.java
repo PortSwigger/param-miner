@@ -496,7 +496,7 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
 
 class ParamNameInsertionPoint extends ParamInsertionPoint {
 
-    public ParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
+    ParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
         super(request, name, value, type);
     }
 
@@ -507,6 +507,16 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     }
 }
 
+class RailsInsertionPoint extends ParamNameInsertionPoint {
+    RailsInsertionPoint(byte[] request, String name, String value, byte type) {
+        super(request, name, value, type);
+    }
+
+    public byte[] buildRequest(byte[] payload) {
+        return super.buildRequest(Utilities.helpers.stringToBytes(Keysmith.unparseParam(Utilities.helpers.bytesToString(payload))));
+    }
+
+}
 /*class RailsInsertionPoint extends ParamInsertionPoint {
     byte[] headers;
     byte[] body;
