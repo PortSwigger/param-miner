@@ -165,6 +165,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         params.addAll(Utilities.paramNames);
 
         // only use keys if the request isn't JSON
+        // todo accept two levels of keys if it's using []
         if (type != IParameter.PARAM_JSON) {
             for(int i=0;i<params.size();i++) {
                 params.set(i, Json.parseKey(params.get(i))[1]);

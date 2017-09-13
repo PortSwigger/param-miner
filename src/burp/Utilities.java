@@ -411,9 +411,14 @@ class Utilities {
     }
 
     public static byte[] fixContentLength(byte[] request) {
-        int start = Utilities.getBodyStart(request);
-        int contentLength = request.length - start;
-        return setHeader(request, "Content-Length", Integer.toString(contentLength));
+        if (countMatches(request, helpers.stringToBytes("Content-Length: ")) > 0) {
+            int start = Utilities.getBodyStart(request);
+            int contentLength = request.length - start;
+            return setHeader(request, "Content-Length", Integer.toString(contentLength));
+        }
+        else {
+            return request;
+        }
     }
 
     static List<IParameter> getExtraInsertionPoints(byte[] request) { //
