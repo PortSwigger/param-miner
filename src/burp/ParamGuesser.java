@@ -89,31 +89,20 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     static ArrayList<String> calculatePayloads(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber) {
-        IRequestInfo info = Utilities.helpers.analyzeRequest(baseRequestResponse.getRequest());
-        List<IParameter> currentParams = info.getParameters();
         ArrayList<String> params = new ArrayList<>();
 
-        HashSet<String> witnessedParams = new HashSet<>();
-        for (IParameter param : currentParams) {
-            if (param.getType() == type) {
-                witnessedParams.add(param.getName());
-            }
-        }
-
-        ArrayList<String> rawRequestParams = Json.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>());
+        // collect keys in request, for key skipping, matching and re-mapping
         HashMap<String, String> requestParams = new HashMap<>();
-        for (String entry: rawRequestParams) { // todo give precedence to shallower keys
-            String[] parsed = Json.parseKey(entry);
+        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
+            String[] parsed = Keysmith.parseKey(entry);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
-            witnessedParams.add(parsed[1]);
-            witnessedParams.add(parsed[0]);
         }
 
-        params.addAll(Json.getAllKeys(baseRequestResponse.getResponse(), requestParams));
-
+        // add JSON from observed responses,
+        params.addAll(Keysmith.getAllKeys(baseRequestResponse.getResponse(), requestParams));
         HashMap<Integer, Set<String>> responses = new HashMap<>();
         for (JsonElement resp: paramGrabber.getSavedJson()) {
-            HashSet<String> keys = new HashSet<>(Json.getAllKeys(resp, requestParams));
+            HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(resp, requestParams));
             int matches = 0;
             for (String requestKey: requestParams.keySet()) {
                 if (keys.contains(requestKey)) {
@@ -126,9 +115,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             if(matches < 2) {
                 HashSet<String> filteredKeys = new HashSet<>();
                 for(String key: keys) {
-                    String lastKey = Json.parseKey(key)[1];
+                    String lastKey = Keysmith.parseKey(key)[1];
                     if (Utilities.parseArrayIndex(lastKey) < 3) {
-                        filteredKeys.add(Json.parseKey(key)[1]);
+                        filteredKeys.add(Keysmith.parseKey(key)[1]);
                     }
                 }
                 keys = filteredKeys;
@@ -150,9 +139,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.out("Loading keys with "+key+" matches");
             ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
             sortedByLength.sort(new LengthCompare());
-            //for (String i: sortedByLength) {
-            //    Utilities.out(i);
-            //}
             params.addAll(sortedByLength);
         }
 
@@ -168,7 +154,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         // todo accept two levels of keys if it's using []
         if (type != IParameter.PARAM_JSON) {
             for(int i=0;i<params.size();i++) {
-                params.set(i, Json.parseKey(params.get(i))[1]);
+                params.set(i, Keysmith.parseKey(params.get(i))[1]);
             }
         }
 
@@ -180,8 +166,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         while (refiner.hasNext()) {
             String candidate = refiner.next();
             String finalKey = getKey(candidate);
-            if (witnessedParams.contains(candidate) ||
-                    witnessedParams.contains(finalKey)) {
+            if (requestParams.containsKey(candidate) ||
+                    requestParams.containsKey(finalKey) || requestParams.containsValue(candidate) || requestParams.containsValue(finalKey)) {
                 refiner.remove();
             }
 
@@ -202,8 +188,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
 
         HashMap<String, String> requestParams = new HashMap<>();
-        for (String entry: Json.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
-            String[] parsed = Json.parseKey(entry);
+        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
+            String[] parsed = Keysmith.parseKey(entry);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
@@ -256,8 +242,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
 
-                for(String key: Json.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
-                    String[] parsed = Json.parseKey(key);
+                for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
+                    String[] parsed = Keysmith.parseKey(key);
                     if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate))) {
                         Utilities.out("Found new key: "+key);
                         params.add(i+1, key);

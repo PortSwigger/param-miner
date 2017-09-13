@@ -187,7 +187,7 @@ class ParamGrabber implements  IScannerCheck {
             try {
                 JsonParser parser = new JsonParser();
                 JsonElement json = parser.parse(body);
-                ArrayList<String> keys = Json.getAllKeys(json, new HashMap<>());
+                ArrayList<String> keys = Keysmith.getJsonKeys(json, new HashMap<>());
                 if (!done.contains(keys)) {
                     //Utilities.out("Importing observed data...");
                     done.add(keys);
@@ -532,6 +532,36 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         return Utilities.helpers.updateParameter(request, newParam);
     }
 }
+
+/*class RailsInsertionPoint extends ParamInsertionPoint {
+    byte[] headers;
+    byte[] body;
+    String baseInput;
+    String mainObjectName;
+
+    public RailsInsertionPoint(byte[] request, String name, String value, byte type) {
+        super(request, name, value, type);
+        int start = Utilities.getBodyStart(request);
+        headers = Arrays.copyOfRange(request, 0, start);
+        body = Arrays.copyOfRange(request, start, request.length);
+        baseInput = Utilities.helpers.bytesToString(body);
+    }
+
+    public byte[] buildRequest(byte[] payload) throws RuntimeException {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            outputStream.write(headers);
+            outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
+            return Utilities.fixContentLength(outputStream.toByteArray());
+        } catch (Exception e) {
+            Utilities.out("Error with "+unparsed);
+            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
+            return buildRequest(Utilities.helpers.stringToBytes("error_"+unparsed.replace(":", "_")));
+            // throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
+        }
+
+    }
+}*/
 
 class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     byte[] headers;

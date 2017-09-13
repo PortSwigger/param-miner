@@ -2,19 +2,16 @@ package burp;
 
 import com.google.gson.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by james on 06/09/2017.
  */
-public class Json {
+public class Keysmith {
 
-    static ArrayList<String> getAllKeys(JsonElement json, HashMap<String, String> witnessedParams){
+    static ArrayList<String> getJsonKeys(JsonElement json, HashMap<String, String> witnessedParams){
         try {
-            return getAllKeys(json, null, witnessedParams);
+            return getJsonKeys(json, null, witnessedParams);
         }
         catch (JsonParseException e) {
             return new ArrayList<>();
@@ -24,15 +21,26 @@ public class Json {
 
     static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
         try {
-            return getAllKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
+            return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
         }
         catch (JsonParseException e) {
             return new ArrayList<>();
         }
     }
 
+    private static ArrayList<String> getParamKeys(byte[] resp, HashMap<String, String> witnessedParams) {
+        ArrayList<String> keys = new ArrayList<>();
+        IRequestInfo info = Utilities.helpers.analyzeRequest(resp);
+        List<IParameter> currentParams = info.getParameters();
+
+        for (IParameter param : currentParams) {
+            keys.add(param.getName());
+        }
+        return keys;
+    }
+
     // fixme still returns keys starting with ':' sometimes
-    private static ArrayList<String> getAllKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
+    private static ArrayList<String> getJsonKeys(JsonElement json, String prefix, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
 
         if (json.isJsonObject()) {
@@ -54,7 +62,7 @@ public class Json {
                 if (prefix != null) {
                     tempPrefix = prefix+":"+tempPrefix;
                 }
-                keys.addAll(getAllKeys(entry.getValue(), tempPrefix, witnessedParams));
+                keys.addAll(getJsonKeys(entry.getValue(), tempPrefix, witnessedParams));
             }
 
             if(prefix != null) {
@@ -69,7 +77,7 @@ public class Json {
                 if (prefix != null) {
                     tempPrefix = prefix+":"+tempPrefix;
                 }
-                keys.addAll(getAllKeys(x, tempPrefix, witnessedParams));
+                keys.addAll(getJsonKeys(x, tempPrefix, witnessedParams));
             }
         }
 
