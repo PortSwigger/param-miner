@@ -43,9 +43,20 @@ public class Keysmith {
         List<IParameter> currentParams = info.getParameters();
 
         for (IParameter param : currentParams) {
-            keys.add(param.getName());
+            String parsedParam = parseParam(param.getName());
+            keys.add(parsedParam);
         }
         return keys;
+    }
+
+    static String parseParam(String param) {
+        StringBuilder parsed = new StringBuilder();
+        for (String e: param.split("\\[")) {
+            parsed.append(":");
+            parsed.append(e.replace("]", ""));
+        }
+
+        return parsed.toString().substring(1);
     }
 
     static ArrayList<String> getHtmlKeys(String body) {

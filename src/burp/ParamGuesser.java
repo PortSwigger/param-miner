@@ -95,6 +95,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
             String[] parsed = Keysmith.parseKey(entry);
+            Utilities.out("Request param: " +parsed[1]);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
@@ -104,15 +105,17 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         for (JsonElement resp: paramGrabber.getSavedJson()) {
             HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(resp, requestParams));
             int matches = 0;
-            for (String requestKey: requestParams.keySet()) {
-                if (keys.contains(requestKey)) {
+            for (String requestKey: keys) {
+                if (requestParams.containsKey(requestKey) || requestParams.containsKey(Keysmith.parseKey(requestKey)[1])) {
                     matches++;
                 }
+
             }
 
             // if there are no matches, don't bother with prefixes
             // todo use root (or non-leaf) objects only
-            if(matches < 2) {
+            if(matches < 1) {
+                //Utilities.out("No matches, discarding prefix");
                 HashSet<String> filteredKeys = new HashSet<>();
                 for(String key: keys) {
                     String lastKey = Keysmith.parseKey(key)[1];
@@ -143,7 +146,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         if (params.size() > 0) {
-            Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response JSON");
+            Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
         params.addAll(paramGrabber.getSavedGET());
@@ -152,11 +155,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         // only use keys if the request isn't JSON
         // todo accept two levels of keys if it's using []
-        if (type != IParameter.PARAM_JSON) {
-            for(int i=0;i<params.size();i++) {
-                params.set(i, Keysmith.parseKey(params.get(i))[1]);
-            }
-        }
+        //if (type != IParameter.PARAM_JSON) {
+        //    for(int i=0;i<params.size();i++) {
+        //        params.set(i, Keysmith.parseKey(params.get(i))[1]);
+        //    }
+        //}
 
         // de-dupe without losing the ordering
         params = new ArrayList<>(new LinkedHashSet<>(params));
@@ -188,7 +191,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
 
         HashMap<String, String> requestParams = new HashMap<>();
-        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
+        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
             String[] parsed = Keysmith.parseKey(entry);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
