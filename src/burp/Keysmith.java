@@ -1,6 +1,10 @@
 package burp;
 
 import com.google.gson.*;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.*;
 
@@ -24,7 +28,12 @@ public class Keysmith {
             return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
         }
         catch (JsonParseException e) {
-            return new ArrayList<>();
+            if(Utilities.isResponse(resp)) {
+                return getHtmlKeys(Utilities.getBody(resp));
+            }
+            else {
+                return getParamKeys(resp, witnessedParams);
+            }
         }
     }
 
@@ -37,6 +46,30 @@ public class Keysmith {
             keys.add(param.getName());
         }
         return keys;
+    }
+
+    static ArrayList<String> getHtmlKeys(String body) {
+        HashSet<String> params = new HashSet<>();
+        Document doc = Jsoup.parse(body);
+        Elements links = doc.select("a[href]");
+        for(Element link: links) {
+            String url = link.attr("href");
+            if(url.contains("?")) {
+                url = url.split("[?]", 2)[1];
+                String[] chunks = url.split("&");
+                for (String chunk: chunks) {
+                    //params.add(chunk.split("=", 2)[0]);
+                    params.add(chunk.split("=", 2)[0]);
+                    //Utilities.out("HTML PARAM: "+chunk.split("=", 2)[0]);
+                }
+            }
+        }
+        Elements inputs = doc.select("input[name]");
+        for(Element input: inputs) {
+            params.add(input.attr("name"));
+        }
+
+        return new ArrayList<String>(params);
     }
 
     // fixme still returns keys starting with ':' sometimes

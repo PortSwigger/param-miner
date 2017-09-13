@@ -410,6 +410,11 @@ class Utilities {
         }
     }
 
+    static boolean isResponse(byte[] data) {
+        byte[] start = Arrays.copyOfRange(data, 0, 4);
+        return (helpers.bytesToString(start).equals("HTTP/"));
+    }
+
     public static byte[] fixContentLength(byte[] request) {
         if (countMatches(request, helpers.stringToBytes("Content-Length: ")) > 0) {
             int start = Utilities.getBodyStart(request);

@@ -5,16 +5,14 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.jsoup.Jsoup;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+
+import static burp.Keysmith.getHtmlKeys;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
@@ -155,35 +153,11 @@ class ParamGrabber implements  IScannerCheck {
         return new ArrayList<>();
     }
 
-    private HashSet<String> getHTML(String body) {
-        HashSet<String> params = new HashSet<>();
-        Document doc = Jsoup.parse(body);
-        Elements links = doc.select("a[href]");
-        for(Element link: links) {
-            String url = link.attr("href");
-            if(url.contains("?")) {
-                url = url.split("[?]", 2)[1];
-                String[] chunks = url.split("&");
-                for (String chunk: chunks) {
-                    //params.add(chunk.split("=", 2)[0]);
-                    savedGET.add(chunk.split("=", 2)[0]);
-                    //Utilities.out("HTML PARAM: "+chunk.split("=", 2)[0]);
-                }
-            }
-        }
-        Elements inputs = doc.select("input[name]");
-        for(Element input: inputs) {
-            savedGET.add(input.attr("name"));
-        }
-
-        return params;
-    }
-
     public void saveParams(IHttpRequestResponse baseRequestResponse) {
         // todo also use observed requests
         String body = Utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {
-            getHTML(body);
+            savedGET.addAll(getHtmlKeys(body));
             try {
                 JsonParser parser = new JsonParser();
                 JsonElement json = parser.parse(body);
