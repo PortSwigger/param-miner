@@ -50,6 +50,7 @@ public class Keysmith {
     }
 
     static String parseParam(String param) {
+        param = param.replace("%5B", "[").replace("%5D", "]");
         StringBuilder parsed = new StringBuilder();
         for (String e: param.split("\\[")) {
             parsed.append(":");

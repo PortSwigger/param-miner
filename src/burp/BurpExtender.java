@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -508,12 +509,40 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 }
 
 class RailsInsertionPoint extends ParamNameInsertionPoint {
+    String defaultPrefix;
+
     RailsInsertionPoint(byte[] request, String name, String value, byte type) {
         super(request, name, value, type);
+        ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
+        HashMap<String, Integer> freq = new HashMap<>();
+        for (String key: keys) {
+            if (key.contains(":")) {
+                String object = key.split(":")[0];
+                freq.put(object, freq.getOrDefault(object, 0) + 1);
+            }
+        }
+
+        String maxKey = null;
+        int max = 0;
+        for (Map.Entry<String, Integer> entry: freq.entrySet()) {
+            if (entry.getValue() > max) {
+                maxKey = entry.getKey();
+                max = entry.getValue();
+            }
+        }
+        defaultPrefix = maxKey;
+
+        if (maxKey != null) {
+            Utilities.out("Identified default key: "+maxKey);
+        }
     }
 
     public byte[] buildRequest(byte[] payload) {
-        return super.buildRequest(Utilities.helpers.stringToBytes(Keysmith.unparseParam(Utilities.helpers.bytesToString(payload))));
+        String key = Utilities.helpers.bytesToString(payload);
+        if (defaultPrefix != null && !key.contains(":")) {
+            key = defaultPrefix + ":" + key;
+        }
+        return super.buildRequest(Utilities.helpers.stringToBytes(Keysmith.unparseParam(key)));
     }
 
 }
