@@ -197,7 +197,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         try {
-            final String payload = "<a`'\\\"${{\\\\";
+            final String payload = ""; // formerly "<a`'\\\"${{\\\\"
 
 
             IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload);
@@ -280,7 +280,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         byte[] failResp = paramGuess.getFirstRequest().getResponse();
         for (int k = 1; k < i && k<4; k++) {
             String lastPayload = params.get(i - k);
-            String canary = Utilities.mangle(lastPayload);
+            String canary = Utilities.toCanary(lastPayload);
             lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
             if (reportedInputs.contains(lastPayload)) {
                 continue;

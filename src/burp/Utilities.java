@@ -65,7 +65,7 @@ class Utilities {
         return sb.toString();
     }
 
-    static String mangle(String seed) {
+    private static String mangle(String seed) {
         Random seededRandom = new Random(seed.hashCode());
         StringBuilder sb = new StringBuilder(7);
         sb.append(START_CHARSET.charAt(seededRandom.nextInt(START_CHARSET.length())));
@@ -258,6 +258,10 @@ class Utilities {
         }
 
         return matches;
+    }
+
+    static String toCanary(String payload) {
+        return "wrtqva" + mangle(payload);
     }
 
     public static int getBodyStart(byte[] response) {

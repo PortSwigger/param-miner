@@ -7,6 +7,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by james on 06/09/2017.
@@ -92,6 +94,16 @@ public class Keysmith {
         Elements inputs = doc.select("input[name]");
         for(Element input: inputs) {
             params.add(input.attr("name"));
+        }
+
+        Elements scripts = doc.select("script");
+        for(Element script: scripts) {
+            String content = script.html();
+            Matcher matched = Pattern.compile("\"([a-zA-Z0-9_]+)\":").matcher(content);
+            while(matched.find()) {
+                params.add(matched.group(1));
+                Utilities.out("Embedded JSON: "+matched.group(1));
+            }
         }
 
         return new ArrayList<String>(params);

@@ -503,7 +503,9 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 
     @Override
     public byte[] buildRequest(byte[] payload) {
-        IParameter newParam = Utilities.helpers.buildParameter(Utilities.helpers.bytesToString(payload), Utilities.encodeParam(value), type);
+        String name = Utilities.helpers.bytesToString(payload);
+        String val = Utilities.toCanary(name) + value;
+        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(val), type);
         return Utilities.helpers.updateParameter(request, newParam);
     }
 }
@@ -593,7 +595,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
     private Object makeNode(ArrayList<String> keys, int i, String unparsed) {
         if (i+1 == keys.size()) {
-            return Utilities.mangle(unparsed) + value;
+            return Utilities.toCanary(unparsed) + value;
         }
         else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
             return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
