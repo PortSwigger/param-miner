@@ -65,7 +65,7 @@ class Utilities {
         return sb.toString();
     }
 
-    private static String mangle(String seed) {
+    static String mangle(String seed) {
         Random seededRandom = new Random(seed.hashCode());
         StringBuilder sb = new StringBuilder(7);
         sb.append(START_CHARSET.charAt(seededRandom.nextInt(START_CHARSET.length())));

@@ -102,7 +102,6 @@ public class Keysmith {
             Matcher matched = Pattern.compile("\"([a-zA-Z0-9_]+)\":").matcher(content);
             while(matched.find()) {
                 params.add(matched.group(1));
-                Utilities.out("Embedded JSON: "+matched.group(1));
             }
         }
 

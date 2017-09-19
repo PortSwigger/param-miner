@@ -189,6 +189,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
+        String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis());
 
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
@@ -200,7 +201,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             final String payload = ""; // formerly "<a`'\\\"${{\\\\"
 
 
-            IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload);
+            IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
 
             PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
@@ -223,7 +224,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     failAttack = injector.buildAttack(permute(candidate), false);
 
                     // this to prevent error messages obscuring persistent inputs
-                    findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i);
+                    findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
 
                     base.addAttack(failAttack);
                     if (!Utilities.similar(base, confirmParamGuess)) {
@@ -255,11 +256,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
 
-                if (findPersistent(baseRequestResponse, targetURL, params, reportedInputs, paramGuess, i)) {
+                if (findPersistent(baseRequestResponse, targetURL, params, reportedInputs, paramGuess, i, attackID)) {
                     base = getBaselineAttack(injector);
                 }
-
-
 
             }
             Utilities.out("Parameter name bruteforce complete: "+targetURL);
@@ -276,11 +275,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
-    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, String targetURL, ArrayList<String> params, HashSet<String> reportedInputs, Attack paramGuess, int i) {
+    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, String targetURL, ArrayList<String> params, HashSet<String> reportedInputs, Attack paramGuess, int i, String attackID) {
         byte[] failResp = paramGuess.getFirstRequest().getResponse();
         for (int k = 1; k < i && k<4; k++) {
             String lastPayload = params.get(i - k);
-            String canary = Utilities.toCanary(lastPayload);
+            String canary = Utilities.toCanary(lastPayload) + attackID;
             lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
             if (reportedInputs.contains(lastPayload)) {
                 continue;
@@ -303,10 +302,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return base;
     }
 
-    private static IScannerInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload) {
+    private static IScannerInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
         return type == IParameter.PARAM_JSON ?
-                        new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type) :
-                        new RailsInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type);
+                        new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID) :
+                        new RailsInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
     }
 
     static ArrayList<Attack> guessBackendParams(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {

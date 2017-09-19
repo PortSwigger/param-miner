@@ -496,15 +496,17 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
 }
 
 class ParamNameInsertionPoint extends ParamInsertionPoint {
+    String attackID;
 
-    ParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
+    ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
+        this.attackID = attackID;
     }
 
     @Override
     public byte[] buildRequest(byte[] payload) {
         String name = Utilities.helpers.bytesToString(payload);
-        String val = Utilities.toCanary(name) + value;
+        String val = Utilities.toCanary(name) + attackID + value;
         IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(val), type);
         return Utilities.helpers.updateParameter(request, newParam);
     }
@@ -513,8 +515,8 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 class RailsInsertionPoint extends ParamNameInsertionPoint {
     String defaultPrefix;
 
-    RailsInsertionPoint(byte[] request, String name, String value, byte type) {
-        super(request, name, value, type);
+    RailsInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
+        super(request, name, value, type, attackID);
         ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
         HashMap<String, Integer> freq = new HashMap<>();
         for (String key: keys) {
@@ -582,11 +584,13 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     byte[] headers;
     byte[] body;
     String baseInput;
+    String attackID;
     JsonElement root;
 
-    public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type) {
+    public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type); // Utilities.encodeJSON(value)
         int start = Utilities.getBodyStart(request);
+        this.attackID = attackID;
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
         baseInput = Utilities.helpers.bytesToString(body);
@@ -595,7 +599,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
     private Object makeNode(ArrayList<String> keys, int i, String unparsed) {
         if (i+1 == keys.size()) {
-            return Utilities.toCanary(unparsed) + value;
+            return Utilities.toCanary(unparsed) + attackID + value;
         }
         else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
             return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
