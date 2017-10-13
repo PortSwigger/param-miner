@@ -266,9 +266,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
         catch (RuntimeException e) {
             Utilities.log("Parameter name bruteforce aborted: "+targetURL);
-            e.printStackTrace();
-            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-            Utilities.out(e.getMessage());
+            if(!e.getMessage().contains("Extension unloaded")) {
+                e.printStackTrace();
+                e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
+                Utilities.out(e.getMessage());
+            }
             return attacks;
         }
 
@@ -373,6 +375,11 @@ class OfferParamGuess implements IContextMenuFactory {
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
         IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
         List<JMenuItem> options = new ArrayList<>();
+        
+        if(reqs.length == 0) {
+            return options;
+        }
+
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
         probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber));
         options.add(probeButton);
