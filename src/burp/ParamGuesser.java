@@ -377,7 +377,7 @@ class OfferParamGuess implements IContextMenuFactory {
         probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber));
         options.add(probeButton);
 
-        if (reqs.length == 1) {
+        if (reqs.length == 1 && reqs[0] != null) {
             IHttpRequestResponse req = reqs[0];
             byte[] resp = req.getRequest();
             if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
