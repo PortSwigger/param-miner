@@ -88,6 +88,7 @@ class Utilities {
     }
 
     static String getBody(byte[] response) {
+        if (response == null) { return ""; }
         int bodyStart = Utilities.getBodyStart(response);
         String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(response, bodyStart, response.length));
         return body;

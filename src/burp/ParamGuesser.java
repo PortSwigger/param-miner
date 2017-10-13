@@ -63,7 +63,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     public void extensionUnloaded() {
-        Utilities.out("Aborting param bruteforce");
+        Utilities.log("Aborting param bruteforce");
         Utilities.unloaded.set(true);
     }
 
@@ -95,7 +95,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
             String[] parsed = Keysmith.parseKey(entry);
-            Utilities.out("Request param: " +parsed[1]);
+            Utilities.log("Request param: " +parsed[1]);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
@@ -139,14 +139,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
         sorted.addAll(responses.keySet());
         for(Integer key: sorted) {
-            Utilities.out("Loading keys with "+key+" matches");
+            Utilities.log("Loading keys with "+key+" matches");
             ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
             sortedByLength.sort(new LengthCompare());
             params.addAll(sortedByLength);
         }
 
         if (params.size() > 0) {
-            Utilities.out("Loaded " + new HashSet<>(params).size() + " params from response");
+            Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
         params.addAll(paramGrabber.getSavedGET());
@@ -182,7 +182,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
     ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
         if (baseRequestResponse.getResponse() == null) {
-            Utilities.out("Baserequest has no response - fetching...");
+            Utilities.log("Baserequest has no response - fetching...");
             baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
         }
 
@@ -205,7 +205,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
-            Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
+            Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
             HashSet<String> reportedInputs = new HashSet<>();
             Attack base = getBaselineAttack(injector);
             Attack paramGuess;
@@ -234,14 +234,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
-                            Utilities.out(targetURL+" identified parameter: " + candidate);
+                            Utilities.log(targetURL+" identified parameter: " + candidate);
                             attacks.addAll(confirmed);
                         }
                         else {
-                            Utilities.out(targetURL+" failed to confirm: "+candidate);
+                            Utilities.log(targetURL+" failed to confirm: "+candidate);
                         }
                     } else {
-                        Utilities.out(targetURL + " couldn't replicate: " + candidate);
+                        Utilities.log(targetURL + " couldn't replicate: " + candidate);
                         base.addAttack(paramGuess);
                     }
                 }
@@ -249,7 +249,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
                     String[] parsed = Keysmith.parseKey(key);
                     if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate))) {
-                        Utilities.out("Found new key: "+key);
+                        Utilities.log("Found new key: "+key);
                         params.add(i+1, key);
                         max++;
                         paramGrabber.saveParams(paramGuess.getFirstRequest());
@@ -261,11 +261,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
 
             }
-            Utilities.out("Parameter name bruteforce complete: "+targetURL);
+            Utilities.log("Parameter name bruteforce complete: "+targetURL);
 
         }
         catch (RuntimeException e) {
-            Utilities.out("Parameter name bruteforce aborted: "+targetURL);
+            Utilities.log("Parameter name bruteforce aborted: "+targetURL);
             e.printStackTrace();
             e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
             Utilities.out(e.getMessage());
@@ -277,6 +277,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
     private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, String targetURL, ArrayList<String> params, HashSet<String> reportedInputs, Attack paramGuess, int i, String attackID) {
         byte[] failResp = paramGuess.getFirstRequest().getResponse();
+        if (failResp == null) {
+            return false;
+        }
+
         for (int k = 1; k < i && k<4; k++) {
             String lastPayload = params.get(i - k);
             String canary = Utilities.toCanary(lastPayload) + attackID;
@@ -285,7 +289,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 continue;
             }
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
-                Utilities.out(targetURL + " identified persistent parameter: " + lastPayload);
+                Utilities.log(targetURL + " identified persistent parameter: " + lastPayload);
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + canary + " in the response", "High", "Firm", "Investigate"));
                 reportedInputs.add(lastPayload);
                 return true;
@@ -313,7 +317,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String baseValue = insertionPoint.getBaseValue();
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
         String targetURL = baseRequestResponse.getHttpService().getHost();
-        Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
+        Utilities.log("Initiating parameter name bruteforce on " + targetURL);
+
         final String breaker = "=%3c%61%60%27%22%24%7b%7b%5c";
         Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+ breaker, false);
 
@@ -335,7 +340,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setRandomAnchor(false);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
-                            Utilities.out("Identified backend parameter: " + candidate);
+                            Utilities.log("Identified backend parameter: " + candidate);
                             attacks.addAll(confirmed);
                         }
                     } else {
@@ -344,10 +349,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
 
             }
-            Utilities.out("Parameter name bruteforce complete: "+targetURL);
+            Utilities.log("Parameter name bruteforce complete: "+targetURL);
         }
         catch (RuntimeException e) {
-            Utilities.out("Parameter name bruteforce aborted: "+targetURL);
+            Utilities.log("Parameter name bruteforce aborted: "+targetURL);
         }
 
         return attacks;
@@ -449,9 +454,13 @@ class TriggerParamGuesser implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
+        Utilities.out("Spinning up 5000 threads");
         for (IHttpRequestResponse req: reqs) {
-            Runnable runnable = new ParamGuesser(req, backend, type, paramGrabber);
-            (new Thread(runnable)).start();
+            for(int i=0;i<5000;i++) {
+                Runnable runnable = new ParamGuesser(req, backend, type, paramGrabber);
+                (new Thread(runnable)).start();
+            }
         }
+        Utilities.out("done!");
     }
 }
