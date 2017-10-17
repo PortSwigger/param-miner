@@ -4,6 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -18,13 +22,15 @@ import static burp.Keysmith.getHtmlKeys;
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
     private static final String version = "0.91";
+    private ThreadPoolExecutor taskEngine;
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
         new Utilities(callbacks);
+        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
+        this.taskEngine = new ThreadPoolExecutor(5, 10, 10, TimeUnit.MINUTES, tasks);
         callbacks.setExtensionName(name);
-
 
         try {
             StringUtils.isNumeric("1");
@@ -45,7 +51,7 @@ public class BurpExtender implements IBurpExtender {
         callbacks.registerExtensionStateListener(scan);
 
         ParamGrabber paramGrabber = new ParamGrabber();
-        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber));
+        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
         callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
         callbacks.registerScannerCheck(paramGrabber);
 

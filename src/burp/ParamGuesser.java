@@ -1,12 +1,16 @@
 package burp;
 
 import com.google.gson.JsonElement;
-
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.*;
+
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 /**
  * Created by james on 30/08/2017.
@@ -210,7 +214,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack base = getBaselineAttack(injector);
             Attack paramGuess;
             Attack failAttack;
-            int max = Math.max(params.size(), 300);
+            int max = max(params.size(), 300);
 
             for (int i = 0; i<max; i++) {
 
@@ -365,8 +369,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 class OfferParamGuess implements IContextMenuFactory {
     private IBurpExtenderCallbacks callbacks;
     private ParamGrabber paramGrabber;
+    private ThreadPoolExecutor taskEngine;
 
-    public OfferParamGuess(final IBurpExtenderCallbacks callbacks, ParamGrabber paramGrabber) {
+    public OfferParamGuess(final IBurpExtenderCallbacks callbacks, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine) {
+        this.taskEngine = taskEngine;
         this.callbacks = callbacks;
         this.paramGrabber = paramGrabber;
     }
@@ -375,13 +381,13 @@ class OfferParamGuess implements IContextMenuFactory {
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
         IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
         List<JMenuItem> options = new ArrayList<>();
-        
+
         if(reqs.length == 0) {
             return options;
         }
 
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
-        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber));
+        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
         options.add(probeButton);
 
         if (reqs.length == 1 && reqs[0] != null) {
@@ -389,7 +395,7 @@ class OfferParamGuess implements IContextMenuFactory {
             byte[] resp = req.getRequest();
             if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
                 JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
-                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber));
+                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
                 options.add(backendProbeButton);
             }
 
@@ -431,7 +437,7 @@ class OfferParamGuess implements IContextMenuFactory {
                     }
 
                     JMenuItem postProbeButton = new JMenuItem("Guess " + humanType + " parameter");
-                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber));
+                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
                     options.add(postProbeButton);
                 }
             }
@@ -447,13 +453,15 @@ class LengthCompare implements Comparator<String> {
     }
 }
 
-class TriggerParamGuesser implements ActionListener {
+class TriggerParamGuesser implements ActionListener, Runnable {
     private IHttpRequestResponse[] reqs;
     private boolean backend;
     private byte type;
     private ParamGrabber paramGrabber;
+    private ThreadPoolExecutor taskEngine;
 
-    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber) {
+    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine) {
+        this.taskEngine = taskEngine;
         this.paramGrabber = paramGrabber;
         this.backend = backend;
         this.reqs = reqs;
@@ -461,13 +469,46 @@ class TriggerParamGuesser implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        Utilities.out("Spinning up 5000 threads");
-        for (IHttpRequestResponse req: reqs) {
-            for(int i=0;i<5000;i++) {
-                Runnable runnable = new ParamGuesser(req, backend, type, paramGrabber);
-                (new Thread(runnable)).start();
+        Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine);
+        (new Thread(runnable)).start();
+    }
+
+    public void run() {
+        Utilities.out("Queuing "+reqs.length+" tasks");
+
+        ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
+        int thread_count = taskEngine.getCorePoolSize();
+        Queue<String> cache = new CircularFifoQueue<>(thread_count);
+        HashSet<String> hosts = new HashSet<>();
+
+        int i = 0;
+        // every pass adds at least one item from every host
+        while(!reqlist.isEmpty()) {
+            Utilities.out("Loop "+i++);
+            Iterator<IHttpRequestResponse> left = reqlist.iterator();
+            while (left.hasNext()) {
+                IHttpRequestResponse req = left.next();
+                String host = req.getHttpService().getHost();
+
+                if (!cache.contains(host)) {
+                    cache.add(host);
+                    left.remove();
+                    Utilities.out("Adding request on "+host+" to queue");
+                    taskEngine.execute(new ParamGuesser(req, backend, type, paramGrabber));
+                } else {
+                    hosts.add(host);
+                }
+            }
+            if (hosts.size() <= 1) {
+                while (!left.hasNext()) {
+                    taskEngine.execute(new ParamGuesser(left.next(), backend, type, paramGrabber));
+                }
+                break;
+            }
+            else {
+                cache = new CircularFifoQueue<>(min(hosts.size()-1, thread_count));
             }
         }
-        Utilities.out("done!");
+
     }
 }
