@@ -479,7 +479,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
         int thread_count = taskEngine.getCorePoolSize();
         Queue<String> cache = new CircularFifoQueue<>(thread_count);
-        HashSet<String> hosts = new HashSet<>();
+        HashSet<String> remainingHosts = new HashSet<>();
 
         int i = 0;
         // every pass adds at least one item from every host
@@ -496,17 +496,18 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     Utilities.out("Adding request on "+host+" to queue");
                     taskEngine.execute(new ParamGuesser(req, backend, type, paramGrabber));
                 } else {
-                    hosts.add(host);
+                    remainingHosts.add(host);
                 }
             }
-            if (hosts.size() <= 1) {
-                while (!left.hasNext()) {
+            if (remainingHosts.size() <= 1) {
+                left = reqlist.iterator();
+                while (left.hasNext()) {
                     taskEngine.execute(new ParamGuesser(left.next(), backend, type, paramGrabber));
                 }
                 break;
             }
             else {
-                cache = new CircularFifoQueue<>(min(hosts.size()-1, thread_count));
+                cache = new CircularFifoQueue<>(min(remainingHosts.size()-1, thread_count));
             }
         }
 

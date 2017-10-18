@@ -22,14 +22,13 @@ import static burp.Keysmith.getHtmlKeys;
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
     private static final String version = "0.91";
-    private ThreadPoolExecutor taskEngine;
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
         new Utilities(callbacks);
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        this.taskEngine = new ThreadPoolExecutor(5, 10, 10, TimeUnit.MINUTES, tasks);
+        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(5, 10, 10, TimeUnit.MINUTES, tasks);
         callbacks.setExtensionName(name);
 
         try {
