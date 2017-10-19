@@ -28,7 +28,7 @@ public class BurpExtender implements IBurpExtender {
 
         new Utilities(callbacks);
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(5, 10, 10, TimeUnit.MINUTES, tasks);
+        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(50, 50, 10, TimeUnit.MINUTES, tasks);
         callbacks.setExtensionName(name);
 
         try {
@@ -53,6 +53,7 @@ public class BurpExtender implements IBurpExtender {
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
         callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
         callbacks.registerScannerCheck(paramGrabber);
+        callbacks.registerHttpListener(new Substituter());
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("Debug mode: " + Utilities.DEBUG);
@@ -69,6 +70,20 @@ public class BurpExtender implements IBurpExtender {
     }
 
 
+}
+
+class Substituter implements IHttpListener {
+
+    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
+        if (messageIsRequest) {
+            byte[] placeHolder = Utilities.helpers.stringToBytes("$randomplz");
+            if (Utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
+                messageInfo.setRequest(
+                        Utilities.fixContentLength(Utilities.replace(messageInfo.getRequest(), placeHolder, Utilities.helpers.stringToBytes(Utilities.generateCanary())))
+                );
+            }
+        }
+    }
 }
 
 class ParamSpammerFactory implements IIntruderPayloadGeneratorFactory {
@@ -126,6 +141,7 @@ class ParamSpammer implements IIntruderPayloadGenerator {
         index = 0;
     }
 }
+
 
 class ParamGrabber implements  IScannerCheck {
 

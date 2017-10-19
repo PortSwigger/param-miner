@@ -239,6 +239,32 @@ class Utilities {
         return matches;
     }
 
+    static byte[] replace(byte[] request, byte[] find, byte[] replace) {
+        List<int[]> matches = getMatches(request, find, -1);
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            for (int i=0;i<matches.size();i++) {
+                if (i == 0) {
+                    outputStream.write(Arrays.copyOfRange(request, 0, matches.get(i)[0]));
+                }
+                else {
+                    outputStream.write(Arrays.copyOfRange(request, matches.get(i-1)[1], matches.get(i)[0]));
+                }
+                outputStream.write(replace);
+
+                if (i==matches.size()-1) {
+                    outputStream.write(Arrays.copyOfRange(request, matches.get(i)[1], request.length));
+                    break;
+                }
+            }
+            request = outputStream.toByteArray();
+        } catch (IOException e) {
+            return null;
+        }
+
+        return request;
+    }
+
     static List<int[]> getMatches(byte[] response, byte[] match, int giveUpAfter) {
         if (giveUpAfter == -1) {
             giveUpAfter = response.length;

@@ -12,6 +12,19 @@ import java.util.concurrent.*;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+
+class SimpleScan implements Runnable, IExtensionStateListener {
+
+    public void run() {
+
+    }
+
+    public void extensionUnloaded() {
+        Utilities.log("Aborting param bruteforce");
+        Utilities.unloaded.set(true);
+    }
+
+}
 /**
  * Created by james on 30/08/2017.
  */
@@ -238,7 +251,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
-                            Utilities.log(targetURL+" identified parameter: " + candidate);
+                            Utilities.out(targetURL+" identified parameter: " + candidate);
                             attacks.addAll(confirmed);
                         }
                         else {
@@ -346,7 +359,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setRandomAnchor(false);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
-                            Utilities.log("Identified backend parameter: " + candidate);
+                            Utilities.out("Identified backend parameter: " + candidate);
                             attacks.addAll(confirmed);
                         }
                     } else {
