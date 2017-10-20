@@ -47,6 +47,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         IRequestInfo info = Utilities.helpers.analyzeRequest(req);
         List<IParameter> params = info.getParameters();
 
+        if (req.getResponse() == null) {
+            Utilities.log("Baserequest has no response - fetching...");
+            req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
+        }
+
         if(backend) {
 
             for (IParameter param : params) {
@@ -198,11 +203,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
-        if (baseRequestResponse.getResponse() == null) {
-            Utilities.log("Baserequest has no response - fetching...");
-            baseRequestResponse = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), baseRequestResponse.getRequest());
-        }
-
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
@@ -228,6 +228,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack paramGuess;
             Attack failAttack;
             int max = max(params.size(), 300);
+            max = min(max, 1000);
 
             for (int i = 0; i<max; i++) {
 
