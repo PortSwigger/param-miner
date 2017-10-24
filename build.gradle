@@ -25,7 +25,13 @@ sourceSets {
 }
 
 task fatJar(type: Jar) {
+
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
+}
+
+compileJava {
+    targetCompatibility '1.8'
+    sourceCompatibility '1.8'
 }
