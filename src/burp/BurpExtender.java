@@ -528,7 +528,16 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     @Override
     public byte[] buildRequest(byte[] payload) {
         String name = Utilities.helpers.bytesToString(payload);
-        String val = Utilities.toCanary(name) + attackID + value;
+        String val;
+        if (name.contains("~")) {
+            String[] parts = name.split("~", 2);
+            name = parts[0];
+            val = String.valueOf(Utilities.invert(parts[1]));
+        }
+        else {
+            val = Utilities.toCanary(name) + attackID + value;
+        }
+
         IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(val), type);
         return Utilities.helpers.updateParameter(request, newParam);
     }
@@ -572,35 +581,6 @@ class RailsInsertionPoint extends ParamNameInsertionPoint {
     }
 
 }
-/*class RailsInsertionPoint extends ParamInsertionPoint {
-    byte[] headers;
-    byte[] body;
-    String baseInput;
-    String mainObjectName;
-
-    public RailsInsertionPoint(byte[] request, String name, String value, byte type) {
-        super(request, name, value, type);
-        int start = Utilities.getBodyStart(request);
-        headers = Arrays.copyOfRange(request, 0, start);
-        body = Arrays.copyOfRange(request, start, request.length);
-        baseInput = Utilities.helpers.bytesToString(body);
-    }
-
-    public byte[] buildRequest(byte[] payload) throws RuntimeException {
-        try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(headers);
-            outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
-            return Utilities.fixContentLength(outputStream.toByteArray());
-        } catch (Exception e) {
-            Utilities.out("Error with "+unparsed);
-            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-            return buildRequest(Utilities.helpers.stringToBytes("error_"+unparsed.replace(":", "_")));
-            // throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
-        }
-
-    }
-}*/
 
 class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     byte[] headers;
@@ -632,6 +612,8 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
 
+
+
     // todo handle ~false/~true
     @Override
     @SuppressWarnings("unchecked")
@@ -641,12 +623,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         if (unparsed.contains("~")) {
             String[] parts = unparsed.split("~", 2);
             unparsed = parts[0];
-            if (parts[1].equals("true")) {
-                paramValue = false;
-            }
-            else {
-                paramValue = true;
-            }
+            paramValue = Utilities.invert(parts[1]);
         }
         else {
             paramValue = Utilities.toCanary(unparsed) + attackID + value;

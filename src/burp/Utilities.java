@@ -58,6 +58,17 @@ class Utilities {
         params.close();
     }
 
+
+    static Object invert(String value) {
+        if (value.equals("true")) {
+            return false;
+        }
+        else if (value.equals("false")){
+            return true;
+        }
+        return null;
+    }
+
     static String randomString(int len) {
         StringBuilder sb = new StringBuilder(len);
         sb.append(START_CHARSET.charAt(rnd.nextInt(START_CHARSET.length())));
