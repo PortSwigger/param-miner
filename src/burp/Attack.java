@@ -27,7 +27,7 @@ class Attack {
 
     private IHttpRequestResponse lastRequest;
 
-    private final String[] keys = {"\":\"", "\",\"", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
+    private final String[] keys = {"\":\"", "\",\"", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div", "true", "false"};
     String payload;
     private Probe probe;
     private String anchor;

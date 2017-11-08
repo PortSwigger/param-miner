@@ -157,7 +157,11 @@ public class Keysmith {
             //}
             // Utilities.out(prefix);
             if (prefix != null) {
-                keys.add(prefix);
+                if (json.getAsJsonPrimitive().isBoolean()) {
+                    prefix = prefix + "~" + String.valueOf(json.getAsBoolean());
+                }
+
+                keys.add(prefix); // todo append value here
             }
         }
 

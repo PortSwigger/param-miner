@@ -524,6 +524,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         this.attackID = attackID;
     }
 
+    // todo substitute param name here? or encode param name inside payload?
     @Override
     public byte[] buildRequest(byte[] payload) {
         String name = Utilities.helpers.bytesToString(payload);
@@ -618,9 +619,9 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         root = new JsonParser().parse(baseInput);
     }
 
-    private Object makeNode(ArrayList<String> keys, int i, String unparsed) {
+    private Object makeNode(ArrayList<String> keys, int i, Object paramValue) {
         if (i+1 == keys.size()) {
-            return Utilities.toCanary(unparsed) + attackID + value;
+            return paramValue;
         }
         else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
             return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
@@ -630,10 +631,27 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         }
     }
 
+
+    // todo handle ~false/~true
     @Override
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
         String unparsed = Utilities.helpers.bytesToString(payload);
+        Object paramValue;
+        if (unparsed.contains("~")) {
+            String[] parts = unparsed.split("~", 2);
+            unparsed = parts[0];
+            if (parts[1].equals("true")) {
+                paramValue = false;
+            }
+            else {
+                paramValue = true;
+            }
+        }
+        else {
+            paramValue = Utilities.toCanary(unparsed) + attackID + value;
+        }
+
         try {
             ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
 
@@ -669,16 +687,16 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                         for(int k=injectionPoint.size(); k<index; k++) {
                             injectionPoint.add(Utilities.generateCanary());
                         }
-                        injectionPoint.add(makeNode(keys, i, unparsed));
+                        injectionPoint.add(makeNode(keys, i, paramValue));
                     }
                     else if (injectionPoint.get(index) == null || setValue) {
-                        injectionPoint.set(index, makeNode(keys, i, unparsed));
+                        injectionPoint.set(index, makeNode(keys, i, paramValue));
                     }
                     next = injectionPoint.get(index);
                 } else {
                     HashMap injectionPoint = (HashMap) next;
                     if (!injectionPoint.containsKey(key) || setValue) {
-                        injectionPoint.put(key, makeNode(keys, i, unparsed));
+                        injectionPoint.put(key, makeNode(keys, i, paramValue));
                     }
                     next = injectionPoint.get(key);
                 }
