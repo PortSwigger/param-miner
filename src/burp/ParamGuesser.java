@@ -99,15 +99,33 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return param;
     }
 
-    static String permute(String param) {
-        String[] keys = param.split(":");
-        for (int i=keys.length-1; i>=0; i--) {
-            if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                keys[i] += Utilities.randomString(3);
-                break;
+    static String permute(String fullparam) {
+        return permute(fullparam, false);
+    }
+
+    static String permute(String fullparam, boolean changeValue) {
+        String[] param = fullparam.split("~", 2);
+
+        String output;
+        if (changeValue) {
+            output = param[0] + "~" + Utilities.invert(param[1]);
+        }
+        else {
+            String[] keys = param[0].split(":");
+            for (int i = keys.length - 1; i >= 0; i--) {
+                if (Utilities.parseArrayIndex(keys[i]) == -1) {
+                    keys[i] += Utilities.randomString(3);
+                    break;
+                }
+            }
+
+            output = String.join(":", keys);
+            if (param.length > 1) {
+                output = output + "~" + param[1];
             }
         }
-        return String.join(":", keys);
+
+        return output;
     }
 
     static ArrayList<String> calculatePayloads(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber) {
@@ -246,14 +264,15 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                     base.addAttack(failAttack);
                     if (!Utilities.similar(base, confirmParamGuess)) {
-                        Probe validParam = new Probe(targetURL+" found param: " + candidate, 4, candidate);
+                        Probe validParam = new Probe("Found unlinked param: " + candidate, 4, candidate);
                         validParam.setEscapeStrings(permute(candidate), permute(candidate));
                         validParam.setRandomAnchor(false);
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
                             Utilities.out(targetURL+" identified parameter: " + candidate);
-                            attacks.addAll(confirmed);
+                            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse));
+                            //attacks.addAll(confirmed);
                         }
                         else {
                             Utilities.log(targetURL+" failed to confirm: "+candidate);
@@ -310,7 +329,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
                 Utilities.log(targetURL + " identified persistent parameter: " + lastPayload);
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Look for " + canary + " in the response", "High", "Firm", "Investigate"));
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
                 reportedInputs.add(lastPayload);
                 return true;
             }
