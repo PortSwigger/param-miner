@@ -58,13 +58,17 @@ class Utilities {
         params.close();
     }
 
+    static boolean invertable(String value) {
+        return invert(value) != null;
+    }
 
     static Object invert(String value) {
-        if (value.equals("true")) {
-            return false;
-        }
-        else if (value.equals("false")){
-            return true;
+        if (value != null) {
+            if (value.equals("true")) {
+                return false;
+            } else if (value.equals("false")) {
+                return true;
+            }
         }
         return null;
     }

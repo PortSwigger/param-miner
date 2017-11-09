@@ -524,7 +524,6 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         this.attackID = attackID;
     }
 
-    // todo substitute param name here? or encode param name inside payload?
     @Override
     public byte[] buildRequest(byte[] payload) {
         String name = Utilities.helpers.bytesToString(payload);

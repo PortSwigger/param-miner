@@ -85,15 +85,23 @@ public class Keysmith {
                 url = url.split("[?]", 2)[1];
                 String[] chunks = url.split("&");
                 for (String chunk: chunks) {
-                    //params.add(chunk.split("=", 2)[0]);
-                    params.add(chunk.split("=", 2)[0]);
+                    String[] keyvalue = chunk.split("=", 2);
+                    String key = keyvalue[0];
+                    if (Utilities.invertable(keyvalue[1])) {
+                        key = key + "~" + keyvalue[1];
+                    }
+                    params.add(key);
                     //Utilities.out("HTML PARAM: "+chunk.split("=", 2)[0]);
                 }
             }
         }
         Elements inputs = doc.select("input[name]");
         for(Element input: inputs) {
-            params.add(input.attr("name"));
+            String key= input.attr("name");
+            if (Utilities.invertable(input.attr("value"))) {
+                key = key + "~" + input.attr("value");
+            }
+            params.add(key);
         }
 
         Elements scripts = doc.select("script");
@@ -157,9 +165,14 @@ public class Keysmith {
             //}
             // Utilities.out(prefix);
             if (prefix != null) {
-                if (json.getAsJsonPrimitive().isBoolean()) {
-                    prefix = prefix + "~" + String.valueOf(json.getAsBoolean());
+                try {
+                    if (json.getAsJsonPrimitive().isBoolean()) {
+                        prefix = prefix + "~" + String.valueOf(json.getAsBoolean());
+                    }
+                } catch (java.lang.IllegalStateException e) {
+
                 }
+
 
                 keys.add(prefix); // todo append value here
             }
