@@ -99,15 +99,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return param;
     }
 
-    static String permute(String fullparam) {
-        return permute(fullparam, false);
-    }
-
-    static String permute(String fullparam, boolean changeValue) {
+    static String permute(String fullparam, String permuteType) {
         String[] param = fullparam.split("~", 2);
 
         String output;
-        if (changeValue) {
+        if (permuteType.equals("flipflop")) {
             output = param[0] + "~" + Utilities.invert(param[1]);
         }
         else {
@@ -120,7 +116,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
 
             output = String.join(":", keys);
-            if (param.length > 1) {
+            if (param.length > 1 && !permuteType.equals("stomp")) {
                 output = output + "~" + param[1];
             }
         }
@@ -251,35 +247,45 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             for (int i = 0; i<max; i++) {
 
                 String candidate = params.get(i);
-                //if(1==1) break;
 
                 paramGuess = injector.buildAttack(candidate, false);
 
                 if (!Utilities.similar(base, paramGuess)) {
                     Attack confirmParamGuess = injector.buildAttack(candidate, false);
-                    failAttack = injector.buildAttack(permute(candidate), false);
 
-                    // this to prevent error messages obscuring persistent inputs
-                    findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
+                    ArrayList<String> permuteTypes = new ArrayList<>();
 
-                    base.addAttack(failAttack);
-                    if (!Utilities.similar(base, confirmParamGuess)) {
-                        Probe validParam = new Probe("Found unlinked param: " + candidate, 4, candidate);
-                        validParam.setEscapeStrings(permute(candidate), permute(candidate));
-                        validParam.setRandomAnchor(false);
-                        validParam.setPrefix(Probe.REPLACE);
-                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                        if (!confirmed.isEmpty()) {
-                            Utilities.out(targetURL+" identified parameter: " + candidate);
-                            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse));
-                            //attacks.addAll(confirmed);
+                    if(candidate.contains("~")) {
+                        permuteTypes.add("flipflop");
+                        //permuteTypes.add("stomp");
+                    }
+                    permuteTypes.add("name");
+
+                    for (String permuteType: permuteTypes) {
+                        failAttack = injector.buildAttack(permute(candidate, permuteType), false);
+
+                        // this to prevent error messages obscuring persistent inputs
+                        findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
+
+                        base.addAttack(failAttack);
+                        if (!Utilities.similar(base, confirmParamGuess)) {
+                            Probe validParam = new Probe("Found unlinked param: " + candidate, 4, candidate);
+                            validParam.setEscapeStrings(permute(candidate, permuteType), permute(candidate, permuteType));
+                            validParam.setRandomAnchor(false);
+                            validParam.setPrefix(Probe.REPLACE);
+                            ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+                            if (!confirmed.isEmpty()) {
+                                Utilities.out(targetURL + " identified parameter: " + candidate);
+                                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse));
+                                //attacks.addAll(confirmed);
+                                break;
+                            } else {
+                                Utilities.log(targetURL + " failed to confirm: " + candidate);
+                            }
+                        } else {
+                            Utilities.log(targetURL + " couldn't replicate: " + candidate);
+                            base.addAttack(paramGuess);
                         }
-                        else {
-                            Utilities.log(targetURL+" failed to confirm: "+candidate);
-                        }
-                    } else {
-                        Utilities.log(targetURL + " couldn't replicate: " + candidate);
-                        base.addAttack(paramGuess);
                     }
                 }
 
