@@ -1,5 +1,6 @@
 package burp;
 
+import com.fasterxml.jackson.core.json.UTF8DataInputJsonParser;
 import com.google.gson.JsonElement;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
@@ -137,6 +138,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         // add JSON from observed responses,
         params.addAll(Keysmith.getAllKeys(baseRequestResponse.getResponse(), requestParams));
+
+        if(baseRequestResponse.getRequest()[0] != 'G') {
+            IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
+                   Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
+            params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
+        }
+
+
         HashMap<Integer, Set<String>> responses = new HashMap<>();
         for (JsonElement resp: paramGrabber.getSavedJson()) {
             HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(resp, requestParams));

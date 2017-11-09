@@ -63,16 +63,21 @@ public class Keysmith {
     }
 
     static String unparseParam(String param) {
+        String[] presplit = param.split("~", 2);
         StringBuilder unparsed = new StringBuilder();
-        String[] split = param.split(":");
+        String[] split = presplit[0].split(":");
         unparsed.append(split[0]);
         for (int i=1;i<split.length;i++) {
             unparsed.append("[");
             unparsed.append(split[i]);
             unparsed.append("]");
         }
+        String output = unparsed.toString();
+        if (presplit.length > 1) {
+            output = output + "~" + presplit[1];
+        }
 
-        return unparsed.toString();
+        return output;
     }
 
     static ArrayList<String> getHtmlKeys(String body) {
@@ -161,10 +166,13 @@ public class Keysmith {
 
         else {
             if (prefix != null) {
+
                 try {
-                    String val = json.getAsString();
-                    if(Utilities.invertable(val)) {
-                        prefix = prefix + "~" + val;
+                    if (!json.getAsJsonPrimitive().isJsonNull()) {
+                        String val = json.getAsString();
+                        if (Utilities.invertable(val)) {
+                            prefix = prefix + "~" + val;
+                        }
                     }
                 } catch (java.lang.IllegalStateException e) {
 
