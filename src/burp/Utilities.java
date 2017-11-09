@@ -69,6 +69,12 @@ class Utilities {
             } else if (value.equals("false")) {
                 return true;
             }
+            else if (value.equals("1")) {
+                return 0;
+            }
+            else if (value.equals("0")) {
+                return 1;
+            }
         }
         return null;
     }

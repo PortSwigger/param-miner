@@ -160,14 +160,11 @@ public class Keysmith {
 
 
         else {
-            //if (prefix.startsWith(":")) {
-            //    prefix = prefix.substring(1);
-            //}
-            // Utilities.out(prefix);
             if (prefix != null) {
                 try {
-                    if (json.getAsJsonPrimitive().isBoolean()) {
-                        prefix = prefix + "~" + String.valueOf(json.getAsBoolean());
+                    String val = json.getAsString();
+                    if(Utilities.invertable(val)) {
+                        prefix = prefix + "~" + val;
                     }
                 } catch (java.lang.IllegalStateException e) {
 
