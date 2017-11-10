@@ -92,7 +92,7 @@ public class Keysmith {
                 for (String chunk: chunks) {
                     String[] keyvalue = chunk.split("=", 2);
                     String key = keyvalue[0];
-                    if (Utilities.invertable(keyvalue[1])) {
+                    if (keyvalue.length > 1 && Utilities.invertable(keyvalue[1])) {
                         key = key + "~" + keyvalue[1];
                     }
                     params.add(key);
@@ -203,6 +203,36 @@ public class Keysmith {
         parsed[0] = prefix;
         parsed[1] = key;
         return parsed;
+    }
+
+    static String getKey(String param) {
+        String[] keys = param.split(":");
+        for (int i=keys.length-1; i>=0; i--) {
+            if (Utilities.parseArrayIndex(keys[i]) == -1) {
+                return keys[i];
+            }
+        }
+        return param;
+    }
+
+    static String permute(String fullparam) {
+
+        if(fullparam.contains("~")) {
+            String[] param = fullparam.split("~", 2);
+            return param[0] + "~" + Utilities.invert(param[1]);
+        }
+        else {
+            String[] keys = fullparam.split(":");
+            for (int i = keys.length - 1; i >= 0; i--) {
+                if (Utilities.parseArrayIndex(keys[i]) == -1) {
+                    keys[i] += Utilities.randomString(3);
+                    break;
+                }
+            }
+
+            return String.join(":", keys);
+        }
+
     }
 
 }

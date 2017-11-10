@@ -1,6 +1,5 @@
 package burp;
 
-import com.fasterxml.jackson.core.json.UTF8DataInputJsonParser;
 import com.google.gson.JsonElement;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
@@ -88,41 +87,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     public void extensionUnloaded() {
         Utilities.log("Aborting param bruteforce");
         Utilities.unloaded.set(true);
-    }
-
-    static String getKey(String param) {
-        String[] keys = param.split(":");
-        for (int i=keys.length-1; i>=0; i--) {
-            if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                return keys[i];
-            }
-        }
-        return param;
-    }
-
-    static String permute(String fullparam, String permuteType) {
-        String[] param = fullparam.split("~", 2);
-
-        String output;
-        if (permuteType.equals("flipflop")) {
-            output = param[0] + "~" + Utilities.invert(param[1]);
-        }
-        else {
-            String[] keys = param[0].split(":");
-            for (int i = keys.length - 1; i >= 0; i--) {
-                if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                    keys[i] += Utilities.randomString(3);
-                    break;
-                }
-            }
-
-            output = String.join(":", keys);
-            if (param.length > 1 && !permuteType.equals("stomp")) {
-                output = output + "~" + param[1];
-            }
-        }
-
-        return output;
     }
 
     static ArrayList<String> calculatePayloads(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber) {
@@ -213,7 +177,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Iterator<String> refiner = params.iterator();
         while (refiner.hasNext()) {
             String candidate = refiner.next();
-            String finalKey = getKey(candidate);
+            String finalKey = Keysmith.getKey(candidate);
             if (requestParams.containsKey(candidate) ||
                     requestParams.containsKey(finalKey) || requestParams.containsValue(candidate) || requestParams.containsValue(finalKey)) {
                 refiner.remove();
@@ -248,7 +212,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
             HashSet<String> reportedInputs = new HashSet<>();
             Attack base = getBaselineAttack(injector);
-            Attack paramGuess;
+            Attack paramGuess = null;
             Attack failAttack;
             int max = max(params.size(), 300);
             max = min(max, 1000);
@@ -257,42 +221,41 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 String candidate = params.get(i);
 
-                paramGuess = injector.buildAttack(candidate, false);
+                ArrayList<String> variants = new ArrayList<>();
 
-                if (!Utilities.similar(base, paramGuess)) {
-                    Attack confirmParamGuess = injector.buildAttack(candidate, false);
+                variants.add(candidate);
+                if(candidate.contains("~")) {
+                    variants.add(candidate.split("~", 2)[0]);
+                }
 
-                    ArrayList<String> permuteTypes = new ArrayList<>();
+                for (String variant: variants) {
+                    paramGuess = injector.buildAttack(variant, false);
 
-                    if(candidate.contains("~")) {
-                        permuteTypes.add("flipflop");
-                        //permuteTypes.add("stomp");
-                    }
-                    permuteTypes.add("name");
+                    if (!Utilities.similar(base, paramGuess)) {
+                        Attack confirmParamGuess = injector.buildAttack(variant, false);
 
-                    for (String permuteType: permuteTypes) {
-                        failAttack = injector.buildAttack(permute(candidate, permuteType), false);
+                        failAttack = injector.buildAttack(Keysmith.permute(variant), false);
 
                         // this to prevent error messages obscuring persistent inputs
                         findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
 
                         base.addAttack(failAttack);
                         if (!Utilities.similar(base, confirmParamGuess)) {
-                            Probe validParam = new Probe("Found unlinked param: " + candidate, 4, candidate);
-                            validParam.setEscapeStrings(permute(candidate, permuteType), permute(candidate, permuteType));
+                            Probe validParam = new Probe("Found unlinked param: " + variant, 4, variant);
+                            validParam.setEscapeStrings(Keysmith.permute(variant), Keysmith.permute(variant));
                             validParam.setRandomAnchor(false);
                             validParam.setPrefix(Probe.REPLACE);
                             ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                             if (!confirmed.isEmpty()) {
-                                Utilities.out(targetURL + " identified parameter: " + candidate);
+                                Utilities.out(targetURL + " identified parameter: " + variant);
                                 Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse));
                                 //attacks.addAll(confirmed);
                                 break;
                             } else {
-                                Utilities.log(targetURL + " failed to confirm: " + candidate);
+                                Utilities.log(targetURL + " failed to confirm: " + variant);
                             }
                         } else {
-                            Utilities.log(targetURL + " couldn't replicate: " + candidate);
+                            Utilities.log(targetURL + " couldn't replicate: " + variant);
                             base.addAttack(paramGuess);
                         }
                     }
