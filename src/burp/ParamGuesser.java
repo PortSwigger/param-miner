@@ -105,7 +105,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
-                   invertedBase);
+                    Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
             params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
         }
 
@@ -212,7 +212,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
             Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
-            HashSet<String> reportedInputs = new HashSet<>();
+            CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(8);
+
             Attack base = getBaselineAttack(injector);
             Attack paramGuess = null;
             Attack failAttack;
@@ -235,11 +236,19 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 variants.add(candidate);
                 if(candidate.contains("~")) {
+                    Utilities.out("hmm: "+candidate);
                     variants.add(candidate.split("~", 2)[0]);
                 }
 
                 for (String variant: variants) {
                     paramGuess = injector.buildAttack(variant, false);
+
+                    if (!candidate.contains("~")) {
+                        if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
+                            base = getBaselineAttack(injector);
+                        }
+                        recentParams.add(variant);
+                    }
 
                     if (!Utilities.similar(base, paramGuess)) {
                         Attack confirmParamGuess = injector.buildAttack(variant, false);
@@ -247,7 +256,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         failAttack = injector.buildAttack(Keysmith.permute(variant), false);
 
                         // this to prevent error messages obscuring persistent inputs
-                        //findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
+                        findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
 
                         base.addAttack(failAttack);
                         if (!Utilities.similar(base, confirmParamGuess)) {
@@ -271,8 +280,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                     else {
                         Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-
-                        findPersistent(baseRequestResponse, targetURL, params, reportedInputs, paramGrab, i, attackID);
+                        findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
 
                         if (!Utilities.similar(altBase, paramGrab)) {
                             Utilities.out("Potential GETbase param: "+variant);
@@ -299,10 +307,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
 
-                if (findPersistent(baseRequestResponse, targetURL, params, reportedInputs, paramGuess, i, attackID)) {
-                    base = getBaselineAttack(injector);
-                }
-
             }
             Utilities.log("Parameter name bruteforce complete: "+targetURL);
 
@@ -320,25 +324,19 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
-    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, String targetURL, ArrayList<String> params, HashSet<String> reportedInputs, Attack paramGuess, int i, String attackID) {
+    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams) {
         byte[] failResp = paramGuess.getFirstRequest().getResponse();
         if (failResp == null) {
             return false;
         }
 
-        for (int k = 1; k < i && k<4; k++) {
-            String lastPayload = params.get(i - k);
-            lastPayload = lastPayload.split("~", 2)[0];
-            String canary = Utilities.toCanary(lastPayload) + attackID;
-            lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
-            if (reportedInputs.contains(lastPayload)) {
-                continue;
-            }
-
+        for(Iterator<String> params = recentParams.iterator(); params.hasNext();) {
+            String param = params.next();
+            String canary = Utilities.toCanary(param.split("~", 2)[0]) + attackID;
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
-                Utilities.log(targetURL + " identified persistent parameter: " + lastPayload);
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
-                reportedInputs.add(lastPayload);
+                Utilities.log(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
+                params.remove();
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + param, "Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
                 return true;
             }
         }
