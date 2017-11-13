@@ -236,7 +236,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 variants.add(candidate);
                 if(candidate.contains("~")) {
-                    Utilities.out("hmm: "+candidate);
                     variants.add(candidate.split("~", 2)[0]);
                 }
 
@@ -291,22 +290,26 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                             if (!Utilities.similar(altBase, paramGrab)) {
                                 Utilities.out("Confirmed GETbase param: "+variant);
+                                IHttpRequestResponse[] evidence = new IHttpRequestResponse[3];
+                                evidence[0] = altBase.getFirstRequest();
+                                evidence[1] = paramGuess.getFirstRequest();
+                                evidence[2] = paramGrab.getFirstRequest();
+                                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Second-order param: " + candidate, "Review evidence", "High", "Firm", "Investigate"));
                             }
                         }
 
                     }
-                }
 
-                for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
-                    String[] parsed = Keysmith.parseKey(key);
-                    if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate))) {
-                        Utilities.log("Found new key: "+key);
-                        params.add(i+1, key);
-                        max++;
-                        paramGrabber.saveParams(paramGuess.getFirstRequest());
+                    for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
+                        String[] parsed = Keysmith.parseKey(key);
+                        if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate) || parsed[1].equals(variant))) {
+                            Utilities.out("Found new key: "+key);
+                            params.add(i+1, key);
+                            max++;
+                            paramGrabber.saveParams(paramGuess.getFirstRequest());
+                        }
                     }
                 }
-
             }
             Utilities.log("Parameter name bruteforce complete: "+targetURL);
 
