@@ -105,7 +105,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
-                   Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
+                   invertedBase);
             params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
         }
 
@@ -194,6 +194,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
         String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis());
+        
+        byte[] invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
 
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
@@ -217,6 +219,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             int max = max(params.size(), 300);
             max = min(max, 1000);
 
+            //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
+            //HashMap<String, Attack> baselines = new HashMap<>();
+            //baselines.put(ref, new Attack(baseRequestResponse));
+            Attack altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+
             for (int i = 0; i<max; i++) {
 
                 String candidate = params.get(i);
@@ -237,7 +247,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         failAttack = injector.buildAttack(Keysmith.permute(variant), false);
 
                         // this to prevent error messages obscuring persistent inputs
-                        findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
+                        //findPersistent(baseRequestResponse, targetURL, params, reportedInputs, failAttack, i, attackID);
 
                         base.addAttack(failAttack);
                         if (!Utilities.similar(base, confirmParamGuess)) {
@@ -258,6 +268,24 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             Utilities.log(targetURL + " couldn't replicate: " + variant);
                             base.addAttack(paramGuess);
                         }
+                    }
+                    else {
+                        Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+
+                        findPersistent(baseRequestResponse, targetURL, params, reportedInputs, paramGrab, i, attackID);
+
+                        if (!Utilities.similar(altBase, paramGrab)) {
+                            Utilities.out("Potential GETbase param: "+variant);
+                            injector.buildAttack(Keysmith.permute(variant), false);
+                            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                            injector.buildAttack(variant, false);
+
+                            paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+                            if (!Utilities.similar(altBase, paramGrab)) {
+                                Utilities.out("Confirmed GETbase param: "+variant);
+                            }
+                        }
+
                     }
                 }
 
@@ -300,11 +328,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         for (int k = 1; k < i && k<4; k++) {
             String lastPayload = params.get(i - k);
+            lastPayload = lastPayload.split("~", 2)[0];
             String canary = Utilities.toCanary(lastPayload) + attackID;
             lastPayload = lastPayload.substring(lastPayload.lastIndexOf(':')+1);
             if (reportedInputs.contains(lastPayload)) {
                 continue;
             }
+
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
                 Utilities.log(targetURL + " identified persistent parameter: " + lastPayload);
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Persistent param: " + lastPayload, "Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
