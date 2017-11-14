@@ -4,10 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -18,6 +15,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import static burp.Keysmith.getHtmlKeys;
+import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 public class BurpExtender implements IBurpExtender {
     private static final String name = "Backslash Powered Scanner";
@@ -145,23 +143,24 @@ class ParamSpammer implements IIntruderPayloadGenerator {
 
 class ParamGrabber implements  IScannerCheck {
 
-    public HashSet<JsonElement> getSavedJson() {
+    public Set<JsonElement> getSavedJson() {
         return savedJson;
     }
 
-    HashSet<JsonElement> savedJson;
+    Set<JsonElement> savedJson;
     HashSet<ArrayList<String>> done;
 
-    public HashSet<String> getSavedGET() {
+    public Set<String> getSavedGET() {
         return savedGET;
     }
 
-    HashSet<String> savedGET;
+    Set<String> savedGET;
 
     ParamGrabber() {
-        savedJson = new HashSet<>();
+        savedJson = ConcurrentHashMap.newKeySet();
+        //savedJson = ConcurrentHashMap.newKeySet();//new HashSet<>();
         done = new HashSet<>();
-        savedGET = new HashSet<>();
+        savedGET = ConcurrentHashMap.newKeySet();
     }
 
     @Override

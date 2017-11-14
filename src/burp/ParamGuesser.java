@@ -113,7 +113,15 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         HashMap<Integer, Set<String>> responses = new HashMap<>();
 
         Iterator<JsonElement> savedJson = paramGrabber.getSavedJson().iterator();
-        for (JsonElement resp = savedJson.next(); savedJson.hasNext();) {
+        while (savedJson.hasNext()) {
+            JsonElement resp = null;
+            try {
+                resp = savedJson.next();
+            }
+            catch (NoSuchElementException e) {
+                break;
+            }
+
             HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(resp, requestParams));
             int matches = 0;
             for (String requestKey: keys) {
