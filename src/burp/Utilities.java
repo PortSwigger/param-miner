@@ -309,6 +309,17 @@ class Utilities {
         return matches;
     }
 
+    public static void doActiveScan(IHttpRequestResponse req, int[] offsets) {
+        String host = helpers.analyzeRequest(req).getUrl().getHost();
+        int port = helpers.analyzeRequest(req).getUrl().getPort();
+        boolean useHTTPS = helpers.analyzeRequest(req).getUrl().toString().startsWith("https");
+        ArrayList<int[]> offsetList = new ArrayList<>();
+        offsetList.add(offsets);
+        callbacks.doActiveScan(
+                host, port, useHTTPS, req.getRequest(), offsetList
+        );
+    }
+
     static String toCanary(String payload) {
         return "wrtqva" + mangle(payload);
     }

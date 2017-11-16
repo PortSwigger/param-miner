@@ -1,6 +1,7 @@
 package burp;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -100,9 +101,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
-        // add JSON from observed responses,
+        // add JSON from response
         params.addAll(Keysmith.getAllKeys(baseRequestResponse.getResponse(), requestParams));
 
+        // add JSON from method-flip response
         if(baseRequestResponse.getRequest()[0] != 'G') {
             IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
                     Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
@@ -110,11 +112,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
 
+        // add JSON from elsewhere
         HashMap<Integer, Set<String>> responses = new HashMap<>();
 
-        Iterator<JsonElement> savedJson = paramGrabber.getSavedJson().iterator();
+        Iterator<IHttpRequestResponse> savedJson = paramGrabber.getSavedJson().iterator();
         while (savedJson.hasNext()) {
-            JsonElement resp = null;
+            IHttpRequestResponse resp = null; // todo record resp
             try {
                 resp = savedJson.next();
             }
@@ -122,13 +125,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 break;
             }
 
-            HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(resp, requestParams));
+            JsonParser parser = new JsonParser();
+            JsonElement json = parser.parse(Utilities.getBody(resp.getResponse()));
+            HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(json, requestParams));
             int matches = 0;
             for (String requestKey: keys) {
                 if (requestParams.containsKey(requestKey) || requestParams.containsKey(Keysmith.parseKey(requestKey)[1])) {
                     matches++;
                 }
-
             }
 
             // if there are no matches, don't bother with prefixes
@@ -217,7 +221,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             final String payload = ""; // formerly "<a`'\\\"${{\\\\"
 
 
-            IScannerInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
+            ParamInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
 
             PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
@@ -276,6 +280,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                             if (!confirmed.isEmpty()) {
                                 Utilities.out(targetURL + " identified parameter: " + variant);
+
+                                String scanBasePayload = candidate.split("~", 2)[0];
+                                IHttpRequestResponse scanBaseAttack = injector.buildAttack(scanBasePayload, false).getFirstRequest();
+                                byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
+                                int start = Utilities.helpers.indexOf(scanBaseAttack.getRequest(), scanBaseGrep, true, 0, scanBaseAttack.getRequest().length);
+                                int end = start + scanBaseGrep.length;
+                                Utilities.doActiveScan(scanBaseAttack, new int[]{start, end});
+
                                 Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse));
                                 //attacks.addAll(confirmed);
                                 break;
@@ -364,7 +376,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return base;
     }
 
-    private static IScannerInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
+    private static ParamInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
         return type == IParameter.PARAM_JSON ?
                         new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID) :
                         new RailsInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);

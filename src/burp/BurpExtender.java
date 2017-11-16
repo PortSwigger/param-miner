@@ -143,11 +143,11 @@ class ParamSpammer implements IIntruderPayloadGenerator {
 
 class ParamGrabber implements  IScannerCheck {
 
-    public Set<JsonElement> getSavedJson() {
+    public Set<IHttpRequestResponse> getSavedJson() {
         return savedJson;
     }
 
-    Set<JsonElement> savedJson;
+    Set<IHttpRequestResponse> savedJson;
     HashSet<ArrayList<String>> done;
 
     public Set<String> getSavedGET() {
@@ -186,7 +186,7 @@ class ParamGrabber implements  IScannerCheck {
                 if (!done.contains(keys)) {
                     //Utilities.out("Importing observed data...");
                     done.add(keys);
-                    savedJson.add(json);
+                    savedJson.add(baseRequestResponse);
                 }
             } catch (JsonParseException e) {
 
@@ -470,6 +470,15 @@ class CustomScanIssue implements IScanIssue {
 }
 
 
+class RequestWithOffsets {
+    private byte[] request;
+    private int[] offsets;
+
+    public RequestWithOffsets(byte[] request, int[] offsets) {
+        this.request = request;
+        this.offsets = offsets;
+    }
+}
 
 class ParamInsertionPoint implements IScannerInsertionPoint {
     byte[] request;
@@ -482,6 +491,10 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
         this.name = name;
         this.value = value;
         this.type = type;
+    }
+
+    String calculateValue(String unparsed) {
+        return unparsed;
     }
 
     @Override
@@ -597,6 +610,10 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         root = new JsonParser().parse(baseInput);
     }
 
+    public byte[] getActualValue(byte[] payload) {
+        return Utilities.helpers.stringToBytes(Utilities.toCanary(Utilities.helpers.bytesToString(payload)) + attackID + value);
+    }
+
     private Object makeNode(ArrayList<String> keys, int i, Object paramValue) {
         if (i+1 == keys.size()) {
             return paramValue;
@@ -609,10 +626,11 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         }
     }
 
+    String calculateValue(String unparsed) {
+        return Utilities.toCanary(unparsed) + attackID + value;
+    }
 
 
-
-    // todo handle ~false/~true
     @Override
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
@@ -624,7 +642,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
             paramValue = Utilities.invert(parts[1]);
         }
         else {
-            paramValue = Utilities.toCanary(unparsed) + attackID + value;
+            paramValue = calculateValue(unparsed);
         }
 
         try {
