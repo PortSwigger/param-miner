@@ -536,20 +536,24 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         this.attackID = attackID;
     }
 
+    String calculateValue(String unparsed) {
+        return Utilities.toCanary(unparsed) + attackID + value;
+    }
+
     @Override
     public byte[] buildRequest(byte[] payload) {
         String name = Utilities.helpers.bytesToString(payload);
-        String val;
+        String paramValue;
         if (name.contains("~")) {
             String[] parts = name.split("~", 2);
             name = parts[0];
-            val = String.valueOf(Utilities.invert(parts[1]));
+            paramValue = String.valueOf(Utilities.invert(parts[1]));
         }
         else {
-            val = Utilities.toCanary(name) + attackID + value;
+            paramValue = calculateValue(name);
         }
 
-        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(val), type);
+        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(paramValue), type);
         return Utilities.helpers.updateParameter(request, newParam);
     }
 }
@@ -608,10 +612,6 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         body = Arrays.copyOfRange(request, start, request.length);
         baseInput = Utilities.helpers.bytesToString(body);
         root = new JsonParser().parse(baseInput);
-    }
-
-    public byte[] getActualValue(byte[] payload) {
-        return Utilities.helpers.stringToBytes(Utilities.toCanary(Utilities.helpers.bytesToString(payload)) + attackID + value);
     }
 
     private Object makeNode(ArrayList<String> keys, int i, Object paramValue) {

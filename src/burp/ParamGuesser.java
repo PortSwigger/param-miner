@@ -280,16 +280,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                             if (!confirmed.isEmpty()) {
                                 Utilities.out(targetURL + " identified parameter: " + variant);
-
-                                String scanBasePayload = candidate.split("~", 2)[0];
-                                IHttpRequestResponse scanBaseAttack = injector.buildAttack(scanBasePayload, false).getFirstRequest();
-                                byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
-                                int start = Utilities.helpers.indexOf(scanBaseAttack.getRequest(), scanBaseGrep, true, 0, scanBaseAttack.getRequest().length);
-                                int end = start + scanBaseGrep.length;
-                                Utilities.doActiveScan(scanBaseAttack, new int[]{start, end});
-
                                 Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse));
-                                //attacks.addAll(confirmed);
+
+                                scanParam(insertionPoint, injector, candidate.split("~", 2)[0]);
                                 break;
                             } else {
                                 Utilities.log(targetURL + " failed to confirm: " + variant);
@@ -347,6 +340,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         return attacks;
+    }
+
+    private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
+        IHttpRequestResponse scanBaseAttack = injector.buildAttack(scanBasePayload, false).getFirstRequest();
+        byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
+        int start = Utilities.helpers.indexOf(scanBaseAttack.getRequest(), scanBaseGrep, true, 0, scanBaseAttack.getRequest().length);
+        int end = start + scanBaseGrep.length;
+        Utilities.doActiveScan(scanBaseAttack, new int[]{start, end});
     }
 
     private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams) {
