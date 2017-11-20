@@ -128,7 +128,7 @@ class PayloadInjector {
         }
 
         IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(baseRequestResponse.getHttpService(), request);
-        Utilities.out("Payload: "+payload+"|"+baseRequestResponse.getHttpService().getHost());
+        //Utilities.out("Payload: "+payload+"|"+baseRequestResponse.getHttpService().getHost());
 
         return requestResponse;// Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
     }

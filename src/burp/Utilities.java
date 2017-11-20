@@ -703,6 +703,10 @@ class Utilities {
     }
 
     static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse) {
+        return reportReflectionIssue(attacks, baseRequestResponse, "");
+    }
+
+    static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse, String title) {
         IHttpRequestResponse[] requests = new IHttpRequestResponse[attacks.length];
         Probe bestProbe = null;
         boolean reliable = false;
@@ -781,9 +785,11 @@ class Utilities {
             }
         }
 
+        if ("".equals(title)) {
+            title = "Interesting input handling:" +bestProbe.getName();
+        }
 
-
-        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), bestProbe.getName(), detail, reliable, reportedSeverity); //attacks[attacks.length-2].getProbe().getName()
+        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), title, detail, reliable, reportedSeverity); //attacks[attacks.length-2].getProbe().getName()
     }
 }
 
