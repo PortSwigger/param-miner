@@ -315,9 +315,13 @@ class Utilities {
         boolean useHTTPS = helpers.analyzeRequest(req).getUrl().toString().startsWith("https");
         ArrayList<int[]> offsetList = new ArrayList<>();
         offsetList.add(offsets);
-        callbacks.doActiveScan(
-                host, port, useHTTPS, req.getRequest(), offsetList
-        );
+        try {
+            callbacks.doActiveScan(
+                    host, port, useHTTPS, req.getRequest(), offsetList
+            );
+        } catch (IllegalArgumentException e) {
+            Utilities.err("Couldn't scan, bad insertion points: "+Arrays.toString(offsetList.get(0)));
+        }
     }
 
     static String toCanary(String payload) {
