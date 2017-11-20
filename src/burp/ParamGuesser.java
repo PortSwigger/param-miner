@@ -208,8 +208,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
         String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis());
-        
-        byte[] invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
 
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
@@ -237,10 +235,19 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
             //HashMap<String, Attack> baselines = new HashMap<>();
             //baselines.put(ref, new Attack(baseRequestResponse));
-            Attack altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+            byte[] invertedBase = null;
+            Attack altBase = null;
+            boolean try_flip = false;
+            if(baseRequestResponse.getRequest()[0] != 'G') {
+                invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
+                altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+                if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404) {
+                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                    try_flip = true;
+                }
+            }
 
             for (int i = 0; i<max; i++) {
 
@@ -292,7 +299,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             base.addAttack(paramGuess);
                         }
                     }
-                    else {
+                    else if(try_flip) {
                         Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                         findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
 
