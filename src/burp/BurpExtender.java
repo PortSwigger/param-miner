@@ -506,6 +506,14 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
         return value;
     }
 
+//    public byte[] buildMassRequest(byte[] payload) {
+//        String bulk = Utilities.helpers.bytesToString(payload);
+//        String[] params = bulk.split("[|]");
+//        for (String param: params) {
+//
+//        }
+//    }
+
     @Override
     public byte[] buildRequest(byte[] payload) {
         IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);

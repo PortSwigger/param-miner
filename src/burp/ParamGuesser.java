@@ -261,7 +261,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
 
                 for (String variant: variants) {
-                    paramGuess = injector.buildAttack(variant, false);
+                    paramGuess = injector.probeAttack(variant);
 
                     if (!candidate.contains("~")) {
                         if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
@@ -271,9 +271,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
 
                     if (!Utilities.similar(base, paramGuess)) {
-                        Attack confirmParamGuess = injector.buildAttack(variant, false);
+                        Attack confirmParamGuess = injector.probeAttack(variant);
 
-                        failAttack = injector.buildAttack(Keysmith.permute(variant), false);
+                        failAttack = injector.probeAttack(Keysmith.permute(variant));
 
                         // this to prevent error messages obscuring persistent inputs
                         findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
@@ -305,9 +305,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                         if (!Utilities.similar(altBase, paramGrab)) {
                             Utilities.out("Potential GETbase param: "+variant);
-                            injector.buildAttack(Keysmith.permute(variant), false);
+                            injector.probeAttack(Keysmith.permute(variant));
                             altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                            injector.buildAttack(variant, false);
+                            injector.probeAttack(variant);
 
                             paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                             if (!Utilities.similar(altBase, paramGrab)) {
@@ -350,7 +350,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
-        IHttpRequestResponse scanBaseAttack = injector.buildAttack(scanBasePayload, false).getFirstRequest();
+        IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
         byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
         int start = Utilities.helpers.indexOf(scanBaseAttack.getRequest(), scanBaseGrep, true, 0, scanBaseAttack.getRequest().length);
         int end = start + scanBaseGrep.length;
@@ -377,9 +377,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private static Attack getBaselineAttack(PayloadInjector injector) {
-        Attack base = injector.buildAttack(Utilities.randomString(6), false);
+        Attack base = injector.probeAttack(Utilities.randomString(6));
         for(int i=0; i<4; i++) {
-            base.addAttack(injector.buildAttack(Utilities.randomString((i+1)*(i+1)), false));
+            base.addAttack(injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
         }
         return base;
     }
