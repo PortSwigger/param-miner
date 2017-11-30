@@ -135,8 +135,10 @@ class PayloadInjector {
 
     Attack probeAttack(String payload) {
         byte[] request = insertionPoint.buildRequest(payload.getBytes());
+
         IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         request = burp.Utilities.helpers.addParameter(request, cacheBuster);
+
         IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(baseRequestResponse.getHttpService(), request);
         return new Attack(requestResponse, null, null, "");
     }

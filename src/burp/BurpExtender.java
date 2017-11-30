@@ -506,14 +506,6 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
         return value;
     }
 
-//    public byte[] buildMassRequest(byte[] payload) {
-//        String bulk = Utilities.helpers.bytesToString(payload);
-//        String[] params = bulk.split("[|]");
-//        for (String param: params) {
-//
-//        }
-//    }
-
     @Override
     public byte[] buildRequest(byte[] payload) {
         IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(Utilities.helpers.bytesToString(payload)), type);
@@ -549,19 +541,26 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 
     @Override
     public byte[] buildRequest(byte[] payload) {
-        String name = Utilities.helpers.bytesToString(payload);
-        String paramValue;
-        if (name.contains("~")) {
-            String[] parts = name.split("~", 2);
-            name = parts[0];
-            paramValue = String.valueOf(Utilities.invert(parts[1]));
-        }
-        else {
-            paramValue = calculateValue(name);
-        }
 
-        IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(paramValue), type);
-        return Utilities.helpers.updateParameter(request, newParam);
+        String bulk = Utilities.helpers.bytesToString(payload);
+        bulk += "|cowbar";
+        String[] params = bulk.split("[|]");
+        byte[] built = request;
+        for (String name: params) {
+            String paramValue;
+            if (name.contains("~")) {
+                String[] parts = name.split("~", 2);
+                name = parts[0];
+                paramValue = String.valueOf(Utilities.invert(parts[1]));
+            }
+            else {
+                paramValue = calculateValue(name);
+            }
+
+            IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(paramValue), type);
+            built = Utilities.helpers.updateParameter(built, newParam);
+        }
+        return built;
     }
 }
 
