@@ -186,7 +186,7 @@ class ParamGrabber implements  IScannerCheck {
                 if (!done.contains(keys)) {
                     //Utilities.out("Importing observed data...");
                     done.add(keys);
-                    savedJson.add(baseRequestResponse);
+                    savedJson.add(Utilities.callbacks.saveBuffersToTempFiles(baseRequestResponse));
                 }
             } catch (JsonParseException e) {
 
@@ -582,7 +582,7 @@ class RailsInsertionPoint extends ParamNameInsertionPoint {
         defaultPrefix = maxKey;
 
         if (maxKey != null) {
-            Utilities.out("Identified default key: "+maxKey);
+            Utilities.out("Selected default key: "+maxKey);
         }
     }
 

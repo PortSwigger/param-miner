@@ -216,8 +216,12 @@ public class Keysmith {
     }
 
     static String permute(String fullparam) {
+        return permute(fullparam, true);
+    }
 
-        if(fullparam.contains("~")) {
+    static String permute(String fullparam, boolean allowValueChange) {
+
+        if(allowValueChange && fullparam.contains("~")) {
             String[] param = fullparam.split("~", 2);
             return param[0] + "~" + Utilities.invert(param[1]);
         }

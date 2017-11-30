@@ -229,7 +229,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack base = getBaselineAttack(injector);
             Attack paramGuess = null;
             Attack failAttack;
-            int max = max(params.size(), 300);
+            int max = max(params.size(), 500);
             max = min(max, 1000);
 
             //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
@@ -237,7 +237,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             //baselines.put(ref, new Attack(baseRequestResponse));
             byte[] invertedBase = null;
             Attack altBase = null;
-            boolean try_flip = false;
+            boolean tryMethodFlip = false;
             if(baseRequestResponse.getRequest()[0] != 'G') {
                 invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
                 altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
@@ -245,7 +245,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
                     altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
                     altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                    try_flip = true;
+                    tryMethodFlip = true;
                 }
             }
 
@@ -281,7 +281,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         base.addAttack(failAttack);
                         if (!Utilities.similar(base, confirmParamGuess)) {
                             Probe validParam = new Probe("Found unlinked param: " + variant, 4, variant);
-                            validParam.setEscapeStrings(Keysmith.permute(variant), Keysmith.permute(variant));
+                            validParam.setEscapeStrings(Keysmith.permute(variant), Keysmith.permute(variant, false));
                             validParam.setRandomAnchor(false);
                             validParam.setPrefix(Probe.REPLACE);
                             ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
@@ -299,7 +299,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             base.addAttack(paramGuess);
                         }
                     }
-                    else if(try_flip) {
+                    else if(tryMethodFlip) {
                         Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                         findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
 
@@ -316,7 +316,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                                 evidence[0] = altBase.getFirstRequest();
                                 evidence[1] = paramGuess.getFirstRequest();
                                 evidence[2] = paramGrab.getFirstRequest();
-                                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: "+variant+". Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
+                                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '"+variant+"'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
                             }
                         }
 
@@ -369,7 +369,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
                 Utilities.log(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
                 params.remove();
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter "+param+". Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
                 return true;
             }
         }
