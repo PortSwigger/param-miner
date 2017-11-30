@@ -207,6 +207,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
+        ArrayList<String> valueParams = new ArrayList<>();
+        for(String candidate: params) {
+            if(candidate.contains("~")) {
+                valueParams.add(candidate.split("~", 2)[0]);
+            }
+        }
+
+
         String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis());
 
         HashMap<String, String> requestParams = new HashMap<>();
@@ -252,87 +260,82 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             for (int i = 0; i<max; i++) {
 
                 String candidate = params.get(i);
+                
+                
+                
+                
+                paramGuess = injector.probeAttack(candidate);
 
-                ArrayList<String> variants = new ArrayList<>();
+                // don't think I need this if any more
+                //if (!variant.contains("~")) {
+                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
+                    base = getBaselineAttack(injector);
+                }
+                recentParams.add(candidate);
+                //}
 
-                variants.add(candidate);
-                if(candidate.contains("~")) {
-                    variants.add(candidate.split("~", 2)[0]);
+                if (!Utilities.similar(base, paramGuess)) {
+                    Attack confirmParamGuess = injector.probeAttack(candidate);
+
+                    failAttack = injector.probeAttack(Keysmith.permute(candidate));
+
+                    // this to prevent error messages obscuring persistent inputs
+                    findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
+
+                    base.addAttack(failAttack);
+                    if (!Utilities.similar(base, confirmParamGuess)) {
+                        Probe validParam = new Probe("Found unlinked param: " + candidate, 4, candidate);
+                        validParam.setEscapeStrings(Keysmith.permute(candidate), Keysmith.permute(candidate, false));
+                        validParam.setRandomAnchor(false);
+                        validParam.setPrefix(Probe.REPLACE);
+                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+                        if (!confirmed.isEmpty()) {
+                            Utilities.out(targetURL + " identified parameter: " + candidate);
+                            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
+
+                            scanParam(insertionPoint, injector, candidate.split("~", 2)[0]);
+                            break;
+                        } else {
+                            Utilities.log(targetURL + " failed to confirm: " + candidate);
+                        }
+                    } else {
+                        Utilities.log(targetURL + " couldn't replicate: " + candidate);
+                        base.addAttack(paramGuess);
+                    }
+                }
+                else if(tryMethodFlip) {
+                    Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+                    findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
+
+                    if (!Utilities.similar(altBase, paramGrab)) {
+                        Utilities.out("Potential GETbase param: "+candidate);
+                        injector.probeAttack(Keysmith.permute(candidate));
+                        altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                        injector.probeAttack(candidate);
+
+                        paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+                        if (!Utilities.similar(altBase, paramGrab)) {
+                            Utilities.out("Confirmed GETbase param: "+candidate);
+                            IHttpRequestResponse[] evidence = new IHttpRequestResponse[3];
+                            evidence[0] = altBase.getFirstRequest();
+                            evidence[1] = paramGuess.getFirstRequest();
+                            evidence[2] = paramGrab.getFirstRequest();
+                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '"+candidate+"'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
+                        }
+                    }
+
                 }
 
-                for (String variant: variants) {
-                    paramGuess = injector.probeAttack(variant);
-
-                    if (!candidate.contains("~")) {
-                        if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
-                            base = getBaselineAttack(injector);
-                        }
-                        recentParams.add(variant);
-                    }
-
-                    if (!Utilities.similar(base, paramGuess)) {
-                        Attack confirmParamGuess = injector.probeAttack(variant);
-
-                        failAttack = injector.probeAttack(Keysmith.permute(variant));
-
-                        // this to prevent error messages obscuring persistent inputs
-                        findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
-
-                        base.addAttack(failAttack);
-                        if (!Utilities.similar(base, confirmParamGuess)) {
-                            Probe validParam = new Probe("Found unlinked param: " + variant, 4, variant);
-                            validParam.setEscapeStrings(Keysmith.permute(variant), Keysmith.permute(variant, false));
-                            validParam.setRandomAnchor(false);
-                            validParam.setPrefix(Probe.REPLACE);
-                            ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                            if (!confirmed.isEmpty()) {
-                                Utilities.out(targetURL + " identified parameter: " + variant);
-                                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
-
-                                scanParam(insertionPoint, injector, candidate.split("~", 2)[0]);
-                                break;
-                            } else {
-                                Utilities.log(targetURL + " failed to confirm: " + variant);
-                            }
-                        } else {
-                            Utilities.log(targetURL + " couldn't replicate: " + variant);
-                            base.addAttack(paramGuess);
-                        }
-                    }
-                    else if(tryMethodFlip) {
-                        Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                        findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
-
-                        if (!Utilities.similar(altBase, paramGrab)) {
-                            Utilities.out("Potential GETbase param: "+variant);
-                            injector.probeAttack(Keysmith.permute(variant));
-                            altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                            injector.probeAttack(variant);
-
-                            paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                            if (!Utilities.similar(altBase, paramGrab)) {
-                                Utilities.out("Confirmed GETbase param: "+variant);
-                                IHttpRequestResponse[] evidence = new IHttpRequestResponse[3];
-                                evidence[0] = altBase.getFirstRequest();
-                                evidence[1] = paramGuess.getFirstRequest();
-                                evidence[2] = paramGrab.getFirstRequest();
-                                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '"+variant+"'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
-                            }
-                        }
-
-                    }
-
-                    for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
-                        String[] parsed = Keysmith.parseKey(key);
-                        if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate) || parsed[1].equals(variant))) {
-                            Utilities.out("Found new key: "+key);
-                            params.add(i+1, key);
-                            max++;
-                            paramGrabber.saveParams(paramGuess.getFirstRequest());
-                        }
+                for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
+                    String[] parsed = Keysmith.parseKey(key);
+                    if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate))) {
+                        Utilities.out("Found new key: "+key);
+                        params.add(i+1, key); // fixme probably adds the key in the wrong format
+                        paramGrabber.saveParams(paramGuess.getFirstRequest());
                     }
                 }
             }
+
             Utilities.log("Parameter name bruteforce complete: "+targetURL);
 
         }
