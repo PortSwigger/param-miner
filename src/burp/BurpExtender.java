@@ -595,6 +595,7 @@ class RailsInsertionPoint extends ParamNameInsertionPoint {
 
     public byte[] buildRequest(byte[] payload) {
         String key = Utilities.helpers.bytesToString(payload);
+
         if (defaultPrefix != null && !key.contains(":")) {
             key = defaultPrefix + ":" + key;
         }
@@ -640,79 +641,77 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     @Override
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
-        String unparsed = Utilities.helpers.bytesToString(payload);
-        Object paramValue;
-        if (unparsed.contains("~")) {
-            String[] parts = unparsed.split("~", 2);
-            unparsed = parts[0];
-            paramValue = Utilities.invert(parts[1]);
-        }
-        else {
-            paramValue = calculateValue(unparsed);
-        }
+        String[] params = Utilities.helpers.bytesToString(payload).split("[|]");
+        String lastBuild = baseInput;
 
         try {
-            ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
+            for (String unparsed: params) {
 
-            boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
-            Object base;
-            if (isArray) {
-                if (root.isJsonArray()) {
-                    base = new ObjectMapper().readValue(baseInput, ArrayList.class);
-                }
-                else {
-                    base = new ArrayList();
-                }
-            }
-            else {
-                if(root.isJsonObject()) {
-                    base = new ObjectMapper().readValue(baseInput, HashMap.class);
-                }
-                else {
-                    base = new HashMap();
-                }
-            }
-
-            Object next = base;
-            for (int i = 0; i < keys.size(); i++) {
-
-                String key = keys.get(i);
-                boolean setValue = i+1 == keys.size();
-
-                int index = Utilities.parseArrayIndex(key);
-                if (index != -1) {
-                    ArrayList injectionPoint = (ArrayList) next;
-                    if (injectionPoint.size() < index+1) {
-                        for(int k=injectionPoint.size(); k<index; k++) {
-                            injectionPoint.add(Utilities.generateCanary());
-                        }
-                        injectionPoint.add(makeNode(keys, i, paramValue));
-                    }
-                    else if (injectionPoint.get(index) == null || setValue) {
-                        injectionPoint.set(index, makeNode(keys, i, paramValue));
-                    }
-                    next = injectionPoint.get(index);
+                Object paramValue;
+                if (unparsed.contains("~")) {
+                    String[] parts = unparsed.split("~", 2);
+                    unparsed = parts[0];
+                    paramValue = Utilities.invert(parts[1]);
                 } else {
-                    HashMap injectionPoint = (HashMap) next;
-                    if (!injectionPoint.containsKey(key) || setValue) {
-                        injectionPoint.put(key, makeNode(keys, i, paramValue));
-                    }
-                    next = injectionPoint.get(key);
+                    paramValue = calculateValue(unparsed);
                 }
-            }
 
-            String mergedJson = new ObjectMapper().writeValueAsString(base);
+                ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
+
+                boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
+                Object base;
+                if (isArray) {
+                    if (root.isJsonArray()) {
+                        base = new ObjectMapper().readValue(lastBuild, ArrayList.class);
+                    } else {
+                        base = new ArrayList();
+                    }
+                } else {
+                    if (root.isJsonObject()) {
+                        base = new ObjectMapper().readValue(lastBuild, HashMap.class);
+                    } else {
+                        base = new HashMap();
+                    }
+                }
+
+                Object next = base;
+                for (int i = 0; i < keys.size(); i++) {
+
+                    String key = keys.get(i);
+                    boolean setValue = i + 1 == keys.size();
+
+                    int index = Utilities.parseArrayIndex(key);
+                    if (index != -1) {
+                        ArrayList injectionPoint = (ArrayList) next;
+                        if (injectionPoint.size() < index + 1) {
+                            for (int k = injectionPoint.size(); k < index; k++) {
+                                injectionPoint.add(Utilities.generateCanary());
+                            }
+                            injectionPoint.add(makeNode(keys, i, paramValue));
+                        } else if (injectionPoint.get(index) == null || setValue) {
+                            injectionPoint.set(index, makeNode(keys, i, paramValue));
+                        }
+                        next = injectionPoint.get(index);
+                    } else {
+                        HashMap injectionPoint = (HashMap) next;
+                        if (!injectionPoint.containsKey(key) || setValue) {
+                            injectionPoint.put(key, makeNode(keys, i, paramValue));
+                        }
+                        next = injectionPoint.get(key);
+                    }
+                }
+
+                lastBuild = new ObjectMapper().writeValueAsString(base);
+            }
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
-            outputStream.write(Utilities.helpers.stringToBytes(mergedJson));
+            outputStream.write(Utilities.helpers.stringToBytes(lastBuild));
             return Utilities.fixContentLength(outputStream.toByteArray());
-
-        }
-        catch (Exception e) {
-            Utilities.out("Error with "+unparsed);
+        } catch (Exception e) {
+            Utilities.out("Error with " + String.join(":", params));
             e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-            return buildRequest(Utilities.helpers.stringToBytes("error_"+unparsed.replace(":", "_")));
+            return buildRequest(Utilities.helpers.stringToBytes("error_" + String.join(":", params).replace(":", "_")));
             // throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
         }
     }

@@ -268,10 +268,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             paramGuess = injector.probeAttack(submission);
 
             if (!candidates.contains("~")) {
-                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
+                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams, candidates)) {
                     base = getBaselineAttack(injector);
                 }
-                recentParams.addAll(candidates);
+                recentParams.addAll(candidates); // fixme this results in params being found multiple times
             }
 
             Attack localBase;
@@ -289,13 +289,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 failAttack = injector.probeAttack(Keysmith.permute(submission));
 
                 // this to prevent error messages obscuring persistent inputs
-                findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
+                findPersistent(baseRequestResponse, failAttack, attackID, recentParams, null);
 
                 localBase.addAttack(failAttack);
                 if (!Utilities.similar(localBase, confirmParamGuess)) {
 
                     if(candidates.size() > 1) {
-                        Utilities.out("Splitting "+ submission);
+                        Utilities.log("Splitting "+ submission);
                         ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
                         Utilities.log("Got "+String.join("|",left));
                         ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2, candidates.size()));
@@ -319,12 +319,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         }
                     }
                 } else {
-                    Utilities.out(targetURL + " couldn't replicate: " + candidates);
-                    localBase.addAttack(paramGuess);
+                    Utilities.log(targetURL + " couldn't replicate: " + candidates);
+                    base.addAttack(paramGuess);
                 }
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
+                findPersistent(baseRequestResponse, paramGrab, attackID, recentParams, null);
 
                 if (!Utilities.similar(altBase, paramGrab)) {
                     Utilities.log("Potential GETbase param: " + candidates);
@@ -336,7 +336,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     if (!Utilities.similar(altBase, paramGrab)) {
 
                         if(candidates.size() > 1) {
-                            Utilities.out("Splitting "+ submission);
+                            Utilities.log("Splitting "+ submission);
                             ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
                             ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
                             paramBuckets.push(left);
@@ -389,7 +389,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.doActiveScan(scanBaseAttack, new int[]{start, end});
     }
 
-    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams) {
+    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams) {
+        if (currentParams == null) {
+            currentParams = new ArrayList<>();
+        }
+
         byte[] failResp = paramGuess.getFirstRequest().getResponse();
         if (failResp == null) {
             return false;
@@ -397,6 +401,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         for(Iterator<String> params = recentParams.iterator(); params.hasNext();) {
             String param = params.next();
+            if(currentParams.contains(param)) {
+                continue;
+            }
+            
             String canary = Utilities.toCanary(param.split("~", 2)[0]) + attackID;
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
                 Utilities.out(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
