@@ -34,7 +34,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     private IHttpRequestResponse req;
     private boolean backend;
     private byte type;
-    private ParamGrabber paramGrabber;
+    private ParamGrabber paramGrabber;// should be a power of 2 for max efficiency
+    public static final int BUCKET_SIZE = 16;
 
     public ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber) {
         this.paramGrabber = paramGrabber;
@@ -208,12 +209,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
         ArrayList<String> valueParams = new ArrayList<>();
-        for(String candidate: params) {
+        for(int i=0; i<params.size();i++) {
+            String candidate = params.get(i);
             if(candidate.contains("~")) {
-                valueParams.add(candidate.split("~", 2)[0]);
+                params.set(i, candidate.split("~", 2)[0]);
+                valueParams.add(candidate);
             }
         }
-
 
         String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis());
 
@@ -231,13 +233,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
         Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
-        CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(8);
+        CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(BUCKET_SIZE*3);
 
         Attack base = getBaselineAttack(injector);
         Attack paramGuess = null;
         Attack failAttack;
-        int max = max(params.size(), 500);
-        max = min(max, 1000);
 
         //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
         //HashMap<String, Attack> baselines = new HashMap<>();
@@ -258,28 +258,32 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         // put the params into buckets
         Deque<ArrayList<String>> paramBuckets = new ArrayDeque<>();
+        addParams(paramBuckets, valueParams);
+        addParams(paramBuckets, params);
 
-        for (int i = 0; i<max; i+=2) {
-            ArrayList<String> bucket = new ArrayList<String>();
-            bucket.add(params.get(i));
-            bucket.add(params.get(i+1));
-            paramBuckets.add(bucket);
-        }
 
         while (paramBuckets.size() > 0) {
             ArrayList<String> candidates = paramBuckets.pop();
             String submission = String.join("|", candidates);
             paramGuess = injector.probeAttack(submission);
 
-            // don't think I need this if any more
-            //if (!variant.contains("~")) {
-//                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
-//                    base = getBaselineAttack(injector);
-//                }
-//                recentParams.add(candidates);
-            //}
+            if (!candidates.contains("~")) {
+                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
+                    base = getBaselineAttack(injector);
+                }
+                recentParams.addAll(candidates);
+            }
 
-            if (!Utilities.similar(base, paramGuess)) {
+            Attack localBase;
+            if (submission.contains("~")) {
+                localBase = new Attack();
+                localBase.addAttack(base);
+            }
+            else {
+                localBase = base;
+            }
+
+            if (!Utilities.similar(localBase, paramGuess)) {
                 Attack confirmParamGuess = injector.probeAttack(submission);
 
                 failAttack = injector.probeAttack(Keysmith.permute(submission));
@@ -287,15 +291,15 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 // this to prevent error messages obscuring persistent inputs
                 findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
 
-                base.addAttack(failAttack);
-                if (!Utilities.similar(base, confirmParamGuess)) {
+                localBase.addAttack(failAttack);
+                if (!Utilities.similar(localBase, confirmParamGuess)) {
 
                     if(candidates.size() > 1) {
                         Utilities.out("Splitting "+ submission);
                         ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
-                        Utilities.out("Got "+String.join("|",left));
+                        Utilities.log("Got "+String.join("|",left));
                         ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2, candidates.size()));
-                        Utilities.out("Got "+String.join("|",right));
+                        Utilities.log("Got "+String.join("|",right));
                         paramBuckets.push(left);
                         paramBuckets.push(right);
                     }
@@ -304,27 +308,26 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
                         validParam.setRandomAnchor(false);
                         validParam.setPrefix(Probe.REPLACE);
-                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+                        ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam);
                         if (!confirmed.isEmpty()) {
                             Utilities.out(targetURL + " identified parameter: " + candidates);
                             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
 
                             scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
-                            break;
                         } else {
-                            Utilities.log(targetURL + " failed to confirm: " + candidates);
+                            Utilities.out(targetURL + " questionable parameter: " + candidates);
                         }
                     }
                 } else {
-                    Utilities.log(targetURL + " couldn't replicate: " + candidates);
-                    base.addAttack(paramGuess);
+                    Utilities.out(targetURL + " couldn't replicate: " + candidates);
+                    localBase.addAttack(paramGuess);
                 }
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                 findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
 
                 if (!Utilities.similar(altBase, paramGrab)) {
-                    Utilities.out("Potential GETbase param: " + candidates);
+                    Utilities.log("Potential GETbase param: " + candidates);
                     injector.probeAttack(Keysmith.permute(submission));
                     altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
                     injector.probeAttack(submission);
@@ -333,10 +336,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     if (!Utilities.similar(altBase, paramGrab)) {
 
                         if(candidates.size() > 1) {
+                            Utilities.out("Splitting "+ submission);
                             ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
                             ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
-                            paramBuckets.add(left);
-                            paramBuckets.add(right);
+                            paramBuckets.push(left);
+                            paramBuckets.push(right);
                         }
                         else {
                             Utilities.out("Confirmed GETbase param: " + candidates);
@@ -366,6 +370,17 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
+    private void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params) {
+        int limit = params.size();
+        for (int i = 0; i<limit+ BUCKET_SIZE; i+= BUCKET_SIZE) {
+            ArrayList<String> bucket = new ArrayList<>();
+            for(int k = 0; k< BUCKET_SIZE && i+k < limit; k++) {
+                bucket.add(params.get(i+k));
+            }
+            paramBuckets.add(bucket);
+        }
+    }
+
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
         byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
@@ -384,7 +399,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             String param = params.next();
             String canary = Utilities.toCanary(param.split("~", 2)[0]) + attackID;
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
-                Utilities.log(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
+                Utilities.out(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
                 params.remove();
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
                 return true;

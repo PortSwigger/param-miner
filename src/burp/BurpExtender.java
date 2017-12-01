@@ -556,6 +556,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
                 paramValue = calculateValue(name);
             }
 
+            name = Utilities.encodeParam(name);
             IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(paramValue), type);
             built = Utilities.helpers.updateParameter(built, newParam);
         }
