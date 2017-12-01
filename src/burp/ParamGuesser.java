@@ -223,131 +223,143 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
-        try {
-            final String payload = ""; // formerly "<a`'\\\"${{\\\\"
+        final String payload = ""; // formerly "<a`'\\\"${{\\\\"
 
 
-            ParamInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
+        ParamInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
 
-            PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
+        PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
-            Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
-            CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(8);
+        Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
+        CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(8);
 
-            Attack base = getBaselineAttack(injector);
-            Attack paramGuess = null;
-            Attack failAttack;
-            int max = max(params.size(), 500);
-            max = min(max, 1000);
+        Attack base = getBaselineAttack(injector);
+        Attack paramGuess = null;
+        Attack failAttack;
+        int max = max(params.size(), 500);
+        max = min(max, 1000);
 
-            //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
-            //HashMap<String, Attack> baselines = new HashMap<>();
-            //baselines.put(ref, new Attack(baseRequestResponse));
-            byte[] invertedBase = null;
-            Attack altBase = null;
-            boolean tryMethodFlip = false;
-            if(baseRequestResponse.getRequest()[0] != 'G') {
-                invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
-                altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404) {
-                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                    tryMethodFlip = true;
-                }
+        //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
+        //HashMap<String, Attack> baselines = new HashMap<>();
+        //baselines.put(ref, new Attack(baseRequestResponse));
+        byte[] invertedBase = null;
+        Attack altBase = null;
+        boolean tryMethodFlip = false;
+        if(baseRequestResponse.getRequest()[0] != 'G') {
+            invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
+            altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+            if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404) {
+                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                tryMethodFlip = true;
             }
+        }
 
-            for (int i = 0; i<max; i++) {
+        // put the params into buckets
+        Deque<ArrayList<String>> paramBuckets = new ArrayDeque<>();
 
-                String candidate = params.get(i);
-                
-                
-                
-                
-                paramGuess = injector.probeAttack(candidate);
+        for (int i = 0; i<max; i+=2) {
+            ArrayList<String> bucket = new ArrayList<String>();
+            bucket.add(params.get(i));
+            bucket.add(params.get(i+1));
+            paramBuckets.add(bucket);
+        }
 
-                // don't think I need this if any more
-                //if (!variant.contains("~")) {
-                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
-                    base = getBaselineAttack(injector);
-                }
-                recentParams.add(candidate);
-                //}
+        while (paramBuckets.size() > 0) {
+            ArrayList<String> candidates = paramBuckets.pop(); // fixme concurrentModificationException
+            String submission = String.join("|", candidates);
+            paramGuess = injector.probeAttack(submission);
 
-                if (!Utilities.similar(base, paramGuess)) {
-                    Attack confirmParamGuess = injector.probeAttack(candidate);
+            // don't think I need this if any more
+            //if (!variant.contains("~")) {
+//                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams)) {
+//                    base = getBaselineAttack(injector);
+//                }
+//                recentParams.add(candidates);
+            //}
 
-                    failAttack = injector.probeAttack(Keysmith.permute(candidate));
+            if (!Utilities.similar(base, paramGuess)) {
+                Attack confirmParamGuess = injector.probeAttack(submission);
 
-                    // this to prevent error messages obscuring persistent inputs
-                    findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
+                failAttack = injector.probeAttack(Keysmith.permute(submission));
 
-                    base.addAttack(failAttack);
-                    if (!Utilities.similar(base, confirmParamGuess)) {
-                        Probe validParam = new Probe("Found unlinked param: " + candidate, 4, candidate);
-                        validParam.setEscapeStrings(Keysmith.permute(candidate), Keysmith.permute(candidate, false));
+                // this to prevent error messages obscuring persistent inputs
+                findPersistent(baseRequestResponse, failAttack, attackID, recentParams);
+
+                base.addAttack(failAttack);
+                if (!Utilities.similar(base, confirmParamGuess)) {
+
+                    if(candidates.size() > 1) {
+                        Utilities.out("Splitting items");
+                        ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
+                        ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
+                        paramBuckets.push(left);
+                        paramBuckets.push(right);
+                    }
+                    else {
+                        Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
+                        validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
                         validParam.setRandomAnchor(false);
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
                         if (!confirmed.isEmpty()) {
-                            Utilities.out(targetURL + " identified parameter: " + candidate);
+                            Utilities.out(targetURL + " identified parameter: " + candidates);
                             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
 
-                            scanParam(insertionPoint, injector, candidate.split("~", 2)[0]);
+                            scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
                             break;
                         } else {
-                            Utilities.log(targetURL + " failed to confirm: " + candidate);
+                            Utilities.log(targetURL + " failed to confirm: " + candidates);
                         }
-                    } else {
-                        Utilities.log(targetURL + " couldn't replicate: " + candidate);
-                        base.addAttack(paramGuess);
                     }
+                } else {
+                    Utilities.log(targetURL + " couldn't replicate: " + candidates);
+                    base.addAttack(paramGuess);
                 }
-                else if(tryMethodFlip) {
-                    Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                    findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
+            } else if (tryMethodFlip) {
+                Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+                findPersistent(baseRequestResponse, paramGrab, attackID, recentParams);
 
+                if (!Utilities.similar(altBase, paramGrab)) {
+                    Utilities.out("Potential GETbase param: " + candidates);
+                    injector.probeAttack(Keysmith.permute(submission));
+                    altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                    injector.probeAttack(submission);
+
+                    paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                     if (!Utilities.similar(altBase, paramGrab)) {
-                        Utilities.out("Potential GETbase param: "+candidate);
-                        injector.probeAttack(Keysmith.permute(candidate));
-                        altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                        injector.probeAttack(candidate);
 
-                        paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                        if (!Utilities.similar(altBase, paramGrab)) {
-                            Utilities.out("Confirmed GETbase param: "+candidate);
+                        if(candidates.size() > 1) {
+                            ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
+                            ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
+                            paramBuckets.add(left);
+                            paramBuckets.add(right);
+                        }
+                        else {
+                            Utilities.out("Confirmed GETbase param: " + candidates);
                             IHttpRequestResponse[] evidence = new IHttpRequestResponse[3];
                             evidence[0] = altBase.getFirstRequest();
                             evidence[1] = paramGuess.getFirstRequest();
                             evidence[2] = paramGrab.getFirstRequest();
-                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '"+candidate+"'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
+                            Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '" + candidates + "'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
                         }
                     }
-
-                }
-
-                for(String key: Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)){
-                    String[] parsed = Keysmith.parseKey(key);
-                    if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidate))) {
-                        Utilities.out("Found new key: "+key);
-                        params.add(i+1, key); // fixme probably adds the key in the wrong format
-                        paramGrabber.saveParams(paramGuess.getFirstRequest());
-                    }
                 }
             }
 
-            Utilities.log("Parameter name bruteforce complete: "+targetURL);
+//                    for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
+//                        String[] parsed = Keysmith.parseKey(key);
+//                        if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidates))) {
+//                            Utilities.out("Found new key: " + key);
+//                            params.add(i + 1, key); // fixme probably adds the key in the wrong format
+//                            paramGrabber.saveParams(paramGuess.getFirstRequest());
+//                        }
+//                    }
+        }
 
-        }
-        catch (RuntimeException e) {
-            Utilities.log("Parameter name bruteforce aborted: "+targetURL);
-            if(!e.getMessage().contains("Extension unloaded")) {
-                e.printStackTrace();
-                e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-                Utilities.out(e.getMessage());
-            }
-            return attacks;
-        }
+
+        Utilities.log("Parameter name bruteforce complete: "+targetURL);
 
         return attacks;
     }

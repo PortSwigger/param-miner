@@ -220,22 +220,26 @@ public class Keysmith {
     }
 
     static String permute(String fullparam, boolean allowValueChange) {
-
-        if(allowValueChange && fullparam.contains("~")) {
-            String[] param = fullparam.split("~", 2);
-            return param[0] + "~" + Utilities.invert(param[1]);
-        }
-        else {
-            String[] keys = fullparam.split(":");
-            for (int i = keys.length - 1; i >= 0; i--) {
-                if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                    keys[i] += Utilities.randomString(3);
-                    break;
+        String[] params = fullparam.split("[|]");
+        ArrayList<String> out = new ArrayList<>();
+        for (String eachparam: params) {
+            if (allowValueChange && eachparam.contains("~")) {
+                String[] param = eachparam.split("~", 2);
+                out.add(param[0] + "~" + Utilities.invert(param[1]));
+            } else {
+                String[] keys = eachparam.split(":");
+                for (int i = keys.length - 1; i >= 0; i--) {
+                    if (Utilities.parseArrayIndex(keys[i]) == -1) {
+                        keys[i] += Utilities.randomString(3);
+                        break;
+                    }
                 }
-            }
 
-            return String.join(":", keys);
+                out.add(String.join(":", keys));
+            }
         }
+
+        return String.join("|", out);
 
     }
 

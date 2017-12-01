@@ -543,7 +543,6 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     public byte[] buildRequest(byte[] payload) {
 
         String bulk = Utilities.helpers.bytesToString(payload);
-        bulk += "|cowbar";
         String[] params = bulk.split("[|]");
         byte[] built = request;
         for (String name: params) {
