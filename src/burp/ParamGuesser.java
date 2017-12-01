@@ -404,7 +404,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             if(currentParams.contains(param)) {
                 continue;
             }
-            
+
             String canary = Utilities.toCanary(param.split("~", 2)[0]) + attackID;
             if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1) {
                 Utilities.out(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
