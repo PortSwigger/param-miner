@@ -267,7 +267,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         while (paramBuckets.size() > 0) {
-            ArrayList<String> candidates = paramBuckets.pop(); // fixme concurrentModificationException
+            ArrayList<String> candidates = paramBuckets.pop();
             String submission = String.join("|", candidates);
             paramGuess = injector.probeAttack(submission);
 
@@ -291,9 +291,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 if (!Utilities.similar(base, confirmParamGuess)) {
 
                     if(candidates.size() > 1) {
-                        Utilities.out("Splitting items");
+                        Utilities.out("Splitting "+ submission);
                         ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
-                        ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
+                        Utilities.out("Got "+String.join("|",left));
+                        ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2, candidates.size()));
+                        Utilities.out("Got "+String.join("|",right));
                         paramBuckets.push(left);
                         paramBuckets.push(right);
                     }
