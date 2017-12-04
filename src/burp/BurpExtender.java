@@ -677,27 +677,31 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 Object next = base;
                 for (int i = 0; i < keys.size(); i++) {
 
-                    String key = keys.get(i);
-                    boolean setValue = i + 1 == keys.size();
+                    try {
+                        String key = keys.get(i);
+                        boolean setValue = i + 1 == keys.size();
 
-                    int index = Utilities.parseArrayIndex(key);
-                    if (index != -1) {
-                        ArrayList injectionPoint = (ArrayList) next;
-                        if (injectionPoint.size() < index + 1) {
-                            for (int k = injectionPoint.size(); k < index; k++) {
-                                injectionPoint.add(Utilities.generateCanary());
+                        int index = Utilities.parseArrayIndex(key);
+                        if (index != -1) {
+                            ArrayList injectionPoint = (ArrayList) next;
+                            if (injectionPoint.size() < index + 1) {
+                                for (int k = injectionPoint.size(); k < index; k++) {
+                                    injectionPoint.add(Utilities.generateCanary());
+                                }
+                                injectionPoint.add(makeNode(keys, i, paramValue));
+                            } else if (injectionPoint.get(index) == null || setValue) {
+                                injectionPoint.set(index, makeNode(keys, i, paramValue));
                             }
-                            injectionPoint.add(makeNode(keys, i, paramValue));
-                        } else if (injectionPoint.get(index) == null || setValue) {
-                            injectionPoint.set(index, makeNode(keys, i, paramValue));
+                            next = injectionPoint.get(index);
+                        } else {
+                            HashMap injectionPoint = (HashMap) next;
+                            if (!injectionPoint.containsKey(key) || setValue) {
+                                injectionPoint.put(key, makeNode(keys, i, paramValue));
+                            }
+                            next = injectionPoint.get(key);
                         }
-                        next = injectionPoint.get(index);
-                    } else {
-                        HashMap injectionPoint = (HashMap) next;
-                        if (!injectionPoint.containsKey(key) || setValue) {
-                            injectionPoint.put(key, makeNode(keys, i, paramValue));
-                        }
-                        next = injectionPoint.get(key);
+                    } catch(ClassCastException e) {
+                        //Utilities.out("Cast error"); // todo figure out a sensible action to stop this form occuring
                     }
                 }
 
