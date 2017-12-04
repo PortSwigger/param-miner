@@ -230,7 +230,7 @@ public class Keysmith {
                 String[] keys = eachparam.split(":");
                 for (int i = keys.length - 1; i >= 0; i--) {
                     if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                        keys[i] += Utilities.randomString(3);
+                        keys[i] += Utilities.randomString(6);
                         break;
                     }
                 }

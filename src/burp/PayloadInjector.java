@@ -5,11 +5,11 @@ import java.util.ArrayList;
 
 class PayloadInjector {
 
-    private IHttpRequestResponse baseRequestResponse;
+    private IHttpService service;
     private IScannerInsertionPoint insertionPoint;
 
     PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        this.baseRequestResponse = baseRequestResponse;
+        this.service = baseRequestResponse.getHttpService();
         this.insertionPoint = insertionPoint;
     }
 
@@ -127,7 +127,7 @@ class PayloadInjector {
             request = burp.Utilities.helpers.addParameter(request, cacheBuster);
         }
 
-        IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(baseRequestResponse.getHttpService(), request);
+        IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(service, request);
         //Utilities.out("Payload: "+payload+"|"+baseRequestResponse.getHttpService().getHost());
 
         return requestResponse;// Utilities.buildRequest(baseRequestResponse, insertionPoint, payload)
@@ -139,7 +139,7 @@ class PayloadInjector {
         IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         request = burp.Utilities.helpers.addParameter(request, cacheBuster);
 
-        IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(baseRequestResponse.getHttpService(), request);
+        IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(service, request);
         return new Attack(requestResponse, null, null, "");
     }
 

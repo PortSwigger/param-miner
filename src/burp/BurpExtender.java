@@ -541,10 +541,13 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 
     @Override
     public byte[] buildRequest(byte[] payload) {
+        return buildRequest(payload, request);
+    }
 
+    public byte[] buildRequest(byte[] payload, byte[] inputRequest) {
         String bulk = Utilities.helpers.bytesToString(payload);
         String[] params = bulk.split("[|]");
-        byte[] built = request;
+        byte[] built = inputRequest;
         for (String name: params) {
             String paramValue;
             if (name.contains("~")) {
@@ -594,12 +597,16 @@ class RailsInsertionPoint extends ParamNameInsertionPoint {
     }
 
     public byte[] buildRequest(byte[] payload) {
-        String key = Utilities.helpers.bytesToString(payload);
-
-        if (defaultPrefix != null && !key.contains(":")) {
-            key = defaultPrefix + ":" + key;
+        byte[] built = request;
+        String bulk = Utilities.helpers.bytesToString(payload);
+        String[] params = bulk.split("[|]");
+        for(String key: params) {
+            if (defaultPrefix != null && !key.contains(":")) {
+                key = defaultPrefix + ":" + key;
+            }
+            built = super.buildRequest(Utilities.helpers.stringToBytes(Keysmith.unparseParam(key)), built);
         }
-        return super.buildRequest(Utilities.helpers.stringToBytes(Keysmith.unparseParam(key)));
+        return built;
     }
 
 }
