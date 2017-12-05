@@ -245,6 +245,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         byte[] invertedBase = null;
         Attack altBase = null;
         boolean tryMethodFlip = false;
+
+        int bucketSize = 16;
+        if (type != IParameter.PARAM_URL) {
+            bucketSize = 128;
+        }
+
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
             altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
@@ -258,8 +264,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         // put the params into buckets
         Deque<ArrayList<String>> paramBuckets = new ArrayDeque<>();
-        addParams(paramBuckets, valueParams);
-        addParams(paramBuckets, params);
+        addParams(paramBuckets, valueParams, bucketSize);
+        addParams(paramBuckets, params, bucketSize);
+        HashSet<String> alreadyReported = new HashSet<>();
 
 
         while (paramBuckets.size() > 0) {
@@ -268,7 +275,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             paramGuess = injector.probeAttack(submission);
 
             if (!candidates.contains("~")) {
-                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams, candidates)) {
+                if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams, candidates, alreadyReported)) {
                     base = getBaselineAttack(injector);
                 }
                 recentParams.addAll(candidates); // fixme this results in params being found multiple times
@@ -289,7 +296,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 failAttack = injector.probeAttack(Keysmith.permute(submission));
 
                 // this to prevent error messages obscuring persistent inputs
-                findPersistent(baseRequestResponse, failAttack, attackID, recentParams, null);
+                findPersistent(baseRequestResponse, failAttack, attackID, recentParams, null, alreadyReported);
 
                 localBase.addAttack(failAttack);
                 if (!Utilities.similar(localBase, confirmParamGuess)) {
@@ -325,7 +332,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-                findPersistent(baseRequestResponse, paramGrab, attackID, recentParams, null);
+                findPersistent(baseRequestResponse, paramGrab, attackID, recentParams, null, alreadyReported);
 
                 if (!Utilities.similar(altBase, paramGrab)) {
                     Utilities.log("Potential GETbase param: " + candidates);
@@ -376,11 +383,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
-    private void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params) {
+    private void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize) {
         int limit = params.size();
-        for (int i = 0; i<limit+ BUCKET_SIZE; i+= BUCKET_SIZE) {
+        for (int i = 0; i<limit+ bucketSize; i+= bucketSize) {
             ArrayList<String> bucket = new ArrayList<>();
-            for(int k = 0; k< BUCKET_SIZE && i+k < limit; k++) {
+            for(int k = 0; k< bucketSize && i+k < limit; k++) {
                 bucket.add(params.get(i+k));
             }
             paramBuckets.add(bucket);
@@ -395,7 +402,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.doActiveScan(scanBaseAttack, new int[]{start, end});
     }
 
-    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams) {
+    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {
         if (currentParams == null) {
             currentParams = new ArrayList<>();
         }
@@ -407,7 +414,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         for(Iterator<String> params = recentParams.iterator(); params.hasNext();) {
             String param = params.next();
-            if(currentParams.contains(param)) {
+            if(currentParams.contains(param) || alreadyReported.contains(param)) {
                 continue;
             }
 
@@ -417,6 +424,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 Utilities.out(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
                 params.remove();
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
+                alreadyReported.add(param);
                 return true;
             }
         }

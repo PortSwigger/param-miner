@@ -228,6 +228,11 @@ public class Keysmith {
                 out.add(param[0] + "~" + Utilities.invert(param[1]));
             } else {
                 String[] keys = eachparam.split(":");
+                String[] param = null;
+                if (eachparam.contains("~")) {
+                    param = eachparam.split("~", 2);
+                    keys = param[0].split(":");
+                }
                 for (int i = keys.length - 1; i >= 0; i--) {
                     if (Utilities.parseArrayIndex(keys[i]) == -1) {
                         keys[i] += Utilities.randomString(6);
@@ -235,7 +240,11 @@ public class Keysmith {
                     }
                 }
 
-                out.add(String.join(":", keys));
+                String tempOut = String.join(":", keys);
+                if (eachparam.contains("~")) {
+                    tempOut += "~" + param[1];
+                }
+                out.add(tempOut);
             }
         }
 
