@@ -26,17 +26,22 @@ public class Keysmith {
     }
 
     static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
-        try {
-            return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
-        }
-        catch (JsonParseException e) {
-            if(Utilities.isResponse(resp)) {
-                return getHtmlKeys(Utilities.getBody(resp));
+        if (!"".equals(Utilities.getBody(resp))) {
+            try {
+                return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
             }
-            else {
-                return getParamKeys(resp, witnessedParams);
+            catch (JsonParseException e) {
+
             }
         }
+
+        if(Utilities.isResponse(resp)) {
+            return getHtmlKeys(Utilities.getBody(resp));
+        }
+        else {
+            return getParamKeys(resp, witnessedParams);
+        }
+
     }
 
     private static ArrayList<String> getParamKeys(byte[] resp, HashMap<String, String> witnessedParams) {
@@ -47,6 +52,7 @@ public class Keysmith {
         for (IParameter param : currentParams) {
             String parsedParam = parseParam(param.getName());
             keys.add(parsedParam);
+            Utilities.log(parsedParam);
         }
         return keys;
     }
