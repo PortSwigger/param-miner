@@ -384,11 +384,17 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize) {
+        params.remove("");
         int limit = params.size();
+        if(limit == 0) {
+            return;
+        }
+
         for (int i = 0; i<limit+ bucketSize; i+= bucketSize) {
             ArrayList<String> bucket = new ArrayList<>();
             for(int k = 0; k< bucketSize && i+k < limit; k++) {
-                bucket.add(params.get(i+k));
+                String param = params.get(i+k);
+                bucket.add(param);
             }
             paramBuckets.add(bucket);
         }
@@ -517,6 +523,11 @@ class OfferParamGuess implements IContextMenuFactory {
         probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
         options.add(probeButton);
 
+        JMenuItem cookieProbeButton = new JMenuItem("Guess cookie parameters");
+        cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
+        options.add(cookieProbeButton);
+
+
         if (reqs.length == 1 && reqs[0] != null) {
             IHttpRequestResponse req = reqs[0];
             byte[] resp = req.getRequest();
@@ -548,7 +559,7 @@ class OfferParamGuess implements IContextMenuFactory {
                             break;
                         case 2:
                             humanType = "cookie";
-                            break;
+                            continue;
                         case 3:
                             humanType = "XML";
                             break;
