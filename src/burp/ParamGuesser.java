@@ -264,8 +264,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         // put the params into buckets
         Deque<ArrayList<String>> paramBuckets = new ArrayDeque<>();
-        addParams(paramBuckets, valueParams, bucketSize);
-        addParams(paramBuckets, params, bucketSize);
+        addParams(paramBuckets, valueParams, bucketSize, false);
+        addParams(paramBuckets, params, bucketSize, false);
+
         HashSet<String> alreadyReported = new HashSet<>();
 
 
@@ -383,14 +384,26 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
-    private void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize) {
+    private void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize, boolean topup) {
         params.remove("");
         int limit = params.size();
         if(limit == 0) {
             return;
         }
 
-        for (int i = 0; i<limit+ bucketSize; i+= bucketSize) {
+        if(topup && !paramBuckets.isEmpty()) {
+            int i = 0;
+            ArrayList<String> last = paramBuckets.getLast();
+            while(last.size() < bucketSize && i < params.size()) {
+                last.add(params.get(i++));
+            }
+
+            if (i == params.size()) {
+                return;
+            }
+        }
+
+        for (int i = 0; i<limit; i+= bucketSize) { // i<limit + bucketSize
             ArrayList<String> bucket = new ArrayList<>();
             for(int k = 0; k< bucketSize && i+k < limit; k++) {
                 String param = params.get(i+k);
