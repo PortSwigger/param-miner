@@ -331,6 +331,19 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     Utilities.log(targetURL + " couldn't replicate: " + candidates);
                     base.addAttack(paramGuess);
                 }
+
+                ArrayList<String> discoveredParams = new ArrayList<>();
+                for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
+                    String[] parsed = Keysmith.parseKey(key);
+                    if (!(valueParams.contains(key) || params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
+                        Utilities.out("Found new key: " + key);
+                        valueParams.add(key);
+                        discoveredParams.add(key); // fixme probably adds the key in the wrong format
+                        paramGrabber.saveParams(paramGuess.getFirstRequest());
+                    }
+                }
+                addParams(paramBuckets, discoveredParams, bucketSize, true);
+
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
                 findPersistent(baseRequestResponse, paramGrab, attackID, recentParams, null, alreadyReported);
@@ -367,15 +380,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
             }
-
-//                    for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
-//                        String[] parsed = Keysmith.parseKey(key);
-//                        if (!(params.contains(key) || params.contains(parsed[1]) || requestParams.containsKey(parsed[1]) || parsed[1].equals(candidates))) {
-//                            Utilities.out("Found new key: " + key);
-//                            params.add(i + 1, key); // fixme probably adds the key in the wrong format
-//                            paramGrabber.saveParams(paramGuess.getFirstRequest());
-//                        }
-//                    }
         }
 
 
