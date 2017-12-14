@@ -50,7 +50,7 @@ public class Keysmith {
         List<IParameter> currentParams = info.getParameters();
 
         for (IParameter param : currentParams) {
-            String parsedParam = parseParam(param.getName()).replace(':', ';');
+            String parsedParam = parseParam(param.getName().replace(':', ';'));
             keys.add(parsedParam);
             Utilities.log(parsedParam);
         }
@@ -85,6 +85,11 @@ public class Keysmith {
 
         return output;
     }
+
+    static HashSet<String> getWords(String body) {
+        return new HashSet<>(Arrays.asList(body.split("[^a-zA-Z0-9_-]")));
+    }
+
 
     static ArrayList<String> getHtmlKeys(String body) {
         HashSet<String> params = new HashSet<>();

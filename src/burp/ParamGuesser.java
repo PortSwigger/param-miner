@@ -177,6 +177,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         params.addAll(Utilities.paramNames);
 
+        params.addAll(paramGrabber.getSavedWords());
+
         // only use keys if the request isn't JSON
         // todo accept two levels of keys if it's using []
         //if (type != IParameter.PARAM_JSON) {
@@ -271,6 +273,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         HashSet<String> alreadyReported = new HashSet<>();
 
+        Utilities.out("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests");
 
         while (paramBuckets.size() > 0) {
             ArrayList<String> candidates = paramBuckets.pop();

@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import static burp.Keysmith.getHtmlKeys;
+import static burp.Keysmith.getWords;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 public class BurpExtender implements IBurpExtender {
@@ -156,10 +157,17 @@ class ParamGrabber implements  IScannerCheck {
 
     Set<String> savedGET;
 
+    public Set<String> getSavedWords() {
+        return savedWords;
+    }
+
+    Set<String> savedWords;
+
     ParamGrabber() {
         savedJson = ConcurrentHashMap.newKeySet();
         //savedJson = ConcurrentHashMap.newKeySet();//new HashSet<>();
         done = new HashSet<>();
+        savedWords = ConcurrentHashMap.newKeySet();
         savedGET = ConcurrentHashMap.newKeySet();
     }
 
@@ -178,6 +186,7 @@ class ParamGrabber implements  IScannerCheck {
         // todo also use observed requests
         String body = Utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {
+            savedWords.addAll(getWords(body));
             savedGET.addAll(getHtmlKeys(body));
             try {
                 JsonParser parser = new JsonParser();
@@ -593,6 +602,9 @@ class RailsInsertionPoint extends ParamNameInsertionPoint {
 
         if (maxKey != null) {
             Utilities.out("Selected default key: "+maxKey);
+        }
+        else {
+            Utilities.out("No default key available");
         }
     }
 
