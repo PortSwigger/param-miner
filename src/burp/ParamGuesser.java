@@ -213,7 +213,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             String candidate = params.get(i);
             if(candidate.contains("~")) {
                 params.set(i, candidate.split("~", 2)[0]);
-                valueParams.add(candidate);
+                if (!valueParams.contains(candidate)) {
+                    valueParams.add(candidate);
+                }
             }
         }
 
