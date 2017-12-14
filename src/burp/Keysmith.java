@@ -50,7 +50,7 @@ public class Keysmith {
         List<IParameter> currentParams = info.getParameters();
 
         for (IParameter param : currentParams) {
-            String parsedParam = parseParam(param.getName());
+            String parsedParam = parseParam(param.getName()).replace(':', ';');
             keys.add(parsedParam);
             Utilities.log(parsedParam);
         }
