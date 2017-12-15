@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 
@@ -680,15 +681,17 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
                 Object base;
                 if (isArray) {
-                    if (root.isJsonArray()) {
+                    try {
                         base = new ObjectMapper().readValue(lastBuild, ArrayList.class);
-                    } else {
+                    }
+                    catch (MismatchedInputException e) {
                         base = new ArrayList();
                     }
                 } else {
-                    if (root.isJsonObject()) {
+                    try {
                         base = new ObjectMapper().readValue(lastBuild, HashMap.class);
-                    } else {
+                    }
+                    catch (MismatchedInputException e) {
                         base = new HashMap();
                     }
                 }
