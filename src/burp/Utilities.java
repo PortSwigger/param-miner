@@ -494,6 +494,10 @@ class Utilities {
         }
     }
 
+//    static byte[] addBulkParams(byte[] request, String name, String value, byte type) {
+//
+//    }
+
     static List<IParameter> getExtraInsertionPoints(byte[] request) { //
         List<IParameter> params = new ArrayList<>();
         int end = getBodyStart(request);

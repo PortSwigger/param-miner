@@ -470,7 +470,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     private static ParamInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
         return type == IParameter.PARAM_JSON ?
                         new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID) :
-                        new RailsInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+                        new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
     }
 
     static ArrayList<Attack> guessBackendParams(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {

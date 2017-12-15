@@ -539,49 +539,12 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
 
 class ParamNameInsertionPoint extends ParamInsertionPoint {
     String attackID;
+    String defaultPrefix;
 
     ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
         this.attackID = attackID;
-    }
 
-    String calculateValue(String unparsed) {
-        return Utilities.toCanary(unparsed) + attackID + value;
-    }
-
-    @Override
-    public byte[] buildRequest(byte[] payload) {
-        return buildRequest(payload, request);
-    }
-
-    public byte[] buildRequest(byte[] payload, byte[] inputRequest) {
-        String bulk = Utilities.helpers.bytesToString(payload);
-        String[] params = bulk.split("[|]");
-        byte[] built = inputRequest;
-        for (String name: params) {
-            String paramValue;
-            if (name.contains("~")) {
-                String[] parts = name.split("~", 2);
-                name = parts[0];
-                paramValue = String.valueOf(Utilities.invert(parts[1]));
-            }
-            else {
-                paramValue = calculateValue(name);
-            }
-
-            name = Utilities.encodeParam(name);
-            IParameter newParam = Utilities.helpers.buildParameter(name, Utilities.encodeParam(paramValue), type);
-            built = Utilities.helpers.updateParameter(built, newParam);
-        }
-        return built;
-    }
-}
-
-class RailsInsertionPoint extends ParamNameInsertionPoint {
-    String defaultPrefix;
-
-    RailsInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
-        super(request, name, value, type, attackID);
         ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
         HashMap<String, Integer> freq = new HashMap<>();
         for (String key: keys) {
@@ -609,19 +572,63 @@ class RailsInsertionPoint extends ParamNameInsertionPoint {
         }
     }
 
+    String calculateValue(String unparsed) {
+        return Utilities.toCanary(unparsed) + attackID + value;
+    }
+
+    @Override
     public byte[] buildRequest(byte[] payload) {
-        byte[] built = request;
         String bulk = Utilities.helpers.bytesToString(payload);
         String[] params = bulk.split("[|]");
+        ArrayList<String> preppedParams = new ArrayList<>();
         for(String key: params) {
             if (defaultPrefix != null && !key.contains(":")) {
                 key = defaultPrefix + ":" + key;
             }
-            built = super.buildRequest(Utilities.helpers.stringToBytes(Keysmith.unparseParam(key)), built);
+            preppedParams.add(Keysmith.unparseParam(key));
+        }
+
+        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY) {
+            return buildBulkRequest(preppedParams);
+        }
+
+        return buildBasicRequest(preppedParams);
+    }
+
+    public byte[] buildBulkRequest(ArrayList<String> params) {
+
+        ArrayList<String> preppedParams = new ArrayList<>();
+        for (String param: params) {
+            String fullParam[] = getValue(param);
+            preppedParams.add(Utilities.encodeParam(fullParam[0])+"="+Utilities.encodeParam(fullParam[1]));
+        }
+
+        String merged = String.join("&", preppedParams);
+        String replaceKey = "TCZqBcS13SA8QRCpW";
+        IParameter newParam = Utilities.helpers.buildParameter(replaceKey, "", type);
+        byte[] built = Utilities.helpers.updateParameter(request, newParam);
+        return Utilities.fixContentLength(Utilities.replace(built, Utilities.helpers.stringToBytes(replaceKey+"="), Utilities.helpers.stringToBytes(merged)));
+    }
+
+    String[] getValue(String name) {
+        if (name.contains("~")) {
+            String[] parts = name.split("~", 2);
+            return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
+        }
+        else {
+            return new String[]{name, calculateValue(name)};
+        }
+    }
+
+    public byte[] buildBasicRequest(ArrayList<String> params) {
+        byte[] built = request;
+        for (String name: params) {
+            String[] param = getValue(name);
+            IParameter newParam = Utilities.helpers.buildParameter(param[0], Utilities.encodeParam(param[1]), type);
+            built = Utilities.helpers.updateParameter(built, newParam);
         }
         return built;
     }
-
 }
 
 class JsonParamNameInsertionPoint extends ParamInsertionPoint {
