@@ -255,6 +255,27 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             bucketSize = 128;
         }
 
+        int longest = params.stream().max(Comparator.comparingInt(String::length)).get().length();
+
+        while (true) {
+            Utilities.out("Trying bucket size: "+bucketSize);
+            StringBuilder trialPayload = new StringBuilder();
+            trialPayload.append(Utilities.randomString(longest));
+            for (int i = 0; i < bucketSize; i++) {
+                trialPayload.append("|");
+                trialPayload.append(Utilities.randomString(longest));
+            }
+
+            Attack trial = injector.probeAttack(trialPayload.toString());
+            if (!Utilities.similar(base, trial)) {
+                bucketSize = bucketSize / 2;
+                break;
+            }
+
+            bucketSize = bucketSize * 2;
+        }
+        Utilities.out("Selected bucket size: "+bucketSize);
+
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
             altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
@@ -464,6 +485,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         for(int i=0; i<4; i++) {
             base.addAttack(injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
         }
+        base.addAttack(injector.probeAttack(Utilities.randomString(6)+"|"+Utilities.randomString(12)));
         return base;
     }
 
@@ -634,7 +656,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
     }
 
     public void run() {
-        Utilities.out("Queuing "+reqs.length+" tasks");
+        Utilities.log("Queuing "+reqs.length+" tasks");
 
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
         int thread_count = taskEngine.getCorePoolSize();
@@ -644,7 +666,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         int i = 0;
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
-            Utilities.out("Loop "+i++);
+            Utilities.log("Loop "+i++);
             Iterator<IHttpRequestResponse> left = reqlist.iterator();
             while (left.hasNext()) {
                 IHttpRequestResponse req = left.next();

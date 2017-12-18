@@ -568,7 +568,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             Utilities.out("Selected default key: "+maxKey);
         }
         else {
-            Utilities.out("No default key available");
+            Utilities.log("No default key available");
         }
     }
 
