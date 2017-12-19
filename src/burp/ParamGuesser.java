@@ -6,6 +6,8 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
@@ -258,7 +260,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         int longest = params.stream().max(Comparator.comparingInt(String::length)).get().length();
 
         while (true) {
-            Utilities.out("Trying bucket size: "+bucketSize);
+            Utilities.log("Trying bucket size: "+bucketSize);
             StringBuilder trialPayload = new StringBuilder();
             trialPayload.append(Utilities.randomString(longest));
             for (int i = 0; i < bucketSize; i++) {
@@ -296,10 +298,36 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         Utilities.out("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests");
 
+        Scanner bonusParams = null;
+        try {
+            bonusParams = new Scanner(new File("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        int seed = 0;
+
         while (paramBuckets.size() > 0) {
             ArrayList<String> candidates = paramBuckets.pop();
             String submission = String.join("|", candidates);
             paramGuess = injector.probeAttack(submission);
+
+            if (paramBuckets.size() == 0) {
+                ArrayList<String> newParams = new ArrayList<>();
+                if (bonusParams != null && bonusParams.hasNext()) {
+                    int i = 0;
+                    while (i++ < bucketSize && bonusParams.hasNext()) {
+                        newParams.add(bonusParams.nextLine());
+                    }
+                }
+                else {
+                    if (seed == 0) {
+                        System.out.println("Switching to bruteforce mode");
+                    }
+                    seed = Utilities.generate(seed, bucketSize, newParams);
+                }
+                addParams(paramBuckets, newParams, bucketSize, true);
+            }
 
             if (!candidates.contains("~")) {
                 if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams, candidates, alreadyReported)) {
