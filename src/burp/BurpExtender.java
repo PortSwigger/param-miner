@@ -28,7 +28,7 @@ public class BurpExtender implements IBurpExtender {
 
         new Utilities(callbacks);
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(10, 10, 10, TimeUnit.MINUTES, tasks);
+        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(30, 30, 10, TimeUnit.MINUTES, tasks);
         callbacks.setExtensionName(name);
 
         try {
