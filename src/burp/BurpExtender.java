@@ -133,6 +133,7 @@ class ParamSpammer implements IIntruderPayloadGenerator {
 
     @Override
     public byte[] getNextPayload(byte[] baseValue) {
+
         return Utilities.helpers.stringToBytes(params.get(index++));
     }
 

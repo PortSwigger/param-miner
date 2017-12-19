@@ -175,6 +175,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
+        params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
+
         params.addAll(paramGrabber.getSavedGET());
 
         params.addAll(Utilities.paramNames);
@@ -273,6 +275,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 bucketSize = bucketSize / 2;
                 break;
             }
+            else if (bucketSize >= 65536) {
+                break;
+            }
 
             bucketSize = bucketSize * 2;
         }
@@ -300,7 +305,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         WordProvider bonusParams = new WordProvider();
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
-        bonusParams.addSource("/doesnt-exist");
         bonusParams.addSource("/usr/share/dict/words");
 
         int seed = -1;
@@ -318,7 +322,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         String next = bonusParams.getNext();
                         if (next == null) {
                             seed = 0;
-                            System.out.println("Switching to bruteforce mode after this attack");
+                            Utilities.out("Switching to bruteforce mode after this attack");
                             break;
                         }
                         newParams.add(next);
