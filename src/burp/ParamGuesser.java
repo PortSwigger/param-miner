@@ -53,7 +53,17 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         if (req.getResponse() == null) {
             Utilities.log("Baserequest has no response - fetching...");
-            req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
+            try {
+                req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
+            }
+            catch (RuntimeException e) {
+                Utilities.out("Aborting attack due to failed lookup");
+                return;
+            }
+            if (req == null) {
+                Utilities.out("Aborting attack due to null response");
+                return;
+            }
         }
 
         if(backend) {
@@ -81,9 +91,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
         }
         else {
-            ArrayList<Attack> paramGuesses = guessParams(req, type);
-            if (!paramGuesses.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+            try {
+                ArrayList<Attack> paramGuesses = guessParams(req, type);
+                if (!paramGuesses.isEmpty()) {
+                    Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+                }
+            }
+            catch (NullPointerException e) {
+                Utilities.out("Aborting attack due to null response");
             }
         }
     }
