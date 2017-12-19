@@ -298,14 +298,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         Utilities.out("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests");
 
-        Scanner bonusParams = null;
-        try {
-            bonusParams = new Scanner(new File("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        WordProvider bonusParams = new WordProvider();
+        bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
+        bonusParams.addSource("/doesnt-exist");
+        bonusParams.addSource("/usr/share/dict/words");
 
-        int seed = 0;
+        int seed = -1;
 
         while (paramBuckets.size() > 0) {
             ArrayList<String> candidates = paramBuckets.pop();
@@ -314,16 +312,19 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
-                if (bonusParams != null && bonusParams.hasNext()) {
-                    int i = 0;
-                    while (i++ < bucketSize && bonusParams.hasNext()) {
-                        newParams.add(bonusParams.nextLine());
+                int i = 0;
+                if (seed == -1) {
+                    while (i++ < bucketSize) {
+                        String next = bonusParams.getNext();
+                        if (next == null) {
+                            seed = 0;
+                            System.out.println("Switching to bruteforce mode after this attack");
+                            break;
+                        }
+                        newParams.add(next);
                     }
                 }
                 else {
-                    if (seed == 0) {
-                        System.out.println("Switching to bruteforce mode");
-                    }
                     seed = Utilities.generate(seed, bucketSize, newParams);
                 }
                 addParams(paramBuckets, newParams, bucketSize, true);
