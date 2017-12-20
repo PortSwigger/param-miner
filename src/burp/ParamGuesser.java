@@ -323,8 +323,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         bonusParams.addSource("/usr/share/dict/words");
 
         int seed = -1;
+        int completedAttacks = 0;
+        int maxAttacks = 20;
 
-        while (paramBuckets.size() > 0) {
+        while (paramBuckets.size() > 0 && completedAttacks++ < maxAttacks) {
             ArrayList<String> candidates = paramBuckets.pop();
             String submission = String.join("|", candidates);
             paramGuess = injector.probeAttack(submission);
