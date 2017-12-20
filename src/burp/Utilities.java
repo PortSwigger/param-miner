@@ -23,7 +23,7 @@ class Utilities {
     private static PrintWriter stderr;
     static final boolean THOROUGH_MODE = true;
     static final boolean DEBUG = false;
-    static final boolean TRANSFORMATION_SCAN = false;
+    static final boolean TRANSFORMATION_SCAN = true;
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 3;
     static AtomicBoolean unloaded = new AtomicBoolean(false);

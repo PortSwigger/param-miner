@@ -255,7 +255,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
-        Utilities.log("Initiating parameter name bruteforce on "+ targetURL);
+        Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
         CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(BUCKET_SIZE*3);
 
         Attack base = getBaselineAttack(injector);
@@ -290,13 +290,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 bucketSize = bucketSize / 2;
                 break;
             }
-            else if (bucketSize >= 65536) {
+            else if (bucketSize >= 65536 || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
                 break;
             }
 
             bucketSize = bucketSize * 2;
         }
-        Utilities.out("Selected bucket size: "+bucketSize);
+        Utilities.out("Selected bucket size: "+bucketSize + " for "+targetURL);
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
@@ -316,7 +316,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         HashSet<String> alreadyReported = new HashSet<>();
 
-        Utilities.out("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests");
+        Utilities.log("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests");
 
         WordProvider bonusParams = new WordProvider();
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
@@ -339,7 +339,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         String next = bonusParams.getNext();
                         if (next == null) {
                             seed = 0;
-                            Utilities.out("Switching to bruteforce mode after this attack");
+                            Utilities.log("Switching to bruteforce mode after this attack");
                             break;
                         }
                         newParams.add(next);
@@ -412,7 +412,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
                     String[] parsed = Keysmith.parseKey(key);
                     if (!(valueParams.contains(key) || params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
-                        Utilities.out("Found new key: " + key);
+                        Utilities.log("Found new key: " + key);
                         valueParams.add(key);
                         discoveredParams.add(key); // fixme probably adds the key in the wrong format
                         paramGrabber.saveParams(paramGuess.getFirstRequest());
@@ -685,63 +685,3 @@ class LengthCompare implements Comparator<String> {
     }
 }
 
-class TriggerParamGuesser implements ActionListener, Runnable {
-    private IHttpRequestResponse[] reqs;
-    private boolean backend;
-    private byte type;
-    private ParamGrabber paramGrabber;
-    private ThreadPoolExecutor taskEngine;
-
-    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine) {
-        this.taskEngine = taskEngine;
-        this.paramGrabber = paramGrabber;
-        this.backend = backend;
-        this.reqs = reqs;
-        this.type = type;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine);
-        (new Thread(runnable)).start();
-    }
-
-    public void run() {
-        Utilities.log("Queuing "+reqs.length+" tasks");
-
-        ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
-        int thread_count = taskEngine.getCorePoolSize();
-        Queue<String> cache = new CircularFifoQueue<>(thread_count);
-        HashSet<String> remainingHosts = new HashSet<>();
-
-        int i = 0;
-        // every pass adds at least one item from every host
-        while(!reqlist.isEmpty()) {
-            Utilities.log("Loop "+i++);
-            Iterator<IHttpRequestResponse> left = reqlist.iterator();
-            while (left.hasNext()) {
-                IHttpRequestResponse req = left.next();
-                String host = req.getHttpService().getHost();
-
-                if (!cache.contains(host)) {
-                    cache.add(host);
-                    left.remove();
-                    Utilities.out("Adding request on "+host+" to queue");
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber));
-                } else {
-                    remainingHosts.add(host);
-                }
-            }
-            if (remainingHosts.size() <= 1) {
-                left = reqlist.iterator();
-                while (left.hasNext()) {
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber));
-                }
-                break;
-            }
-            else {
-                cache = new CircularFifoQueue<>(min(remainingHosts.size()-1, thread_count));
-            }
-        }
-
-    }
-}
