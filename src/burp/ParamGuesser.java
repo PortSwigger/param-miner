@@ -36,14 +36,20 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     private IHttpRequestResponse req;
     private boolean backend;
     private byte type;
+    private int start;
+    private ThreadPoolExecutor taskEngine;
+    private int stop;
     private ParamGrabber paramGrabber;// should be a power of 2 for max efficiency
     public static final int BUCKET_SIZE = 16;
 
-    public ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber) {
+    public ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int start, int stop) {
         this.paramGrabber = paramGrabber;
         this.req = req;
         this.backend = backend;
         this.type = type;
+        this.start = start;
+        this.stop = stop;
+        this.taskEngine = taskEngine;
     }
 
     public void run() {
@@ -92,7 +98,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
         else {
             try {
-                ArrayList<Attack> paramGuesses = guessParams(req, type);
+                ArrayList<Attack> paramGuesses = guessParams(req, type, start, stop);
                 if (!paramGuesses.isEmpty()) {
                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
                 }
@@ -225,7 +231,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return params;
     }
 
-    ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type) {
+    ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type, int start, int stop) {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
         ArrayList<String> params = calculatePayloads(baseRequestResponse, type, paramGrabber);
@@ -316,7 +322,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         HashSet<String> alreadyReported = new HashSet<>();
 
-        Utilities.log("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests");
+        Utilities.log("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests. Going from "+start + " to "+stop);
 
         WordProvider bonusParams = new WordProvider();
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
@@ -324,12 +330,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         int seed = -1;
         int completedAttacks = 0;
-        int maxAttacks = 20;
 
-        while (paramBuckets.size() > 0 && completedAttacks++ < maxAttacks) {
+        while (paramBuckets.size() > 0 && completedAttacks++ < stop) {
             ArrayList<String> candidates = paramBuckets.pop();
-            String submission = String.join("|", candidates);
-            paramGuess = injector.probeAttack(submission);
 
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
@@ -339,7 +342,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         String next = bonusParams.getNext();
                         if (next == null) {
                             seed = 0;
-                            Utilities.log("Switching to bruteforce mode after this attack");
+                            Utilities.out("Switching to bruteforce mode after this attack");
                             break;
                         }
                         newParams.add(next);
@@ -350,6 +353,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
                 addParams(paramBuckets, newParams, bucketSize, true);
             }
+
+            if (completedAttacks < start) {
+                continue;
+            }
+
+            String submission = String.join("|", candidates);
+            paramGuess = injector.probeAttack(submission);
 
             if (!candidates.contains("~")) {
                 if (findPersistent(baseRequestResponse, paramGuess, attackID, recentParams, candidates, alreadyReported)) {
@@ -460,6 +470,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
 
         Utilities.log("Parameter name bruteforce complete: "+targetURL);
+        taskEngine.execute(new ParamGuesser(req, backend, type, paramGrabber, taskEngine, stop, stop*2));
 
         return attacks;
     }

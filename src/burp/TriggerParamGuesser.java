@@ -50,7 +50,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     cache.add(host);
                     left.remove();
                     Utilities.log("Adding request on "+host+" to queue");
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber));
+                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, 0, 20));
                 } else {
                     remainingHosts.add(host);
                 }
@@ -58,7 +58,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             if (remainingHosts.size() <= 1) {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber));
+                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, 0, 20));
                 }
                 break;
             }
