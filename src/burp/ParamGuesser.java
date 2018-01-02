@@ -262,7 +262,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
-        Utilities.out("Initiating parameter name bruteforce on "+ targetURL);
+        Utilities.out("Initiating parameter name bruteforce from "+start+"-"+stop+" on "+ targetURL);
         CircularFifoQueue<String> recentParams = new CircularFifoQueue<>(BUCKET_SIZE*3);
 
         Attack base = getBaselineAttack(injector);
@@ -357,7 +357,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         String next = bonusParams.getNext();
                         if (next == null) {
                             seed = 0;
-                            Utilities.out("Switching to bruteforce mode after this attack");
+                            if(completedAttacks > start) {
+                                Utilities.out("Switching to bruteforce mode after this attack");
+                            }
                             break;
                         }
                         newParams.add(next);
@@ -436,7 +438,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 ArrayList<String> discoveredParams = new ArrayList<>();
                 for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
                     String[] parsed = Keysmith.parseKey(key);
-                    if (!(valueParams.contains(key) || params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
+                    if (start == 0 && !(valueParams.contains(key) || params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
                         Utilities.log("Found new key: " + key);
                         valueParams.add(key);
                         discoveredParams.add(key); // fixme probably adds the key in the wrong format
