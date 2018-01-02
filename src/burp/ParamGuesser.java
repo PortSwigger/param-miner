@@ -246,7 +246,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
         }
 
-        String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis());
+        // prevents attack cross-talk with stored input detection
+        String attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis()).substring(0,2);
 
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
@@ -275,12 +276,22 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Attack altBase = null;
         boolean tryMethodFlip = false;
 
+        int longest = params.stream().max(Comparator.comparingInt(String::length)).get().length();
+        longest = min(20, longest);
+
         int bucketSize = 16;
         if (type != IParameter.PARAM_URL) {
             bucketSize = 128;
         }
 
-        int longest = params.stream().max(Comparator.comparingInt(String::length)).get().length();
+        StringBuilder basePayload = new StringBuilder();
+        for (int i = 2; i < 16; i++) {
+            basePayload.append("|");
+            basePayload.append(Utilities.randomString(longest));
+            if(i % 4 == 0) {
+                base.addAttack(injector.probeAttack(basePayload.toString()));
+            }
+        }
 
         while (true) {
             Utilities.log("Trying bucket size: "+bucketSize);
@@ -293,10 +304,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             Attack trial = injector.probeAttack(trialPayload.toString());
             if (!Utilities.similar(base, trial)) {
-                bucketSize = bucketSize / 2;
-                break;
+                trial.addAttack(injector.probeAttack(trialPayload.toString()));
+                trial.addAttack(injector.probeAttack(trialPayload.toString()));
+                if (!Utilities.similar(base, trial)) {
+                    bucketSize = bucketSize / 2;
+                    break;
+                }
             }
-            else if (bucketSize >= 65536 || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
+            if (bucketSize >= 65536 || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
                 break;
             }
 

@@ -25,7 +25,7 @@ class Utilities {
     static final boolean DEBUG = false;
     static final boolean TRANSFORMATION_SCAN = true;
     static final boolean DIFFING_SCAN = true;
-    static final byte CONFIRMATIONS = 3;
+    static final byte CONFIRMATIONS = 5;
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 
     static final boolean TRY_HPP = true;
