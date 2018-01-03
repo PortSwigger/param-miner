@@ -87,7 +87,9 @@ public class Keysmith {
     }
 
     static HashSet<String> getWords(String body) {
-        return new HashSet<>(Arrays.asList(body.split("[^a-zA-Z0-9_-]")));
+        HashSet<String> longWords = new HashSet<>(Arrays.asList(body.split("[^.:a-zA-Z0-9_-]")));
+        longWords.addAll(Arrays.asList(body.split("[^a-zA-Z0-9]")));
+        return longWords;
     }
 
 

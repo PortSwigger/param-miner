@@ -74,7 +74,7 @@ class DiffingScan {
             ArrayList<Attack> backendParameterAttack = injector.fuzz(softBase, backendParameterInjection);
             results.addAll(backendParameterAttack);
             if (Utilities.TRY_HPP_FOLLOWUP && !backendParameterAttack.isEmpty()) {
-                results.addAll(ParamGuesser.guessBackendParams(baseRequestResponse, insertionPoint));
+                //results.addAll(ParamGuesser.guessBackendParams(baseRequestResponse, insertionPoint));
             }
 
         }

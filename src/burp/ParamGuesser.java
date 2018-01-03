@@ -36,10 +36,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     private IHttpRequestResponse req;
     private boolean backend;
     private byte type;
-    private int start;
     private ThreadPoolExecutor taskEngine;
     private int stop;
     private ParamGrabber paramGrabber;
+    private ParamAttack attack;
 
     ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int stop) {
         this.paramGrabber = paramGrabber;
@@ -50,61 +50,60 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         this.taskEngine = taskEngine;
     }
 
+    ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine) {
+        this.attack = attack;
+        this.req = attack.getBaseRequestResponse();
+        this.taskEngine = taskEngine;
+    }
+
     public void run() {
-
-        IRequestInfo info = Utilities.helpers.analyzeRequest(req);
-        List<IParameter> params = info.getParameters();
-
-        if (req.getResponse() == null) {
-            Utilities.log("Baserequest has no response - fetching...");
-            try {
-                req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
-            }
-            catch (RuntimeException e) {
-                Utilities.out("Aborting attack due to failed lookup");
-                return;
-            }
-            if (req == null) {
-                Utilities.out("Aborting attack due to null response");
-                return;
-            }
-        }
-
-        if(backend) {
-
-            for (IParameter param : params) {
-                String key = null;
-                String[] keys = {"%26zq=%253c", "!zq=%253c"};
-                for (String test : keys) {
-                    if (param.getValue().contains(test)) {
-                        key = test;
-                        break;
-                    }
+        if(this.attack == null) {
+            if (req.getResponse() == null) {
+                Utilities.log("Baserequest has no response - fetching...");
+                try {
+                    req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
                 }
-
-                if (key != null) {
-                    String originalValue = param.getValue().substring(0, param.getValue().indexOf(key));
-                    ParamInsertionPoint insertionPoint = new ParamInsertionPoint(req.getRequest(), param.getName(), originalValue, param.getType());
-                    ArrayList<Attack> paramGuesses = guessBackendParams(req, insertionPoint);
-                    if (!paramGuesses.isEmpty()) {
-                        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
-                    }
-                    break;
+                catch (RuntimeException e) {
+                    Utilities.out("Aborting attack due to failed lookup");
+                    return;
                 }
-
-            }
-        }
-        else {
-            try {
-                ArrayList<Attack> paramGuesses = guessParams(req, type, stop);
-                if (!paramGuesses.isEmpty()) {
-                    Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+                if (req == null) {
+                    Utilities.out("Aborting attack due to null response");
+                    return;
                 }
             }
-            catch (NullPointerException e) {
-                Utilities.out("Aborting attack due to null response");
-            }
+            this.attack = new ParamAttack(req, type, paramGrabber, stop);
         }
+        ArrayList<Attack> paramGuesses = guessParams(attack);
+        if (!paramGuesses.isEmpty()) {
+            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+        }
+
+//        if(backend) {
+//            IRequestInfo info = Utilities.helpers.analyzeRequest(req);
+//            List<IParameter> params = info.getParameters();
+//            for (IParameter param : params) {
+//                String key = null;
+//                String[] keys = {"%26zq=%253c", "!zq=%253c"};
+//                for (String test : keys) {
+//                    if (param.getValue().contains(test)) {
+//                        key = test;
+//                        break;
+//                    }
+//                }
+//
+//                if (key != null) {
+//                    String originalValue = param.getValue().substring(0, param.getValue().indexOf(key));
+//                    ParamInsertionPoint insertionPoint = new ParamInsertionPoint(req.getRequest(), param.getName(), originalValue, param.getType());
+//                    ArrayList<Attack> paramGuesses = guessBackendParams(req, insertionPoint);
+//                    if (!paramGuesses.isEmpty()) {
+//                        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+//                    }
+//                    break;
+//                }
+//
+//            }
+//        }
     }
 
     public void extensionUnloaded() {
@@ -246,46 +245,41 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return blacklist;
     }
 
-    ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type, int stop) {
-        ParamAttack attack = new ParamAttack(baseRequestResponse, type, paramGrabber);
-        return guessParams(attack, stop);
-    }
-
-
-    ArrayList<Attack> guessParams(ParamAttack attack, int stop) {
-        final int bucketSize = attack.getBucketSize();
-        final IHttpRequestResponse baseRequestResponse = attack.getBaseRequestResponse();
+    private ArrayList<Attack> guessParams(ParamAttack state) {
+        final int bucketSize = state.getBucketSize();
+        final IHttpRequestResponse baseRequestResponse = state.getBaseRequestResponse();
         final IHttpService service = baseRequestResponse.getHttpService();
-        final PayloadInjector injector = attack.getInjector();
-        final String attackID = attack.getAttackID();
-        final String targetURL = attack.getTargetURL();
-        final boolean tryMethodFlip = attack.shouldTryMethodFlip();
-        final ParamInsertionPoint insertionPoint = attack.getInsertionPoint();
-        final HashMap<String, String> requestParams = attack.getRequestParams();
-        final WordProvider bonusParams = attack.getBonusParams();
+        final PayloadInjector injector = state.getInjector();
+        final String attackID = state.getAttackID();
+        final String targetURL = state.getTargetURL();
+        final boolean tryMethodFlip = state.shouldTryMethodFlip();
+        final ParamInsertionPoint insertionPoint = state.getInsertionPoint();
+        final HashMap<String, String> requestParams = state.getRequestParams();
+        final WordProvider bonusParams = state.getBonusParams();
 
         ArrayList<Attack> attacks = new ArrayList<>();
-        int seed = -1;
         int completedAttacks = 0;
-        Attack base = attack.getBase();
-        byte[] invertedBase = attack.getInvertedBase();
-        Attack altBase = attack.getAltBase();
-        Deque<ArrayList<String>> paramBuckets = attack.getParamBuckets();
+        int start = 0; // todo could manually set this
+        int stop = state.getStop();
+        Attack base = state.getBase();
+        byte[] invertedBase = state.getInvertedBase();
+        Attack altBase = state.getAltBase();
+        Deque<ArrayList<String>> paramBuckets = state.getParamBuckets();
 
-        Utilities.out("Initiating parameter name bruteforce from "+start+"-"+stop+" on "+ targetURL);
+        Utilities.out("Initiating parameter name bruteforce from "+state.seed+" on "+ targetURL);
 
         while (paramBuckets.size() > 0 && completedAttacks++ < stop) {
             ArrayList<String> candidates = paramBuckets.pop();
-            candidates.removeAll(attack.alreadyReported);
+            candidates.removeAll(state.alreadyReported);
 
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
                 int i = 0;
-                if (seed == -1) {
+                if (state.seed == -1) {
                     while (i++ < bucketSize) {
                         String next = bonusParams.getNext();
                         if (next == null) {
-                            seed = 0;
+                            state.seed = 0;
                             if(completedAttacks > start) {
                                 Utilities.out("Switching to bruteforce mode after this attack");
                             }
@@ -295,7 +289,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
                 else {
-                    seed = Utilities.generate(seed, bucketSize, newParams);
+                    state.seed = Utilities.generate(state.seed, bucketSize, newParams);
                 }
                 addParams(paramBuckets, newParams, bucketSize, true);
             }
@@ -308,10 +302,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             Attack paramGuess = injector.probeAttack(submission);
 
             if (!candidates.contains("~")) {
-                if (findPersistent(baseRequestResponse, paramGuess, attackID, attack.recentParams, candidates, attack.alreadyReported)) {
-                    attack.updateBaseline();
+                if (findPersistent(baseRequestResponse, paramGuess, attackID, state.recentParams, candidates, state.alreadyReported)) {
+                    state.updateBaseline();
                 }
-                attack.recentParams.addAll(candidates); // fixme this results in params being found multiple times
+                state.recentParams.addAll(candidates); // fixme this results in params being found multiple times
             }
 
             Attack localBase;
@@ -329,7 +323,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 Attack failAttack = injector.probeAttack(Keysmith.permute(submission));
 
                 // this to prevent error messages obscuring persistent inputs
-                findPersistent(baseRequestResponse, failAttack, attackID, attack.recentParams, null, attack.alreadyReported);
+                findPersistent(baseRequestResponse, failAttack, attackID, state.recentParams, null, state.alreadyReported);
 
                 localBase.addAttack(failAttack);
                 if (!Utilities.similar(localBase, confirmParamGuess)) {
@@ -344,7 +338,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         paramBuckets.push(right);
                     }
                     else {
-                        if (attack.alreadyReported.contains(submission)) {
+                        if (state.alreadyReported.contains(submission)) {
                             continue;
                         }
 
@@ -354,12 +348,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam);
                         if (!confirmed.isEmpty()) {
-                            attack.alreadyReported.add(submission);
+                            state.alreadyReported.add(submission);
                             Utilities.out(targetURL + " identified parameter: " + candidates);
                             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
                             scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
 
-                            base = attack.updateBaseline();
+                            base = state.updateBaseline();
                         } else {
                             Utilities.out(targetURL + " questionable parameter: " + candidates);
                         }
@@ -372,9 +366,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 ArrayList<String> discoveredParams = new ArrayList<>();
                 for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
                     String[] parsed = Keysmith.parseKey(key);
-                    if (start == 0 && !(attack.valueParams.contains(key) || attack.params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
+                    if (!(state.valueParams.contains(key) || state.params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
                         Utilities.log("Found new key: " + key);
-                        attack.valueParams.add(key);
+                        state.valueParams.add(key);
                         discoveredParams.add(key); // fixme probably adds the key in the wrong format
                         paramGrabber.saveParams(paramGuess.getFirstRequest());
                     }
@@ -383,7 +377,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase));
-                findPersistent(baseRequestResponse, paramGrab, attackID, attack.recentParams, null, attack.alreadyReported);
+                findPersistent(baseRequestResponse, paramGrab, attackID, state.recentParams, null, state.alreadyReported);
 
                 if (!Utilities.similar(altBase, paramGrab)) {
                     Utilities.log("Potential GETbase param: " + candidates);
@@ -421,7 +415,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
 
         Utilities.log("Parameter name bruteforce complete: "+targetURL);
-        taskEngine.execute(new ParamGuesser(req, backend, type, paramGrabber, taskEngine, stop, stop*2));
+        taskEngine.execute(new ParamGuesser(state, taskEngine));
 
         return attacks;
     }
@@ -493,51 +487,51 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
 
-    static ArrayList<Attack> guessBackendParams(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-
-        String baseValue = insertionPoint.getBaseValue();
-        PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
-        String targetURL = baseRequestResponse.getHttpService().getHost();
-        Utilities.log("Initiating parameter name bruteforce on " + targetURL);
-
-        final String breaker = "=%3c%61%60%27%22%24%7b%7b%5c";
-        Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+ breaker, false);
-
-        for(int i=0; i<4; i++) {
-            base.addAttack(injector.buildAttack(baseValue+"&"+Utilities.randomString((i+1)*(i+1))+ breaker, false));
-        }
-
-        ArrayList<Attack> attacks = new ArrayList<>();
-        try {
-            for (int i = 0; i < Utilities.paramNames.size(); i++) { // i<Utilities.paramNames.size();
-                String candidate = Utilities.paramNames.get(i);
-                Attack paramGuess = injector.buildAttack(baseValue + "&" + candidate + breaker, false);
-                if (!Utilities.similar(base, paramGuess)) {
-                    Attack confirmParamGuess = injector.buildAttack(baseValue + "&" + candidate + breaker, false);
-                    base.addAttack(injector.buildAttack(baseValue + "&" + candidate + "z"+breaker, false));
-                    if (!Utilities.similar(base, confirmParamGuess)) {
-                        Probe validParam = new Probe("Backend param: " + candidate, 4, "&" + candidate + breaker, "&" + candidate + "=%3c%62%60%27%22%24%7b%7b%5c");
-                        validParam.setEscapeStrings("&" + Utilities.randomString(candidate.length()) + breaker, "&" + candidate + "z"+breaker);
-                        validParam.setRandomAnchor(false);
-                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
-                        if (!confirmed.isEmpty()) {
-                            Utilities.out("Identified backend parameter: " + candidate);
-                            attacks.addAll(confirmed);
-                        }
-                    } else {
-                        base.addAttack(paramGuess);
-                    }
-                }
-
-            }
-            Utilities.log("Parameter name bruteforce complete: "+targetURL);
-        }
-        catch (RuntimeException e) {
-            Utilities.log("Parameter name bruteforce aborted: "+targetURL);
-        }
-
-        return attacks;
-    }
+//    static ArrayList<Attack> guessBackendParams(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+//
+//        String baseValue = insertionPoint.getBaseValue();
+//        PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
+//        String targetURL = baseRequestResponse.getHttpService().getHost();
+//        Utilities.log("Initiating parameter name bruteforce on " + targetURL);
+//
+//        final String breaker = "=%3c%61%60%27%22%24%7b%7b%5c";
+//        Attack base = injector.buildAttack(baseValue+"&"+Utilities.randomString(6)+ breaker, false);
+//
+//        for(int i=0; i<4; i++) {
+//            base.addAttack(injector.buildAttack(baseValue+"&"+Utilities.randomString((i+1)*(i+1))+ breaker, false));
+//        }
+//
+//        ArrayList<Attack> attacks = new ArrayList<>();
+//        try {
+//            for (int i = 0; i < Utilities.paramNames.size(); i++) { // i<Utilities.paramNames.size();
+//                String candidate = Utilities.paramNames.get(i);
+//                Attack paramGuess = injector.buildAttack(baseValue + "&" + candidate + breaker, false);
+//                if (!Utilities.similar(base, paramGuess)) {
+//                    Attack confirmParamGuess = injector.buildAttack(baseValue + "&" + candidate + breaker, false);
+//                    base.addAttack(injector.buildAttack(baseValue + "&" + candidate + "z"+breaker, false));
+//                    if (!Utilities.similar(base, confirmParamGuess)) {
+//                        Probe validParam = new Probe("Backend param: " + candidate, 4, "&" + candidate + breaker, "&" + candidate + "=%3c%62%60%27%22%24%7b%7b%5c");
+//                        validParam.setEscapeStrings("&" + Utilities.randomString(candidate.length()) + breaker, "&" + candidate + "z"+breaker);
+//                        validParam.setRandomAnchor(false);
+//                        ArrayList<Attack> confirmed = injector.fuzz(base, validParam);
+//                        if (!confirmed.isEmpty()) {
+//                            Utilities.out("Identified backend parameter: " + candidate);
+//                            attacks.addAll(confirmed);
+//                        }
+//                    } else {
+//                        base.addAttack(paramGuess);
+//                    }
+//                }
+//
+//            }
+//            Utilities.log("Parameter name bruteforce complete: "+targetURL);
+//        }
+//        catch (RuntimeException e) {
+//            Utilities.log("Parameter name bruteforce aborted: "+targetURL);
+//        }
+//
+//        return attacks;
+//    }
 
 }
 
