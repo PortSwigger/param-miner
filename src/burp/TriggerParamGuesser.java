@@ -30,10 +30,18 @@ class TriggerParamGuesser implements ActionListener, Runnable {
     }
 
     public void run() {
-        Utilities.log("Queuing "+reqs.length+" tasks");
+        int queueSize = taskEngine.getQueue().size();
+        Utilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
+        queueSize += reqs.length;
+        int thread_count = taskEngine.getCorePoolSize();
+
+        int stop = 32;
+        if (queueSize < thread_count) {
+            stop = 256;
+        }
 
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
-        int thread_count = taskEngine.getCorePoolSize();
+
         Queue<String> cache = new CircularFifoQueue<>(thread_count);
         HashSet<String> remainingHosts = new HashSet<>();
 
@@ -50,7 +58,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     cache.add(host);
                     left.remove();
                     Utilities.log("Adding request on "+host+" to queue");
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, 0, 20));
+                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, 0, stop));
                 } else {
                     remainingHosts.add(host);
                 }
@@ -58,7 +66,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             if (remainingHosts.size() <= 1) {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, 0, 20));
+                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, 0, stop));
                 }
                 break;
             }

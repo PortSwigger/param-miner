@@ -231,6 +231,23 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return params;
     }
 
+    HashSet<String> getBlacklist(byte type) {
+        HashSet<String> blacklist = new HashSet<>();
+        switch(type) {
+            case IParameter.PARAM_COOKIE:
+                blacklist.add("__cfduid");
+                blacklist.add("PHPSESSID");
+                blacklist.add("csrftoken");
+                break;
+            case IParameter.PARAM_URL:
+                blacklist.add("lang");
+            default:
+                break;
+        }
+
+        return blacklist;
+    }
+
     ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type, int start, int stop) {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
@@ -335,7 +352,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         addParams(paramBuckets, valueParams, bucketSize, false);
         addParams(paramBuckets, params, bucketSize, false);
 
-        HashSet<String> alreadyReported = new HashSet<>();
+        HashSet<String> alreadyReported = getBlacklist(type);
 
         Utilities.log("Trying " + (valueParams.size()+params.size()) + " params in ~"+paramBuckets.size() + " requests. Going from "+start + " to "+stop);
 
@@ -348,6 +365,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         while (paramBuckets.size() > 0 && completedAttacks++ < stop) {
             ArrayList<String> candidates = paramBuckets.pop();
+            candidates.removeAll(alreadyReported);
 
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
@@ -415,6 +433,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         paramBuckets.push(right);
                     }
                     else {
+                        if (alreadyReported.contains(submission)) {
+                            continue;
+                        }
+
                         Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
                         validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
                         validParam.setRandomAnchor(false);
