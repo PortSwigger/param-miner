@@ -6,6 +6,11 @@ import java.util.ArrayList;
 class PayloadInjector {
 
     private IHttpService service;
+
+    public IScannerInsertionPoint getInsertionPoint() {
+        return insertionPoint;
+    }
+
     private IScannerInsertionPoint insertionPoint;
 
     PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
