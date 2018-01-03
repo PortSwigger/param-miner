@@ -247,7 +247,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         return blacklist;
     }
-
+    
     ArrayList<Attack> guessParams(IHttpRequestResponse baseRequestResponse, byte type, int start, int stop) {
         ArrayList<Attack> attacks = new ArrayList<>();
         String targetURL = baseRequestResponse.getHttpService().getHost();
@@ -443,6 +443,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         validParam.setPrefix(Probe.REPLACE);
                         ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam);
                         if (!confirmed.isEmpty()) {
+                            alreadyReported.add(submission);
                             Utilities.out(targetURL + " identified parameter: " + candidates);
                             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
                             scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
