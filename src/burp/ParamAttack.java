@@ -209,8 +209,13 @@ class ParamAttack {
 
 
     private static ParamInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
-        return type == IParameter.PARAM_JSON ?
-                new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID) :
-                new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+        switch(type) {
+            case IParameter.PARAM_JSON:
+                return new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+            case Utilities.PARAM_HEADER:
+                return new HeaderNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+            default:
+                return new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+        }
     }
 }

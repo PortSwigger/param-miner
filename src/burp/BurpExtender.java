@@ -589,7 +589,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             preppedParams.add(Keysmith.unparseParam(key));
         }
 
-        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY || type == IParameter.PARAM_COOKIE) {
+        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY || type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER) {
             return buildBulkRequest(preppedParams);
         }
 
@@ -597,26 +597,42 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
-
-        ArrayList<String> preppedParams = new ArrayList<>();
-        for (String param: params) {
-            String fullParam[] = getValue(param);
-            preppedParams.add(Utilities.encodeParam(fullParam[0])+"="+Utilities.encodeParam(fullParam[1]));
-        }
-
-        String merged;
-        if(type == IParameter.PARAM_COOKIE) {
-            merged = String.join("; ", preppedParams) + ";";
-        }
-        else {
-            merged = String.join("&", preppedParams);
-        }
-
-
+        String merged = prepBulkParams(params);
         String replaceKey = "TCZqBcS13SA8QRCpW";
         IParameter newParam = Utilities.helpers.buildParameter(replaceKey, "", type);
         byte[] built = Utilities.helpers.updateParameter(request, newParam);
         return Utilities.fixContentLength(Utilities.replace(built, Utilities.helpers.stringToBytes(replaceKey+"="), Utilities.helpers.stringToBytes(merged)));
+    }
+
+    String prepBulkParams(ArrayList<String> params) {
+        ArrayList<String> preppedParams = new ArrayList<>();
+
+        String equals;
+        String join;
+        String trail;
+        if(type == IParameter.PARAM_COOKIE) {
+            equals = "=";
+            join = "; ";
+            trail = ";";
+        }
+        else if (type == Utilities.PARAM_HEADER) {
+            equals = ": ";
+            join ="\r\n";
+            trail = ""; // \r\n
+        }
+        else {
+            equals = "=";
+            join = "&";
+            trail = "";
+        }
+
+
+        for (String param: params) {
+            String fullParam[] = getValue(param);
+            preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
+        }
+
+        return String.join(join, preppedParams) + trail;
     }
 
     String[] getValue(String name) {
@@ -629,7 +645,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         }
     }
 
-    public byte[] buildBasicRequest(ArrayList<String> params) {
+    byte[] buildBasicRequest(ArrayList<String> params) {
         byte[] built = request;
         for (String name: params) {
             String[] param = getValue(name);
@@ -637,6 +653,19 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             built = Utilities.helpers.updateParameter(built, newParam);
         }
         return built;
+    }
+}
+
+class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
+    public HeaderNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
+        super(request, name, value, type, attackID);
+    }
+
+    public byte[] buildBulkRequest(ArrayList<String> params) {
+        String merged = prepBulkParams(params);
+        String replaceKey = "TCZqBcS13SA8QRCpW";
+        byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
+        return Utilities.setHeader(built, replaceKey, "x\r\n"+merged);
     }
 }
 

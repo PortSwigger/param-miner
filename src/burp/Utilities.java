@@ -34,6 +34,7 @@ class Utilities {
     static final boolean TRY_VALUE_PRESERVING_ATTACKS = true;
     static final boolean TRY_EXPERIMENTAL_CONCAT_ATTACKS = true;
     static final boolean TRY_MAGIC_VALUE_ATTACKS = true;
+    static final byte PARAM_HEADER = 7;
 
     static IBurpExtenderCallbacks callbacks;
     static IExtensionHelpers helpers;

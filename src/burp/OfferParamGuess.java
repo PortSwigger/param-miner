@@ -34,6 +34,10 @@ class OfferParamGuess implements IContextMenuFactory {
         cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
         options.add(cookieProbeButton);
 
+        JMenuItem headerProbeButton = new JMenuItem("Guess headers!");
+        headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
+        options.add(headerProbeButton);
+
 
         if (reqs.length == 1 && reqs[0] != null) {
             IHttpRequestResponse req = reqs[0];
