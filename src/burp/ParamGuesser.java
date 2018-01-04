@@ -268,10 +268,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         Utilities.out("Initiating parameter name bruteforce from "+state.seed+" on "+ targetURL);
 
-        while (paramBuckets.size() > 0 && completedAttacks++ < stop) {
-            ArrayList<String> candidates = paramBuckets.pop();
-            candidates.removeAll(state.alreadyReported);
-
+        while (completedAttacks++ < stop) {
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
                 int i = 0;
@@ -294,10 +291,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 addParams(paramBuckets, newParams, bucketSize, true);
             }
 
+            ArrayList<String> candidates = paramBuckets.pop();
+
             if (completedAttacks < start) {
                 continue;
             }
 
+            candidates.removeAll(state.alreadyReported);
             String submission = String.join("|", candidates);
             Attack paramGuess = injector.probeAttack(submission);
 
@@ -352,8 +352,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             Utilities.out(targetURL + " identified parameter: " + candidates);
                             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
                             scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
-
+                            //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
                             base = state.updateBaseline();
+                            ArrayList<String> newWords = new ArrayList<String>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
+                            addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
                         } else {
                             Utilities.out(targetURL + " questionable parameter: " + candidates);
                         }
@@ -363,17 +365,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     base.addAttack(paramGuess);
                 }
 
-                ArrayList<String> discoveredParams = new ArrayList<>();
-                for (String key : Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams)) {
-                    String[] parsed = Keysmith.parseKey(key);
-                    if (!(state.valueParams.contains(key) || state.params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
-                        Utilities.log("Found new key: " + key);
-                        state.valueParams.add(key);
-                        discoveredParams.add(key); // fixme probably adds the key in the wrong format
-                        paramGrabber.saveParams(paramGuess.getFirstRequest());
-                    }
-                }
-                addParams(paramBuckets, discoveredParams, bucketSize, true);
+                addNewKeys(Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams), state, bucketSize, paramBuckets, candidates, paramGuess);
 
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase));
@@ -418,6 +410,20 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         taskEngine.execute(new ParamGuesser(state, taskEngine));
 
         return attacks;
+    }
+
+    private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, Deque<ArrayList<String>> paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
+        ArrayList<String> discoveredParams = new ArrayList<>();
+        for (String key : keys) {
+            String[] parsed = Keysmith.parseKey(key);
+            if (!(state.valueParams.contains(key) || state.params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
+                Utilities.log("Found new key: " + key);
+                state.valueParams.add(key);
+                discoveredParams.add(key); // fixme probably adds the key in the wrong format
+                paramGrabber.saveParams(paramGuess.getFirstRequest());
+            }
+        }
+        addParams(paramBuckets, discoveredParams, bucketSize, true);
     }
 
     static void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize, boolean topup) {

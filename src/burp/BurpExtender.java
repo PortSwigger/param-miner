@@ -188,7 +188,7 @@ class ParamGrabber implements  IScannerCheck {
         // todo also use observed requests
         String body = Utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {
-            savedWords.addAll(getWords(body));
+            savedWords.addAll(getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
             savedGET.addAll(getHtmlKeys(body));
             try {
                 JsonParser parser = new JsonParser();
@@ -589,7 +589,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             preppedParams.add(Keysmith.unparseParam(key));
         }
 
-        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY) {
+        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY || type == IParameter.PARAM_COOKIE) {
             return buildBulkRequest(preppedParams);
         }
 
@@ -604,7 +604,15 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             preppedParams.add(Utilities.encodeParam(fullParam[0])+"="+Utilities.encodeParam(fullParam[1]));
         }
 
-        String merged = String.join("&", preppedParams);
+        String merged;
+        if(type == IParameter.PARAM_COOKIE) {
+            merged = String.join("; ", preppedParams) + ";";
+        }
+        else {
+            merged = String.join("&", preppedParams);
+        }
+
+
         String replaceKey = "TCZqBcS13SA8QRCpW";
         IParameter newParam = Utilities.helpers.buildParameter(replaceKey, "", type);
         byte[] built = Utilities.helpers.updateParameter(request, newParam);

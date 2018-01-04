@@ -36,6 +36,7 @@ public class Keysmith {
         }
 
         if(Utilities.isResponse(resp)) {
+
             return getHtmlKeys(Utilities.getBody(resp));
         }
         else {
@@ -71,7 +72,7 @@ public class Keysmith {
     static String unparseParam(String param) {
         String[] presplit = param.split("~", 2);
         StringBuilder unparsed = new StringBuilder();
-        String[] split = presplit[0].split(":");
+        String[] split = presplit[0].split(":", -1);
         unparsed.append(split[0]);
         for (int i=1;i<split.length;i++) {
             unparsed.append("[");
@@ -87,7 +88,7 @@ public class Keysmith {
     }
 
     static HashSet<String> getWords(String body) {
-        HashSet<String> longWords = new HashSet<>(Arrays.asList(body.split("[^.:a-zA-Z0-9_-]")));
+        HashSet<String> longWords = new HashSet<>(Arrays.asList(body.split("[^.a-zA-Z0-9_-]")));
         longWords.addAll(Arrays.asList(body.split("[^a-zA-Z0-9]")));
         return longWords;
     }
