@@ -779,6 +779,7 @@ class Utilities {
         boolean reliable = false;
         String detail = "<br/><br/><b>Successful probes</b><br/>";
         String reportedSeverity = "High";
+        int evidenceCount = 0;
 
         for (int i=0; i<attacks.length; i++) {
             requests[i] = attacks[i].getLastRequest(); // was getFirstRequest
@@ -803,6 +804,8 @@ class Utilities {
                     if(brokeResult.equals(workedResult)) {
                         continue;
                     }
+
+                    evidenceCount++;
 
                     try {
                         if (Math.abs(Integer.parseInt(brokeResult)) > 9999) {
@@ -850,6 +853,10 @@ class Utilities {
                 }
 
             }
+        }
+
+        if (evidenceCount == 1) {
+            reportedSeverity = "Information";
         }
 
         if ("".equals(title)) {

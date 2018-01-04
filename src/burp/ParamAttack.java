@@ -196,7 +196,6 @@ class ParamAttack {
         bonusParams = new WordProvider();
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
         bonusParams.addSource("/usr/share/dict/words");
-
     }
 
     Attack updateBaseline() {

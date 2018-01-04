@@ -266,7 +266,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Attack altBase = state.getAltBase();
         Deque<ArrayList<String>> paramBuckets = state.getParamBuckets();
 
-        Utilities.out("Initiating parameter name bruteforce from "+state.seed+" on "+ targetURL);
+        Utilities.out("Initiating parameter name bruteforce from -"+bucketSize+"/"+state.seed+" on "+ targetURL);
 
         while (completedAttacks++ < stop) {
             if (paramBuckets.size() == 0) {
