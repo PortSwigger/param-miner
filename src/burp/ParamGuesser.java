@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -201,6 +202,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
         params.addAll(paramGrabber.getSavedWords());
 
+        params.addAll(Utilities.phpFunctions);
+
         // only use keys if the request isn't JSON
         // todo accept two levels of keys if it's using []
         //if (type != IParameter.PARAM_JSON) {
@@ -238,6 +241,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 break;
             case IParameter.PARAM_URL:
                 blacklist.add("lang");
+            case Utilities.PARAM_HEADER:
+                blacklist.addAll(Utilities.headerNames);
             default:
                 break;
         }
@@ -266,7 +271,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Attack altBase = state.getAltBase();
         Deque<ArrayList<String>> paramBuckets = state.getParamBuckets();
 
-        Utilities.out("Initiating parameter name bruteforce from -"+bucketSize+"/"+state.seed+" on "+ targetURL);
+        Utilities.out("Initiating parameter name bruteforce from -"+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
 
         while (completedAttacks++ < stop) {
             if (paramBuckets.size() == 0) {
@@ -288,10 +293,16 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 else {
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
                 }
-                addParams(paramBuckets, newParams, bucketSize, true);
+                addParams(paramBuckets, newParams, bucketSize, true, type);
             }
 
-            ArrayList<String> candidates = paramBuckets.pop();
+            ArrayList<String> candidates;
+            try {
+                candidates = paramBuckets.pop();
+            }
+            catch (NoSuchElementException e) {
+                continue;
+            }
 
             if (completedAttacks < start) {
                 continue;
@@ -423,11 +434,21 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 paramGrabber.saveParams(paramGuess.getFirstRequest());
             }
         }
-        addParams(paramBuckets, discoveredParams, bucketSize, true);
+        addParams(paramBuckets, discoveredParams, bucketSize, true, type);
     }
 
-    static void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize, boolean topup) {
+    private static void removeBadEntries(ArrayList<String> params, byte type) {
         params.remove("");
+
+        if (type == Utilities.PARAM_HEADER) {
+            params.removeIf(x -> Character.isDigit(x.charAt(0)));
+            params.replaceAll(String::toLowerCase);
+        }
+    }
+
+    static void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize, boolean topup, byte type) {
+        removeBadEntries(params, type);
+
         int limit = params.size();
         if(limit == 0) {
             return;

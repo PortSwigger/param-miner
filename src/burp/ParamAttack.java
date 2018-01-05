@@ -186,14 +186,15 @@ class ParamAttack {
 
         // put the params into buckets
         paramBuckets = new ArrayDeque<>();
-        ParamGuesser.addParams(paramBuckets, valueParams, bucketSize, false);
-        ParamGuesser.addParams(paramBuckets, params, bucketSize, false);
+        ParamGuesser.addParams(paramBuckets, valueParams, bucketSize, false, type);
+        ParamGuesser.addParams(paramBuckets, params, bucketSize, false, type);
 
         alreadyReported = ParamGuesser.getBlacklist(type);
 
         //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
 
         bonusParams = new WordProvider();
+        bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
         bonusParams.addSource("/usr/share/dict/words");
     }

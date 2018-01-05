@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -38,8 +37,9 @@ class Utilities {
 
     static IBurpExtenderCallbacks callbacks;
     static IExtensionHelpers helpers;
-    private static HashSet<String> phpFunctions = new HashSet<>();
-    public static ArrayList<String> paramNames = new ArrayList<>();
+    static HashSet<String> phpFunctions = new HashSet<>();
+    static ArrayList<String> paramNames = new ArrayList<>();
+    static HashSet<String> headerNames = new HashSet<>();
 
     private static final String CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz"; // ABCDEFGHIJKLMNOPQRSTUVWXYZ
     private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
@@ -62,6 +62,11 @@ class Utilities {
             paramNames.add(params.next());
         }
         params.close();
+
+        Scanner headers = new Scanner(getClass().getResourceAsStream("/boring_headers"));
+        while (headers.hasNext()) {
+            headerNames.add(headers.next().toLowerCase());
+        }
     }
 
     static int generate(int seed, int count, List<String> accumulator)

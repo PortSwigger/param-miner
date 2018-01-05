@@ -629,6 +629,9 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 
         for (String param: params) {
             String fullParam[] = getValue(param);
+            if ("".equals(fullParam[0])) {
+                continue;
+            }
             preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
         }
 

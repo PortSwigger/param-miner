@@ -48,7 +48,7 @@ class OfferParamGuess implements IContextMenuFactory {
                 options.add(backendProbeButton);
             }
 
-            if (resp[0] == 'P') {
+            if (resp != null && resp[0] == 'P') {
                 IRequestInfo info = Utilities.helpers.analyzeRequest(req);
                 List<IParameter> params = info.getParameters();
 
