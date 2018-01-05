@@ -269,7 +269,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Attack base = state.getBase();
         byte[] invertedBase = state.getInvertedBase();
         Attack altBase = state.getAltBase();
-        Deque<ArrayList<String>> paramBuckets = state.getParamBuckets();
+        ParamHolder paramBuckets = state.getParamBuckets();
 
         Utilities.out("Initiating parameter name bruteforce from -"+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
 
@@ -293,7 +293,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 else {
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
                 }
-                addParams(paramBuckets, newParams, bucketSize, true, type);
+                paramBuckets.addParams(newParams, true);
             }
 
             ArrayList<String> candidates;
@@ -423,7 +423,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
-    private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, Deque<ArrayList<String>> paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
+    private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, ParamHolder paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
         ArrayList<String> discoveredParams = new ArrayList<>();
         for (String key : keys) {
             String[] parsed = Keysmith.parseKey(key);
@@ -434,46 +434,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 paramGrabber.saveParams(paramGuess.getFirstRequest());
             }
         }
-        addParams(paramBuckets, discoveredParams, bucketSize, true, type);
-    }
 
-    private static void removeBadEntries(ArrayList<String> params, byte type) {
-        params.remove("");
-
-        if (type == Utilities.PARAM_HEADER) {
-            params.removeIf(x -> Character.isDigit(x.charAt(0)));
-            params.replaceAll(String::toLowerCase);
-        }
-    }
-
-    static void addParams(Deque<ArrayList<String>> paramBuckets, ArrayList<String> params, int bucketSize, boolean topup, byte type) {
-        removeBadEntries(params, type);
-
-        int limit = params.size();
-        if(limit == 0) {
-            return;
-        }
-
-        if(topup && !paramBuckets.isEmpty()) {
-            int i = 0;
-            ArrayList<String> last = paramBuckets.getLast();
-            while(last.size() < bucketSize && i < params.size()) {
-                last.add(params.get(i++));
-            }
-
-            if (i == params.size()) {
-                return;
-            }
-        }
-
-        for (int i = 0; i<limit; i+= bucketSize) { // i<limit + bucketSize
-            ArrayList<String> bucket = new ArrayList<>();
-            for(int k = 0; k< bucketSize && i+k < limit; k++) {
-                String param = params.get(i+k);
-                bucket.add(param);
-            }
-            paramBuckets.add(bucket);
-        }
+        paramBuckets.addParams(discoveredParams, true);
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {

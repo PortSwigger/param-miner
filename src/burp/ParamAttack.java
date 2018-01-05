@@ -16,7 +16,7 @@ class ParamAttack {
 
     private WordProvider bonusParams;
     private HashMap<String, String> requestParams;
-    private Deque<ArrayList<String>> paramBuckets;
+    private ParamHolder paramBuckets;
     private int bucketSize;
     private IHttpRequestResponse baseRequestResponse;
     private PayloadInjector injector;
@@ -75,7 +75,7 @@ class ParamAttack {
         return injector;
     }
 
-    Deque<ArrayList<String>> getParamBuckets() {
+    ParamHolder getParamBuckets() {
         return paramBuckets;
     }
 
@@ -185,9 +185,9 @@ class ParamAttack {
         }
 
         // put the params into buckets
-        paramBuckets = new ArrayDeque<>();
-        ParamGuesser.addParams(paramBuckets, valueParams, bucketSize, false, type);
-        ParamGuesser.addParams(paramBuckets, params, bucketSize, false, type);
+        paramBuckets = new ParamHolder(type, bucketSize);
+        paramBuckets.addParams(valueParams, false);
+        paramBuckets.addParams(params, false);
 
         alreadyReported = ParamGuesser.getBlacklist(type);
 
