@@ -11,6 +11,7 @@ class ParamHolder {
 
     ParamHolder(byte type, int bucketSize) {
         this.type = type;
+        this.bucketSize = bucketSize;
         paramBuckets = new ArrayDeque<>();
     }
 
