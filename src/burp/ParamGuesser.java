@@ -112,125 +112,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
-    static ArrayList<String> calculatePayloads(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber) {
-        ArrayList<String> params = new ArrayList<>();
-
-        // collect keys in request, for key skipping, matching and re-mapping
-        HashMap<String, String> requestParams = new HashMap<>();
-        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
-            String[] parsed = Keysmith.parseKey(entry);
-            Utilities.log("Request param: " +parsed[1]);
-            requestParams.putIfAbsent(parsed[1], parsed[0]);
-        }
-
-        // add JSON from response
-        params.addAll(Keysmith.getAllKeys(baseRequestResponse.getResponse(), requestParams));
-
-        // add JSON from method-flip response
-        if(baseRequestResponse.getRequest()[0] != 'G') {
-            IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
-                    Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
-            params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
-        }
-
-
-        // add JSON from elsewhere
-        HashMap<Integer, Set<String>> responses = new HashMap<>();
-
-        Iterator<IHttpRequestResponse> savedJson = paramGrabber.getSavedJson().iterator();
-        while (savedJson.hasNext()) {
-            IHttpRequestResponse resp = null; // todo record resp
-            try {
-                resp = savedJson.next();
-            }
-            catch (NoSuchElementException e) {
-                break;
-            }
-
-            JsonParser parser = new JsonParser();
-            JsonElement json = parser.parse(Utilities.getBody(resp.getResponse()));
-            HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(json, requestParams));
-            int matches = 0;
-            for (String requestKey: keys) {
-                if (requestParams.containsKey(requestKey) || requestParams.containsKey(Keysmith.parseKey(requestKey)[1])) {
-                    matches++;
-                }
-            }
-
-            // if there are no matches, don't bother with prefixes
-            // todo use root (or non-leaf) objects only
-            if(matches < 1) {
-                //Utilities.out("No matches, discarding prefix");
-                HashSet<String> filteredKeys = new HashSet<>();
-                for(String key: keys) {
-                    String lastKey = Keysmith.parseKey(key)[1];
-                    if (Utilities.parseArrayIndex(lastKey) < 3) {
-                        filteredKeys.add(Keysmith.parseKey(key)[1]);
-                    }
-                }
-                keys = filteredKeys;
-            }
-
-            Integer matchKey = matches;
-            if(responses.containsKey(matchKey)) {
-                responses.get(matchKey).addAll(keys);
-            }
-            else {
-                responses.put(matchKey, keys);
-            }
-        }
-
-
-        final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
-        sorted.addAll(responses.keySet());
-        for(Integer key: sorted) {
-            Utilities.log("Loading keys with "+key+" matches");
-            ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
-            sortedByLength.sort(new LengthCompare());
-            params.addAll(sortedByLength);
-        }
-
-        if (params.size() > 0) {
-            Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
-        }
-
-        params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
-
-        params.addAll(paramGrabber.getSavedGET());
-
-        params.addAll(Utilities.paramNames);
-
-        params.addAll(paramGrabber.getSavedWords());
-
-        params.addAll(Utilities.phpFunctions);
-
-        // only use keys if the request isn't JSON
-        // todo accept two levels of keys if it's using []
-        //if (type != IParameter.PARAM_JSON) {
-        //    for(int i=0;i<params.size();i++) {
-        //        params.set(i, Keysmith.parseKey(params.get(i))[1]);
-        //    }
-        //}
-
-        // de-dupe without losing the ordering
-        params = new ArrayList<>(new LinkedHashSet<>(params));
-
-        // don't both using parameters that are already present
-        Iterator<String> refiner = params.iterator();
-        while (refiner.hasNext()) {
-            String candidate = refiner.next();
-            String finalKey = Keysmith.getKey(candidate);
-            if (requestParams.containsKey(candidate) ||
-                    requestParams.containsKey(finalKey) || requestParams.containsValue(candidate) || requestParams.containsValue(finalKey)) {
-                refiner.remove();
-            }
-
-        }
-
-
-        return params;
-    }
-
     static HashSet<String> getBlacklist(byte type) {
         HashSet<String> blacklist = new HashSet<>();
         switch(type) {
@@ -271,7 +152,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Attack altBase = state.getAltBase();
         ParamHolder paramBuckets = state.getParamBuckets();
 
-        Utilities.out("Initiating parameter name bruteforce from -"+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
+        Utilities.out("Resuming type "+type+" bruteforce at "+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
 
         while (completedAttacks++ < stop) {
             if (paramBuckets.size() == 0) {

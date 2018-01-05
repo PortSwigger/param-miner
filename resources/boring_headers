@@ -16,3 +16,8 @@ content-length
 range
 if-unmodified-since
 if-match
+access-control-request-method
+x-request-id
+x-timer
+via
+proxy
