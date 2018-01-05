@@ -30,6 +30,13 @@ class ParamHolder {
     void addParams(ArrayList<String> params, boolean topup) {
         removeBadEntries(params);
 
+        if(type == Utilities.PARAM_HEADER) {
+            ArrayList<String> custom = new ArrayList<>();
+            custom.addAll(params);
+            custom.replaceAll(x-> "x-"+x);
+            params.addAll(custom);
+        }
+
         int limit = params.size();
         if(limit == 0) {
             return;
