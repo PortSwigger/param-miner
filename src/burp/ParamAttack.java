@@ -199,7 +199,7 @@ class ParamAttack {
         paramBuckets.addParams(valueParams, false);
         paramBuckets.addParams(params, false);
 
-        alreadyReported = ParamGuesser.getBlacklist(type);
+        alreadyReported = getBlacklist(type);
 
         //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
 
@@ -207,6 +207,28 @@ class ParamAttack {
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
         bonusParams.addSource("/usr/share/dict/words");
+    }
+
+    private HashSet<String> getBlacklist(byte type) {
+        HashSet<String> blacklist = new HashSet<>();
+        switch(type) {
+            case IParameter.PARAM_COOKIE:
+                blacklist.add("__cfduid");
+                blacklist.add("PHPSESSID");
+                blacklist.add("csrftoken");
+                break;
+            case IParameter.PARAM_URL:
+                blacklist.add("lang");
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashMap<>()));
+            case IParameter.PARAM_BODY:
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashMap<>()));
+            case Utilities.PARAM_HEADER:
+                blacklist.addAll(Utilities.headerNames);
+            default:
+                break;
+        }
+
+        return blacklist;
     }
 
     Attack updateBaseline() {
@@ -313,6 +335,7 @@ class ParamAttack {
         }
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
+
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
 
         params.addAll(paramGrabber.getSavedGET());
@@ -334,17 +357,17 @@ class ParamAttack {
         // de-dupe without losing the ordering
         params = new ArrayList<>(new LinkedHashSet<>(params));
 
-        // don't both using parameters that are already present
-        Iterator<String> refiner = params.iterator();
-        while (refiner.hasNext()) {
-            String candidate = refiner.next();
-            String finalKey = Keysmith.getKey(candidate);
-            if (requestParams.containsKey(candidate) ||
-                    requestParams.containsKey(finalKey) || requestParams.containsValue(candidate) || requestParams.containsValue(finalKey)) {
-                refiner.remove();
-            }
-
-        }
+//        // don't both using parameters that are already present
+//        // fixme move this to a more appropriate point
+//        Iterator<String> refiner = params.iterator();
+//        while (refiner.hasNext()) {
+//            String candidate = refiner.next();
+//            String finalKey = Keysmith.getKey(candidate);
+//            if (requestParams.containsKey(candidate) ||
+//                    requestParams.containsKey(finalKey) || requestParams.containsValue(candidate) || requestParams.containsValue(finalKey)) {
+//                refiner.remove();
+//            }
+//        }
 
 
         return params;

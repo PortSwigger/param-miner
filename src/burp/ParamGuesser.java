@@ -112,25 +112,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
-    static HashSet<String> getBlacklist(byte type) {
-        HashSet<String> blacklist = new HashSet<>();
-        switch(type) {
-            case IParameter.PARAM_COOKIE:
-                blacklist.add("__cfduid");
-                blacklist.add("PHPSESSID");
-                blacklist.add("csrftoken");
-                break;
-            case IParameter.PARAM_URL:
-                blacklist.add("lang");
-            case Utilities.PARAM_HEADER:
-                blacklist.addAll(Utilities.headerNames);
-            default:
-                break;
-        }
-
-        return blacklist;
-    }
-
     private ArrayList<Attack> guessParams(ParamAttack state) {
         final int bucketSize = state.getBucketSize();
         final IHttpRequestResponse baseRequestResponse = state.getBaseRequestResponse();

@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.Deque;
 
 class ParamHolder {
-    Deque<ArrayList<String>> paramBuckets;
-    byte type;
-    int bucketSize;
+    private Deque<ArrayList<String>> paramBuckets;
+    private byte type;
+    private int bucketSize;
 
     ParamHolder(byte type, int bucketSize) {
         this.type = type;

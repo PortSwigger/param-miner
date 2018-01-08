@@ -45,7 +45,7 @@ public class Keysmith {
 
     }
 
-    private static ArrayList<String> getParamKeys(byte[] resp, HashMap<String, String> witnessedParams) {
+    static ArrayList<String> getParamKeys(byte[] resp, HashMap<String, String> witnessedParams) {
         ArrayList<String> keys = new ArrayList<>();
         IRequestInfo info = Utilities.helpers.analyzeRequest(resp);
         List<IParameter> currentParams = info.getParameters();
