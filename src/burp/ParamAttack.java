@@ -28,6 +28,7 @@ class ParamAttack {
     private Attack altBase;
     private boolean tryMethodFlip;
     private final ParamInsertionPoint insertionPoint;
+    final byte type;
 
     int getStop() {
         return stop;
@@ -91,6 +92,7 @@ class ParamAttack {
 
 
     ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop) {
+        this.type = type;
         this.stop = stop;
         this.baseRequestResponse = baseRequestResponse;
         targetURL = baseRequestResponse.getHttpService().getHost();

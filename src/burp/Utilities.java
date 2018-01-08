@@ -448,6 +448,10 @@ class Utilities {
         return value;
     }
 
+    public static boolean containsBytes(byte[] request, byte[] value) {
+        return helpers.indexOf(request, value, false, 1, request.length - 1) != -1;
+    }
+
     public static byte[] setHeader(byte[] request, String header, String value) {
         int[] offsets = getHeaderOffsets(request, header);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

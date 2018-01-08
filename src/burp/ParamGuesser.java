@@ -123,6 +123,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         final ParamInsertionPoint insertionPoint = state.getInsertionPoint();
         final HashMap<String, String> requestParams = state.getRequestParams();
         final WordProvider bonusParams = state.getBonusParams();
+        final byte type = state.type;
 
         ArrayList<Attack> attacks = new ArrayList<>();
         int completedAttacks = 0;
@@ -225,6 +226,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             Utilities.out(targetURL + " identified parameter: " + candidates);
                             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
                             scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+                            if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
+                                cachePoison(injector, submission);
+                            }
                             //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
                             base = state.updateBaseline();
                             ArrayList<String> newWords = new ArrayList<String>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
@@ -283,6 +287,24 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         taskEngine.execute(new ParamGuesser(state, taskEngine));
 
         return attacks;
+    }
+
+    private IHttpRequestResponse cachePoison(PayloadInjector injector, String param) {
+        byte[] request = injector.getInsertionPoint().buildRequest(param.getBytes());
+        IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+        request = Utilities.helpers.addParameter(request, cacheBuster);
+        Utilities.attemptRequest(injector.getService(), request);
+        Utilities.attemptRequest(injector.getService(), request);
+        Utilities.attemptRequest(injector.getService(), request);
+
+        IHttpRequestResponse poisoned = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(injector.getBase().getRequest(), cacheBuster));
+        if (Utilities.containsBytes(poisoned.getResponse(), "wrtqv".getBytes())){
+            Utilities.log("Successful cache poisoning check");
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(poisoned.getHttpService(), Utilities.getURL(poisoned), poisoned, "Cache poisoning", "Cache poisoning: '"+param+"'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
+            return poisoned;
+        }
+        Utilities.log("Failed cache poisoning check");
+        return null;
     }
 
     private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, ParamHolder paramBuckets, ArrayList<String> candidates, Attack paramGuess) {

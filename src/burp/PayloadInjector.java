@@ -5,6 +5,10 @@ import java.util.ArrayList;
 
 class PayloadInjector {
 
+    public IHttpService getService() {
+        return service;
+    }
+
     private IHttpService service;
 
     public IScannerInsertionPoint getInsertionPoint() {
@@ -13,8 +17,15 @@ class PayloadInjector {
 
     private IScannerInsertionPoint insertionPoint;
 
+    public IHttpRequestResponse getBase() {
+        return base;
+    }
+
+    private IHttpRequestResponse base;
+
     PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         this.service = baseRequestResponse.getHttpService();
+        this.base = baseRequestResponse;
         this.insertionPoint = insertionPoint;
     }
 
