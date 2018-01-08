@@ -40,20 +40,22 @@ public class Keysmith {
             return getHtmlKeys(Utilities.getBody(resp));
         }
         else {
-            return getParamKeys(resp, witnessedParams);
+            return getParamKeys(resp, new HashSet<>());
         }
 
     }
 
-    static ArrayList<String> getParamKeys(byte[] resp, HashMap<String, String> witnessedParams) {
+    static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types) {
         ArrayList<String> keys = new ArrayList<>();
         IRequestInfo info = Utilities.helpers.analyzeRequest(resp);
         List<IParameter> currentParams = info.getParameters();
 
         for (IParameter param : currentParams) {
             String parsedParam = parseParam(param.getName().replace(':', ';'));
-            keys.add(parsedParam);
-            Utilities.log(parsedParam);
+            if(types.isEmpty() || types.contains(param.getType())) {
+                keys.add(parsedParam);
+                Utilities.log(parsedParam);
+            }
         }
         return keys;
     }

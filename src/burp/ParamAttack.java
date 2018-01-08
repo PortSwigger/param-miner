@@ -216,12 +216,13 @@ class ParamAttack {
                 blacklist.add("__cfduid");
                 blacklist.add("PHPSESSID");
                 blacklist.add("csrftoken");
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_COOKIE)));
                 break;
             case IParameter.PARAM_URL:
                 blacklist.add("lang");
-                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashMap<>()));
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
             case IParameter.PARAM_BODY:
-                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashMap<>()));
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
             case Utilities.PARAM_HEADER:
                 blacklist.addAll(Utilities.headerNames);
             default:
