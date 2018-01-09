@@ -207,8 +207,10 @@ class ParamAttack {
 
         bonusParams = new WordProvider();
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
-        bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
-        bonusParams.addSource("/usr/share/dict/words");
+        if (!Utilities.LIGHTWEIGHT) {
+            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
+            bonusParams.addSource("/usr/share/dict/words");
+        }
     }
 
     private HashSet<String> getBlacklist(byte type) {
@@ -343,11 +345,12 @@ class ParamAttack {
 
         params.addAll(paramGrabber.getSavedGET());
 
-        params.addAll(Utilities.paramNames);
-
         params.addAll(paramGrabber.getSavedWords());
 
-        params.addAll(Utilities.phpFunctions);
+        if (!Utilities.LIGHTWEIGHT) {
+            params.addAll(Utilities.paramNames);
+            params.addAll(Utilities.phpFunctions);
+        }
 
         // only use keys if the request isn't JSON
         // todo accept two levels of keys if it's using []

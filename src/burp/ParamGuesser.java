@@ -134,7 +134,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         Attack altBase = state.getAltBase();
         ParamHolder paramBuckets = state.getParamBuckets();
 
-        Utilities.out("Resuming type "+type+" bruteforce at "+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
+        Utilities.out("Resuming "+Utilities.getNameFromType(type)+" bruteforce at "+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
 
         while (completedAttacks++ < stop) {
             if (paramBuckets.size() == 0) {
@@ -146,7 +146,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         if (next == null) {
                             state.seed = 0;
                             if(completedAttacks > start) {
-                                Utilities.out("Switching to bruteforce mode after this attack");
+                                if (Utilities.LIGHTWEIGHT) {
+                                    Utilities.out("Completed attack on "+ targetURL);
+                                    return attacks;
+                                }
+                                else {
+                                    Utilities.out("Switching to bruteforce mode after this attack");
+                                }
                             }
                             break;
                         }
@@ -224,8 +230,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         if (!confirmed.isEmpty()) {
                             state.alreadyReported.add(submission);
                             Utilities.out(targetURL + " identified parameter: " + candidates);
-                            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret parameter"));
-                            scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+                            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret input: "+Utilities.getNameFromType(type)));
+                            //scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
                             if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
                                 cachePoison(injector, submission);
                             }
@@ -290,18 +296,34 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private IHttpRequestResponse cachePoison(PayloadInjector injector, String param) {
+        IHttpRequestResponse base = injector.getBase();
+        PayloadInjector altInject = new PayloadInjector(base, new ParamNameInsertionPoint(base.getRequest(), "guesser", "", IParameter.PARAM_URL, "repliblah"));
+        Probe validParam = new Probe("Potentially swappable param: " + param, 5, param);
+        validParam.setEscapeStrings(Keysmith.permute(param), Keysmith.permute(param, false));
+        validParam.setRandomAnchor(false);
+        validParam.setPrefix(Probe.REPLACE);
+        Attack paramBase = new Attack();
+        paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
+        paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
+        ArrayList<Attack> confirmed = altInject.fuzz(paramBase, validParam);
+        if(!confirmed.isEmpty()) {
+            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param"));
+        }
+
+
         byte[] request = injector.getInsertionPoint().buildRequest(param.getBytes());
         IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         request = Utilities.helpers.addParameter(request, cacheBuster);
-        Utilities.attemptRequest(injector.getService(), request);
-        Utilities.attemptRequest(injector.getService(), request);
-        Utilities.attemptRequest(injector.getService(), request);
+        if(Utilities.containsBytes(Utilities.attemptRequest(injector.getService(), request).getResponse(), "wrtqv".getBytes())) {
+            Utilities.attemptRequest(injector.getService(), request);
+            Utilities.attemptRequest(injector.getService(), request);
 
-        IHttpRequestResponse poisoned = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(injector.getBase().getRequest(), cacheBuster));
-        if (Utilities.containsBytes(poisoned.getResponse(), "wrtqv".getBytes())){
-            Utilities.log("Successful cache poisoning check");
-            Utilities.callbacks.addScanIssue(new CustomScanIssue(poisoned.getHttpService(), Utilities.getURL(poisoned), poisoned, "Cache poisoning", "Cache poisoning: '"+param+"'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
-            return poisoned;
+            IHttpRequestResponse poisoned = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base.getRequest(), cacheBuster));
+            if (Utilities.containsBytes(poisoned.getResponse(), "wrtqv".getBytes())){
+                Utilities.log("Successful cache poisoning check");
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(poisoned.getHttpService(), Utilities.getURL(poisoned), poisoned, "Cache poisoning", "Cache poisoning: '"+param+"'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
+                return poisoned;
+            }
         }
         Utilities.log("Failed cache poisoning check");
         return null;

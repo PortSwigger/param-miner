@@ -25,6 +25,7 @@ class Utilities {
     static final boolean TRANSFORMATION_SCAN = true;
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
+    static final boolean LIGHTWEIGHT = true;
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 
     static final boolean TRY_HPP = true;
@@ -66,6 +67,23 @@ class Utilities {
         Scanner headers = new Scanner(getClass().getResourceAsStream("/boring_headers"));
         while (headers.hasNext()) {
             headerNames.add(headers.next().toLowerCase());
+        }
+    }
+
+    static String getNameFromType(byte type) {
+        switch (type) {
+            case IParameter.PARAM_BODY:
+                return "body";
+            case IParameter.PARAM_URL:
+                return "url";
+            case IParameter.PARAM_COOKIE:
+                return "cookie";
+            case IParameter.PARAM_JSON:
+                return "json";
+            case Utilities.PARAM_HEADER:
+                return "header";
+            default:
+                return "unknown";
         }
     }
 
