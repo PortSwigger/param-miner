@@ -229,25 +229,29 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             continue;
                         }
 
-                        Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
-                        validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
-                        validParam.setRandomAnchor(false);
-                        validParam.setPrefix(Probe.REPLACE);
-                        ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam);
-                        if (!confirmed.isEmpty()) {
-                            state.alreadyReported.add(submission);
-                            Utilities.out(targetURL + " identified parameter: " + candidates);
-                            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret input: "+Utilities.getNameFromType(type)));
-                            //scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
-                            if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
-                                cachePoison(injector, submission);
+                        Attack WAFCatcher = new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission)));
+                        WAFCatcher.addAttack(new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission))));
+                        if (!Utilities.similar(WAFCatcher, confirmParamGuess)){
+                            Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
+                            validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
+                            validParam.setRandomAnchor(false);
+                            validParam.setPrefix(Probe.REPLACE);
+                            ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam);
+                            if (!confirmed.isEmpty()) {
+                                state.alreadyReported.add(submission);
+                                Utilities.out(targetURL + " identified parameter: " + candidates);
+                                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret input: "+Utilities.getNameFromType(type)));
+                                //scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+                                if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
+                                    cachePoison(injector, submission);
+                                }
+                                //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
+                                base = state.updateBaseline();
+                                ArrayList<String> newWords = new ArrayList<String>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
+                                //addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
+                            } else {
+                                Utilities.out(targetURL + " questionable parameter: " + candidates);
                             }
-                            //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
-                            base = state.updateBaseline();
-                            ArrayList<String> newWords = new ArrayList<String>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
-                            //addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
-                        } else {
-                            Utilities.out(targetURL + " questionable parameter: " + candidates);
                         }
                     }
                 } else {
