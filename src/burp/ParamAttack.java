@@ -201,6 +201,11 @@ class ParamAttack {
         paramBuckets.addParams(valueParams, false);
         paramBuckets.addParams(params, false);
 
+        if (!Utilities.DYNAMIC_KEYLOAD) {
+            params = null;
+            valueParams = null;
+        }
+
         alreadyReported = getBlacklist(type);
 
         //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
@@ -343,6 +348,7 @@ class ParamAttack {
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
 
+        // todo move this stuff elsewhere - no need to load it into memory in advance
         params.addAll(paramGrabber.getSavedGET());
 
         params.addAll(paramGrabber.getSavedWords());
@@ -362,19 +368,6 @@ class ParamAttack {
 
         // de-dupe without losing the ordering
         params = new ArrayList<>(new LinkedHashSet<>(params));
-
-//        // don't both using parameters that are already present
-//        // fixme move this to a more appropriate point
-//        Iterator<String> refiner = params.iterator();
-//        while (refiner.hasNext()) {
-//            String candidate = refiner.next();
-//            String finalKey = Keysmith.getKey(candidate);
-//            if (requestParams.containsKey(candidate) ||
-//                    requestParams.containsKey(finalKey) || requestParams.containsValue(candidate) || requestParams.containsValue(finalKey)) {
-//                refiner.remove();
-//            }
-//        }
-
 
         return params;
     }

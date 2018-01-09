@@ -66,6 +66,9 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    TRY_HPP "+Utilities.TRY_HPP);
         Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
         Utilities.out("    TRY_MAGIC_VALUE_ATTACKS "+Utilities.TRY_MAGIC_VALUE_ATTACKS);
+        Utilities.out("Param guessing:");
+        Utilities.out("    LIGHTWEIGHT "+Utilities.LIGHTWEIGHT);
+        Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
 
     }
 

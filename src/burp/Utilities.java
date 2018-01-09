@@ -25,7 +25,10 @@ class Utilities {
     static final boolean TRANSFORMATION_SCAN = true;
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
+
     static final boolean LIGHTWEIGHT = true;
+    static final boolean DYNAMIC_KEYLOAD = false;
+
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 
     static final boolean TRY_HPP = true;

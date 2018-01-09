@@ -238,7 +238,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
                             base = state.updateBaseline();
                             ArrayList<String> newWords = new ArrayList<String>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
-                            addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
+                            //addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
                         } else {
                             Utilities.out(targetURL + " questionable parameter: " + candidates);
                         }
@@ -330,6 +330,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, ParamHolder paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
+        if (!Utilities.DYNAMIC_KEYLOAD) {
+            return;
+        }
         ArrayList<String> discoveredParams = new ArrayList<>();
         for (String key : keys) {
             String[] parsed = Keysmith.parseKey(key);
