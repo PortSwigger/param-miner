@@ -28,7 +28,7 @@ public class BurpExtender implements IBurpExtender {
 
         new Utilities(callbacks);
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(30, 30, 10, TimeUnit.MINUTES, tasks);
+        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.THREAD_POOL_SIZE, Utilities.THREAD_POOL_SIZE, 10, TimeUnit.MINUTES, tasks);
         callbacks.setExtensionName(name);
 
         try {
@@ -67,9 +67,10 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
         Utilities.out("    TRY_MAGIC_VALUE_ATTACKS "+Utilities.TRY_MAGIC_VALUE_ATTACKS);
         Utilities.out("Param guessing:");
-        Utilities.out("    LIGHTWEIGHT "+Utilities.LIGHTWEIGHT);
+        Utilities.out("    BRUTEFORCE "+Utilities.BRUTEFORCE);
         Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
-        Utilities.out("    ROTATION INTERVAL"+Utilities.ROTATION_INTERVAL);
+        Utilities.out("    ROTATION_INTERVAL "+Utilities.ROTATION_INTERVAL);
+        Utilities.out("    THREAD_POOL_SIZE "+Utilities.THREAD_POOL_SIZE);
 
     }
 

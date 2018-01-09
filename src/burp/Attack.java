@@ -27,17 +27,30 @@ class Attack {
 
     private IHttpRequestResponse lastRequest;
 
-    private final String[] keys = {"\":\"", "wrtqva", "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
+    static private String[] keys;
     String payload;
     private Probe probe;
     private String anchor;
     private HashMap<String, Object> fingerprint;
 
 
-    private IResponseKeywords responseKeywords = Utilities.helpers.analyzeResponseKeywords(Arrays.asList(keys));
-    private IResponseVariations responseDetails = Utilities.helpers.analyzeResponseVariations();
+    static private IResponseKeywords responseKeywords;
+    static private IResponseVariations responseDetails;
+
     // todo add response end?
     private int responseReflections = UNINITIALISED;
+
+
+    static {
+        if (Utilities.FAST_DIFFING) {
+            keys = new String[]{"wrtqva", "error"};
+        }
+        else {
+            keys = new String[]{"\":\"", "wrtqva", "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
+        }
+        responseKeywords = Utilities.helpers.analyzeResponseKeywords(Arrays.asList(keys));
+        responseDetails = Utilities.helpers.analyzeResponseVariations();
+    }
 
     public Attack(IHttpRequestResponse req, Probe probe, String payload, String anchor) {
         this.firstRequest = req;

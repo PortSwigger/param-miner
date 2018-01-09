@@ -214,7 +214,7 @@ class ParamAttack {
 
         bonusParams = new WordProvider();
         bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
-        if (!Utilities.LIGHTWEIGHT) {
+        if (Utilities.BRUTEFORCE) {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
             bonusParams.addSource("/usr/share/dict/words");
         }
@@ -355,7 +355,7 @@ class ParamAttack {
 
         params.addAll(paramGrabber.getSavedWords());
 
-        if (!Utilities.LIGHTWEIGHT) {
+        if (Utilities.BRUTEFORCE) {
             params.addAll(Utilities.paramNames);
             params.addAll(Utilities.phpFunctions);
         }

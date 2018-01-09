@@ -153,7 +153,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         if (next == null) {
                             state.seed = 0;
                             if(completedAttacks > start) {
-                                if (Utilities.LIGHTWEIGHT) {
+                                if (!Utilities.BRUTEFORCE) {
                                     Utilities.out("Completed attack on "+ targetURL);
                                     return attacks;
                                 }
@@ -376,18 +376,23 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             return false;
         }
 
+        if (!Utilities.containsBytes(failResp, "wrtqva".getBytes())) {
+            return false;
+        }
+
+        byte[] req = paramGuess.getFirstRequest().getRequest();
+
         for(Iterator<String> params = recentParams.iterator(); params.hasNext();) {
             String param = params.next();
             if(currentParams.contains(param) || alreadyReported.contains(param)) {
                 continue;
             }
 
-            String canary = Utilities.toCanary(param.split("~", 2)[0]) + attackID;
-            if (Utilities.helpers.indexOf(failResp, Utilities.helpers.stringToBytes(canary), false, 1, failResp.length - 1) != -1 &&
-                    Utilities.helpers.indexOf(paramGuess.getFirstRequest().getRequest(), Utilities.helpers.stringToBytes(canary), false, 1, paramGuess.getFirstRequest().getRequest().length - 1) == -1) {
+            byte[] canary = Utilities.helpers.stringToBytes(Utilities.toCanary(param.split("~", 2)[0]) + attackID);
+            if (Utilities.containsBytes(failResp, canary) && !Utilities.containsBytes(req, canary)){
                 Utilities.out(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
                 params.remove();
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + canary + " in the response", "High", "Firm", "Investigate"));
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + Utilities.helpers.bytesToString(canary) + " in the response", "High", "Firm", "Investigate"));
                 alreadyReported.add(param);
                 return true;
             }

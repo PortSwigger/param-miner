@@ -26,8 +26,11 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
-    static final boolean LIGHTWEIGHT = false;
+    static final boolean BRUTEFORCE = true;
     static final boolean DYNAMIC_KEYLOAD = false;
+    static final boolean FAST_DIFFING = true;
+    static final boolean FIND_PERSISTENT = false;
+    static final int THREAD_POOL_SIZE = 32;
     static final int ROTATION_INTERVAL = 4;
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);
