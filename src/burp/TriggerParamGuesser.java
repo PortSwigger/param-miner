@@ -35,7 +35,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         queueSize += reqs.length;
         int thread_count = taskEngine.getCorePoolSize();
 
-        int stop = 32;
+        int stop = Utilities.ROTATION_INTERVAL;
         if (queueSize < thread_count) {
             stop = 256;
         }

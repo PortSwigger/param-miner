@@ -15,6 +15,7 @@ class ParamAttack {
     ArrayList<String> params;
     ArrayList<String> valueParams;
     int seed = -1;
+    boolean started;
 
     private WordProvider bonusParams;
     private HashMap<String, String> requestParams;
@@ -92,6 +93,7 @@ class ParamAttack {
 
 
     ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop) {
+        started = false;
         this.type = type;
         this.stop = stop;
         this.baseRequestResponse = baseRequestResponse;

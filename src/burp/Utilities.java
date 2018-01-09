@@ -26,8 +26,9 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
-    static final boolean LIGHTWEIGHT = true;
+    static final boolean LIGHTWEIGHT = false;
     static final boolean DYNAMIC_KEYLOAD = false;
+    static final int ROTATION_INTERVAL = 4;
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 

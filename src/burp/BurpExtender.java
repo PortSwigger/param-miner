@@ -69,6 +69,7 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("Param guessing:");
         Utilities.out("    LIGHTWEIGHT "+Utilities.LIGHTWEIGHT);
         Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
+        Utilities.out("    ROTATION INTERVAL"+Utilities.ROTATION_INTERVAL);
 
     }
 
