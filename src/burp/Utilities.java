@@ -26,7 +26,7 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
-    static final boolean BRUTEFORCE = true;
+    static final boolean BRUTEFORCE = false;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean FAST_DIFFING = false;
     static final boolean FIND_PERSISTENT = false;

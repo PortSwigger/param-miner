@@ -152,21 +152,16 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         String next = bonusParams.getNext();
                         if (next == null) {
                             state.seed = 0;
-                            if(completedAttacks > start) {
-                                if (!Utilities.BRUTEFORCE) {
-                                    Utilities.out("Completed attack on "+ targetURL);
-                                    return attacks;
-                                }
-                                else {
-                                    Utilities.out("Switching to bruteforce mode after this attack");
-                                }
-                            }
                             break;
                         }
                         newParams.add(next);
                     }
                 }
                 else {
+                    if (!Utilities.BRUTEFORCE) {
+                        Utilities.out("Completed attack on "+ targetURL);
+                        return attacks;
+                    }
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
                 }
                 paramBuckets.addParams(newParams, true);

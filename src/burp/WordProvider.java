@@ -29,7 +29,7 @@ class WordProvider {
 
         while (!sources.isEmpty()) {
             try {
-                currentSource = new Scanner(new File(sources.pop()));
+                currentSource = new Scanner(new File(sources.removeFirst()));
                 if (currentSource.hasNext()) {
                     return;
                 }
