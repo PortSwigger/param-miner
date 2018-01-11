@@ -348,6 +348,8 @@ class ParamAttack {
             Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
+        params.add("x-original-url");
+
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
