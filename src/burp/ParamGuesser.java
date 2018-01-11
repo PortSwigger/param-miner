@@ -317,49 +317,60 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         IHttpRequestResponse setPoison = null;
-        int attackDedication = 64;
-        for(int i=1; i<attackDedication; i++) {
-            byte[] setPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
-            IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-            setPoisonReq = Utilities.helpers.addParameter(setPoisonReq, cacheBuster);
-            for(int j=attackDedication-i; j<attackDedication; j++) {
-                setPoison = Utilities.attemptRequest(injector.getService(), setPoisonReq);
-            }
-
-            if (i == 1 && !Utilities.containsBytes(setPoison.getResponse(), "wrtqv".getBytes())) {
-                break;
-            }
-
-            for(int j=attackDedication-i; j<attackDedication; j+=3) {
-                IHttpRequestResponse getPoison = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base.getRequest(), cacheBuster));
-                if (Utilities.containsBytes(getPoison.getResponse(), "wrtqv".getBytes())) {
-                    Utilities.log("Successful cache poisoning check");
-                    Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, "Cache poisoning", "Cache poisoning: '" + param + "'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
-                    return;
-                }
-            }
+        int attackDedication = 2;
+        if(canSeeCache(base.getResponse())) {
+            attackDedication = 16;
         }
 
+        boolean reflectPoisonMightWork = true;
+        boolean statusPoisonMightWork = true;
 
-        if (Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(setPoison.getResponse()).getStatusCode()) {
+        String pathCacheBuster = Utilities.generateCanary();
+        byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes());
+        IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
+        short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 
-            String pathCacheBuster = Utilities.generateCanary();
-            byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes());
-            IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
-            short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode() ;
+        for(int i=1; i<attackDedication; i++) {
 
-            for (int i = 0; i < attackDedication; i++) {
+            if (reflectPoisonMightWork) {
+                byte[] setPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
+                IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+                setPoisonReq = Utilities.helpers.addParameter(setPoisonReq, cacheBuster);
+                for (int j = attackDedication - i; j < attackDedication; j++) {
+                    setPoison = Utilities.attemptRequest(injector.getService(), setPoisonReq);
+                }
+
+                if (i == 1 && !Utilities.containsBytes(setPoison.getResponse(), "wrtqv".getBytes())) {
+                    reflectPoisonMightWork = false;
+                }
+
+                for (int j = attackDedication - i; j < attackDedication; j += 3) {
+                    IHttpRequestResponse getPoison = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base.getRequest(), cacheBuster));
+                    if (Utilities.containsBytes(getPoison.getResponse(), "wrtqv".getBytes())) {
+                        Utilities.log("Successful cache poisoning check");
+                        Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, "Cache poisoning", "Cache poisoning: '" + param + "'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
+                        return;
+                    }
+                }
+            }
+
+            if (i == 1) {
+                statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(setPoison.getResponse()).getStatusCode();
+            }
+
+            if(statusPoisonMightWork) {
                 IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
 
                 byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param+"~cake"));
                 setPoison200Req = Utilities.replace(setPoison200Req, "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes());
                 setPoison200Req = Utilities.replace(setPoison200Req, "null".getBytes(), "/".getBytes());
 
+                IHttpRequestResponse setPoisonResp = null;
                 for(int j=attackDedication-i; j<attackDedication; j++) {
-                    Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
+                    setPoisonResp = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
                 }
 
-                // todo bail if codes match
+                statusPoisonMightWork = Utilities.helpers.analyzeResponse(setPoisonResp.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(setPoison.getResponse()).getStatusCode();
 
                 for(int j=attackDedication-i; j<attackDedication; j+=3) {
                     IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base404, cacheBuster));
@@ -379,7 +390,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private static boolean canSeeCache(byte[] response) {
-        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits"};
+        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {
                 return true;
