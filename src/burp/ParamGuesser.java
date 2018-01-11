@@ -236,14 +236,18 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                                 state.alreadyReported.add(submission);
                                 Utilities.out(targetURL + " identified parameter: " + candidates);
                                 Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret input: "+Utilities.getNameFromType(type)));
-                                //scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+
+                                if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())){
+                                    scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+                                }
+
                                 if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
                                     cachePoison(injector, submission, failAttack.getFirstRequest());
                                 }
                                 //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
                                 base = state.updateBaseline();
-                                ArrayList<String> newWords = new ArrayList<String>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
-                                //addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
+                                ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
+                                addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
                             } else {
                                 Utilities.out(targetURL + " questionable parameter: " + candidates);
                             }
@@ -325,8 +329,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         boolean reflectPoisonMightWork = true;
         boolean statusPoisonMightWork = true;
 
-        String pathCacheBuster = Utilities.generateCanary();
-        byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes());
+        String pathCacheBuster = Utilities.generateCanary()+".jpg";
+        byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes()); // fixme fails on non-root reqs
         IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
         short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 

@@ -29,9 +29,8 @@ class Utilities {
     static final boolean BRUTEFORCE = false;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean FAST_DIFFING = false;
-    static final boolean FIND_PERSISTENT = false;
     static final int THREAD_POOL_SIZE = 32;
-    static final int ROTATION_INTERVAL = 4;
+    static final int ROTATION_INTERVAL = 16;
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 
