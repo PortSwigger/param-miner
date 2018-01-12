@@ -330,13 +330,18 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             attackDedication = 16;
         }
 
-        boolean reflectPoisonMightWork = true;
-        boolean statusPoisonMightWork = true;
-
         String pathCacheBuster = Utilities.generateCanary()+".jpg";
         byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes()); // fixme fails on non-root reqs
         IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
         short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
+
+        byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
+        IParameter testCacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+        testReq = Utilities.helpers.addParameter(testReq, testCacheBuster);
+        IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
+
+        boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes();
+        boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
 
         for(int i=1; i<attackDedication; i++) {
 
@@ -346,10 +351,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 setPoisonReq = Utilities.helpers.addParameter(setPoisonReq, cacheBuster);
                 for (int j = attackDedication - i; j < attackDedication; j++) {
                     setPoison = Utilities.attemptRequest(injector.getService(), setPoisonReq);
-                }
-
-                if (i == 1 && !Utilities.containsBytes(setPoison.getResponse(), "wrtqv".getBytes())) {
-                    reflectPoisonMightWork = false;
                 }
 
                 for (int j = attackDedication - i; j < attackDedication; j += 3) {
@@ -373,10 +374,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         return;
                     }
                 }
-            }
-
-            if (i == 1) {
-                statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(setPoison.getResponse()).getStatusCode();
             }
 
             if(statusPoisonMightWork) {
