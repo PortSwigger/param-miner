@@ -351,16 +351,13 @@ class ParamAttack {
 
         params.addAll(paramGrabber.getSavedWords());
 
-        if (Utilities.BRUTEFORCE) {
-            params.addAll(Utilities.paramNames);
-            params.addAll(Utilities.phpFunctions);
-        }
-
         bonusParams = new WordProvider();
         if (type == Utilities.PARAM_HEADER || Utilities.BRUTEFORCE) {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         }
         if (Utilities.BRUTEFORCE) {
+            bonusParams.addSource("/params");
+            bonusParams.addSource("/functions");
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
             bonusParams.addSource("/usr/share/dict/words");
         }

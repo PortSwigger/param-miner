@@ -28,13 +28,22 @@ class WordProvider {
         }
 
         while (!sources.isEmpty()) {
+            String filename = sources.removeFirst();
             try {
-                currentSource = new Scanner(new File(sources.removeFirst()));
+                currentSource = new Scanner(getClass().getResourceAsStream(filename));
                 if (currentSource.hasNext()) {
                     return;
                 }
-            } catch (FileNotFoundException e) {
-                ;
+            } catch (NullPointerException e) {
+                try {
+                    currentSource = new Scanner(new File(filename));
+                    if (currentSource.hasNext()) {
+                        return;
+                    }
+                }
+                catch (FileNotFoundException f) {
+                    ;
+                }
             }
         }
 
