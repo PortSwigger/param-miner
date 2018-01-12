@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -343,10 +344,38 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes());
         boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
 
+
+        ArrayList<String> suffixes = new ArrayList<>();
+        ArrayList<String> suffixesWhich404 = new ArrayList<>();
+        String[] potentialSuffixes = new String[]{"index.php/zxcvk.jpg", "zxcvk.jpg"};
+
+        suffixes.add("");
+        if (reflectPoisonMightWork) {
+            for (String suffix: potentialSuffixes) {
+                testResp = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(testReq, suffix));
+                if (Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes())) {
+                    if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
+                        suffixes.add(suffix);
+                    } else {
+                        suffixesWhich404.add(suffix);
+                    }
+                }
+                if (attackDedication == 2 && canSeeCache(testResp.getResponse())) {
+                    attackDedication = 12;
+                }
+            }
+        }
+
+        if (suffixes.size() == 1) {
+            suffixes.add(suffixesWhich404.get(suffixesWhich404.size()-1));
+        }
+
         for(int i=1; i<attackDedication; i++) {
 
             if (reflectPoisonMightWork) {
-                if (tryReflectCache(injector, param, base, attackDedication, i)) return;
+                for (String suffix: suffixes) {
+                    if (tryReflectCache(injector, param, base, attackDedication, i, suffix)) return;
+                }
             }
 
             if(statusPoisonMightWork) {
@@ -355,14 +384,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         Utilities.log("Failed cache poisoning check");
-        return;
     }
 
     private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, String pathCacheBuster, byte[] base404, short get404Code, int i) {
         IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
 
         byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param+"~/"));
-        setPoison200Req = Utilities.replace(setPoison200Req, "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes());
+        setPoison200Req = Utilities.appendToPath(setPoison200Req, pathCacheBuster);
 
         for(int j=attackDedication-i; j<attackDedication; j++) {
             Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
@@ -381,24 +409,25 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return false;
     }
 
-    private boolean tryReflectCache(PayloadInjector injector, String param, IHttpRequestResponse base, int attackDedication, int i) {
-        byte[] setPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
+    private boolean tryReflectCache(PayloadInjector injector, String param, IHttpRequestResponse base, int attackDedication, int i, String pathSuffix) {
+        IHttpService service = injector.getService();
+        byte[] setPoisonReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param)), pathSuffix);
         IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         setPoisonReq = Utilities.helpers.addParameter(setPoisonReq, cacheBuster);
         for (int j = attackDedication - i; j < attackDedication; j++) {
-            Utilities.attemptRequest(injector.getService(), setPoisonReq);
+            Utilities.attemptRequest(service, setPoisonReq);
         }
 
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
-            IHttpRequestResponse getPoison = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base.getRequest(), cacheBuster));
+            IHttpRequestResponse getPoison = Utilities.attemptRequest(service, Utilities.appendToPath(Utilities.helpers.addParameter(base.getRequest(), cacheBuster), pathSuffix));
             if (Utilities.containsBytes(getPoison.getResponse(), "wrtqv".getBytes())) {
                 Utilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
                 try {
-                    byte[] headerSplitReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz"));
+                    byte[] headerSplitReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
                     cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-                    byte[] headerSplitResp = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(headerSplitReq, cacheBuster)).getResponse();
+                    byte[] headerSplitResp = Utilities.attemptRequest(service, Utilities.helpers.addParameter(headerSplitReq, cacheBuster)).getResponse();
                     if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
                         title = "Severe cache poisoning";
                     }
@@ -415,7 +444,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
 
     private static boolean canSeeCache(byte[] response) {
-        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status"};
+        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAYz"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {
                 return true;

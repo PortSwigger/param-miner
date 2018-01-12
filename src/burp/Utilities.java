@@ -379,6 +379,29 @@ class Utilities {
         return request;
     }
 
+    static byte[] appendToPath(byte[] request, String suffix) {
+        if (suffix == null || suffix.equals("")) {
+            return request;
+        }
+
+        int i = 0;
+        while (i < request.length && request[i++] != '\n') {
+        }
+
+        int j = 0;
+        while (j < i && request[j++] != '?') {
+        }
+
+        if(j >= i) {
+            request = replace(request, " HTTP/1.1".getBytes(), (suffix+" HTTP/1.1").getBytes());
+        }
+        else {
+            request = replace(request, "?".getBytes(), (suffix+"?").getBytes()); // fixme replace can't handle single-char inputs
+        }
+
+        return request;
+    }
+
     static List<int[]> getMatches(byte[] response, byte[] match, int giveUpAfter) {
         if (giveUpAfter == -1) {
             giveUpAfter = response.length;
@@ -386,9 +409,9 @@ class Utilities {
 
         List<int[]> matches = new ArrayList<>();
 
-        if (match.length < 4) {
-            return matches;
-        }
+//        if (match.length < 4) {
+//            return matches;
+//        }
 
         int start = 0;
         while (start < giveUpAfter) {
