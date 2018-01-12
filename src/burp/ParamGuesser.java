@@ -235,7 +235,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             if (!confirmed.isEmpty()) {
                                 state.alreadyReported.add(submission);
                                 Utilities.out(targetURL + " identified parameter: " + candidates);
-                                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, "Secret input: "+Utilities.getNameFromType(type)));
+                                String title = "Secret input: "+Utilities.getNameFromType(type);
+                                if ((type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
+                                    title = "Failed hopes: "+title;
+                                }
+                                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 
                                 if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())){
                                     scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
@@ -352,7 +356,20 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     IHttpRequestResponse getPoison = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base.getRequest(), cacheBuster));
                     if (Utilities.containsBytes(getPoison.getResponse(), "wrtqv".getBytes())) {
                         Utilities.log("Successful cache poisoning check");
-                        Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, "Cache poisoning", "Cache poisoning: '" + param + "'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
+                        String title = "Cache poisoning";
+
+                        try {
+                            byte[] headerSplitReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz"));
+                            cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+                            byte[] headerSplitResp = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(headerSplitReq, cacheBuster)).getResponse();
+                            if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
+                                title = "Severe cache poisoning";
+                            }
+                        } catch (Exception e) {
+
+                        }
+
+                        Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, title, "Cache poisoning: '" + param + "'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
                         return;
                     }
                 }
@@ -365,9 +382,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             if(statusPoisonMightWork) {
                 IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
 
-                byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param+"~cake"));
+                byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param+"~/"));
                 setPoison200Req = Utilities.replace(setPoison200Req, "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes());
-                setPoison200Req = Utilities.replace(setPoison200Req, "null".getBytes(), "/".getBytes());
 
                 IHttpRequestResponse setPoisonResp = null;
                 for(int j=attackDedication-i; j<attackDedication; j++) {
@@ -393,8 +409,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return;
     }
 
+
+
     private static boolean canSeeCache(byte[] response) {
-        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish"};
+        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {
                 return true;

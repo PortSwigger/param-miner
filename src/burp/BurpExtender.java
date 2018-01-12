@@ -51,7 +51,7 @@ public class BurpExtender implements IBurpExtender {
 
         ParamGrabber paramGrabber = new ParamGrabber();
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
-        callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
+        //callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
         callbacks.registerScannerCheck(paramGrabber);
         callbacks.registerHttpListener(new Substituter());
 
@@ -91,62 +91,62 @@ class Substituter implements IHttpListener {
     }
 }
 
-class ParamSpammerFactory implements IIntruderPayloadGeneratorFactory {
-
-    ParamGrabber grabber;
-
-    public ParamSpammerFactory(ParamGrabber grabber) {
-        this.grabber = grabber;
-    }
-
-    @Override
-    public String getGeneratorName() {
-        return "Observed Parameter Spammer";
-    }
-
-    @Override
-    public IIntruderPayloadGenerator createNewInstance(IIntruderAttack attack) {
-        attack.getRequestTemplate();
-        byte[] baseLine = attack.getRequestTemplate();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        //byte foo = (byte) 0xa7;
-        for(byte b: baseLine) {
-            if (b != (byte) 0xa7) { // §
-                outputStream.write(b);
-            }
-        }
-        baseLine = Utilities.fixContentLength(outputStream.toByteArray());
-        IHttpRequestResponse req = Utilities.callbacks.makeHttpRequest(attack.getHttpService(), baseLine);
-        ArrayList<String> params = ParamAttack.calculatePayloads(req, grabber, IParameter.PARAM_BODY);
-        return new ParamSpammer(params);
-    }
-}
-
-class ParamSpammer implements IIntruderPayloadGenerator {
-
-    private ArrayList<String> params;
-    private int index = 0;
-
-    public ParamSpammer(ArrayList<String> params) {
-        this.params = params;
-    }
-
-    @Override
-    public boolean hasMorePayloads() {
-        return (params.size() > index+1);
-    }
-
-    @Override
-    public byte[] getNextPayload(byte[] baseValue) {
-
-        return Utilities.helpers.stringToBytes(params.get(index++));
-    }
-
-    @Override
-    public void reset() {
-        index = 0;
-    }
-}
+//class ParamSpammerFactory implements IIntruderPayloadGeneratorFactory {
+//
+//    ParamGrabber grabber;
+//
+//    public ParamSpammerFactory(ParamGrabber grabber) {
+//        this.grabber = grabber;
+//    }
+//
+//    @Override
+//    public String getGeneratorName() {
+//        return "Observed Parameter Spammer";
+//    }
+//
+//    @Override
+//    public IIntruderPayloadGenerator createNewInstance(IIntruderAttack attack) {
+//        attack.getRequestTemplate();
+//        byte[] baseLine = attack.getRequestTemplate();
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//        //byte foo = (byte) 0xa7;
+//        for(byte b: baseLine) {
+//            if (b != (byte) 0xa7) { // §
+//                outputStream.write(b);
+//            }
+//        }
+//        baseLine = Utilities.fixContentLength(outputStream.toByteArray());
+//        IHttpRequestResponse req = Utilities.callbacks.makeHttpRequest(attack.getHttpService(), baseLine);
+//        ArrayList<String> params = ParamAttack.calculatePayloads(req, grabber, IParameter.PARAM_BODY);
+//        return new ParamSpammer(params);
+//    }
+//}
+//
+//class ParamSpammer implements IIntruderPayloadGenerator {
+//
+//    private ArrayList<String> params;
+//    private int index = 0;
+//
+//    public ParamSpammer(ArrayList<String> params) {
+//        this.params = params;
+//    }
+//
+//    @Override
+//    public boolean hasMorePayloads() {
+//        return (params.size() > index+1);
+//    }
+//
+//    @Override
+//    public byte[] getNextPayload(byte[] baseValue) {
+//
+//        return Utilities.helpers.stringToBytes(params.get(index++));
+//    }
+//
+//    @Override
+//    public void reset() {
+//        index = 0;
+//    }
+//}
 
 
 class ParamGrabber implements  IScannerCheck {

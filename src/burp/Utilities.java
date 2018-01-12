@@ -26,7 +26,7 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
-    static final boolean BRUTEFORCE = false;
+    static final boolean BRUTEFORCE = true;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean FAST_DIFFING = false;
     static final int THREAD_POOL_SIZE = 32;
@@ -152,7 +152,7 @@ class Utilities {
 
 
     static boolean invertable(String value) {
-        return invert(value) != null;
+        return !value.equals(invert(value));
     }
 
     static Object invert(String value) {
@@ -169,7 +169,7 @@ class Utilities {
                 return 1;
             }
         }
-        return null;
+        return value;
     }
 
     static String randomString(int len) {
