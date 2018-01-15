@@ -42,7 +42,11 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
 
-        Queue<String> cache = new CircularFifoQueue<>(thread_count);
+        int cache_size = thread_count;
+        if (Utilities.MAX_ONE_PER_HOST) {
+            cache_size = queueSize;
+        }
+        Queue<String> cache = new CircularFifoQueue<>(cache_size);
         HashSet<String> remainingHosts = new HashSet<>();
 
         int i = 0;
@@ -63,6 +67,11 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     remainingHosts.add(host);
                 }
             }
+
+            if(Utilities.MAX_ONE_PER_HOST) {
+                break;
+            }
+
             if (remainingHosts.size() <= 1) {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
