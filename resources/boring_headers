@@ -1,4 +1,3 @@
-host
 upgrade
 expect
 vary
@@ -9,7 +8,6 @@ accept-encoding
 accept-language
 accept
 transfer-encoding
-user-agent
 content-type
 content-length
 range
@@ -20,7 +18,10 @@ if
 via
 proxy
 trailer
+user-agent
+host
 zaccess-control-request-method
+zorigin
 zx-request-id
 zx-timer
 waf-stuff-below
@@ -33,3 +34,4 @@ label
 start
 date
 keep-alive
+x-scanner

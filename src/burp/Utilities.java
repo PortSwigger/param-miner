@@ -29,8 +29,8 @@ class Utilities {
     static final boolean BRUTEFORCE = true;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean MAX_ONE_PER_HOST = true;
-    static final int THREAD_POOL_SIZE = 64;
-    static final int ROTATION_INTERVAL = 16;
+    static final int THREAD_POOL_SIZE = 32;
+    static final int ROTATION_INTERVAL = 6;
 
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);

@@ -42,7 +42,11 @@ class WordProvider {
                     }
                 }
                 catch (FileNotFoundException f) {
-                    ;
+                    if (filename.contains("\n")) {
+                        currentSource = new Scanner(filename);
+                        return;
+                    }
+
                 }
             }
         }

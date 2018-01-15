@@ -135,7 +135,7 @@ class ParamAttack {
         altBase = null;
         tryMethodFlip = false;
 
-        int longest = params.stream().max(Comparator.comparingInt(String::length)).get().length();
+        int longest = 20;//params.stream().max(Comparator.comparingInt(String::length)).get().length();
         longest = min(20, longest);
 
         switch(type) {
@@ -340,9 +340,6 @@ class ParamAttack {
             Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
-        params.add("x-original-url");
-        params.add("x-host");
-
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
@@ -352,10 +349,14 @@ class ParamAttack {
 
         params.addAll(paramGrabber.getSavedWords());
 
+        // de-dupe without losing the ordering
+        params = new ArrayList<>(new LinkedHashSet<>(params));
+
         bonusParams = new WordProvider();
         if (type == Utilities.PARAM_HEADER || Utilities.BRUTEFORCE) {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         }
+        bonusParams.addSource(String.join("\n", params));
         if (Utilities.BRUTEFORCE) {
             bonusParams.addSource("/params");
             bonusParams.addSource("/functions");
@@ -371,9 +372,8 @@ class ParamAttack {
         //    }
         //}
 
-        // de-dupe without losing the ordering
-        params = new ArrayList<>(new LinkedHashSet<>(params));
 
-        return params;
+
+        return new ArrayList<>();
     }
 }

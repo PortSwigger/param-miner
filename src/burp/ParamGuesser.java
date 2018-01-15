@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import static burp.Utilities.DYNAMIC_KEYLOAD;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -252,8 +253,10 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                                 }
                                 //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
                                 base = state.updateBaseline();
-                                ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
-                                addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
+                                if (DYNAMIC_KEYLOAD) {
+                                    ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
+                                    addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
+                                }
                             } else {
                                 Utilities.out(targetURL + " questionable parameter: " + candidates);
                             }
@@ -264,7 +267,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     base.addAttack(paramGuess);
                 }
 
-                addNewKeys(Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams), state, bucketSize, paramBuckets, candidates, paramGuess);
+                if(DYNAMIC_KEYLOAD) {
+                    addNewKeys(Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams), state, bucketSize, paramBuckets, candidates, paramGuess);
+                }
 
             } else if (tryMethodFlip) {
                 Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase));
@@ -460,7 +465,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, ParamHolder paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
-        if (!Utilities.DYNAMIC_KEYLOAD) {
+        if (!DYNAMIC_KEYLOAD) {
             return;
         }
         ArrayList<String> discoveredParams = new ArrayList<>();
