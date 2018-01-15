@@ -341,6 +341,7 @@ class ParamAttack {
         }
 
         params.add("x-original-url");
+        params.add("x-host");
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
 

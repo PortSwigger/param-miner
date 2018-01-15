@@ -367,7 +367,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
         if (suffixes.size() == 1) {
-            suffixes.add(suffixesWhich404.get(suffixesWhich404.size()-1));
+            if(!suffixesWhich404.isEmpty()) {
+                suffixes.add(suffixesWhich404.get(suffixesWhich404.size() - 1));
+            }
         }
 
         for(int i=1; i<attackDedication; i++) {

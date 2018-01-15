@@ -10,7 +10,6 @@ accept-language
 accept
 transfer-encoding
 user-agent
-origin
 content-type
 content-length
 range
@@ -26,9 +25,11 @@ zx-request-id
 zx-timer
 waf-stuff-below
 referrer
+negotiate
 javascript
 action
 authorization
 label
 start
 date
+keep-alive
