@@ -2,6 +2,7 @@ package burp;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.sun.tools.internal.ws.wsdl.document.jaxws.Exception;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -311,81 +312,87 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private void cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
-        IHttpRequestResponse base = injector.getBase();
-        PayloadInjector altInject = new PayloadInjector(base, new ParamNameInsertionPoint(base.getRequest(), "guesser", "", IParameter.PARAM_URL, "repliblah"));
-        Probe validParam = new Probe("Potentially swappable param: " + param, 5, param);
-        validParam.setEscapeStrings(Keysmith.permute(param), Keysmith.permute(param, false));
-        validParam.setRandomAnchor(false);
-        validParam.setPrefix(Probe.REPLACE);
-        Attack paramBase = new Attack();
-        paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
-        paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
-        ArrayList<Attack> confirmed = altInject.fuzz(paramBase, validParam);
-        if (!confirmed.isEmpty()) {
-            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param"));
-        }
+        try {
+            IHttpRequestResponse base = injector.getBase();
+            PayloadInjector altInject = new PayloadInjector(base, new ParamNameInsertionPoint(base.getRequest(), "guesser", "", IParameter.PARAM_URL, "repliblah"));
+            Probe validParam = new Probe("Potentially swappable param: " + param, 5, param);
+            validParam.setEscapeStrings(Keysmith.permute(param), Keysmith.permute(param, false));
+            validParam.setRandomAnchor(false);
+            validParam.setPrefix(Probe.REPLACE);
+            Attack paramBase = new Attack();
+            paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
+            paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
+            ArrayList<Attack> confirmed = altInject.fuzz(paramBase, validParam);
+            if (!confirmed.isEmpty()) {
+                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param"));
+            }
 
 
-        int attackDedication = 2;
-        if(canSeeCache(base.getResponse())) {
-            attackDedication = 16;
-        }
+            int attackDedication = 2;
+            if (canSeeCache(base.getResponse())) {
+                attackDedication = 16;
+            }
 
-        String pathCacheBuster = Utilities.generateCanary()+".jpg";
-        byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /"+pathCacheBuster).getBytes()); // fixme fails on non-root reqs
-        IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
-        short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
+            String pathCacheBuster = Utilities.generateCanary() + ".jpg";
+            byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /" + pathCacheBuster).getBytes()); // fixme fails on non-root reqs
+            IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
+            short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 
-        byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
-        IParameter testCacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-        testReq = Utilities.helpers.addParameter(testReq, testCacheBuster);
-        IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
+            byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
+            IParameter testCacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+            testReq = Utilities.helpers.addParameter(testReq, testCacheBuster);
+            IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
 
-        boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes());
-        boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
+            boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes());
+            boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
 
 
-        ArrayList<String> suffixes = new ArrayList<>();
-        ArrayList<String> suffixesWhich404 = new ArrayList<>();
-        String[] potentialSuffixes = new String[]{"index.php/zxcvk.jpg", "zxcvk.jpg"};
+            ArrayList<String> suffixes = new ArrayList<>();
+            ArrayList<String> suffixesWhich404 = new ArrayList<>();
+            String[] potentialSuffixes = new String[]{"index.php/zxcvk.jpg", "zxcvk.jpg"};
 
-        suffixes.add("");
-        if (reflectPoisonMightWork) {
-            for (String suffix: potentialSuffixes) {
-                testResp = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(testReq, suffix));
-                if (Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes())) {
-                    if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
-                        suffixes.add(suffix);
-                    } else {
-                        suffixesWhich404.add(suffix);
+            suffixes.add("");
+            if (reflectPoisonMightWork) {
+                for (String suffix : potentialSuffixes) {
+                    testResp = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(testReq, suffix));
+                    if (Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes())) {
+                        if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
+                            suffixes.add(suffix);
+                        } else {
+                            suffixesWhich404.add(suffix);
+                        }
+                    }
+                    if (attackDedication == 2 && canSeeCache(testResp.getResponse())) {
+                        attackDedication = 12;
                     }
                 }
-                if (attackDedication == 2 && canSeeCache(testResp.getResponse())) {
-                    attackDedication = 12;
-                }
             }
-        }
 
-        if (suffixes.size() == 1) {
-            if(!suffixesWhich404.isEmpty()) {
-                suffixes.add(suffixesWhich404.get(suffixesWhich404.size() - 1));
-            }
-        }
-
-        for(int i=1; i<attackDedication; i++) {
-
-            if (reflectPoisonMightWork) {
-                for (String suffix: suffixes) {
-                    if (tryReflectCache(injector, param, base, attackDedication, i, suffix)) return;
+            if (suffixes.size() == 1) {
+                if (!suffixesWhich404.isEmpty()) {
+                    suffixes.add(suffixesWhich404.get(suffixesWhich404.size() - 1));
                 }
             }
 
-            if(statusPoisonMightWork) {
-                if (tryStatusCache(injector, param, attackDedication, pathCacheBuster, base404, get404Code, i)) return;
-            }
-        }
+            for (int i = 1; i < attackDedication; i++) {
 
-        Utilities.log("Failed cache poisoning check");
+                if (reflectPoisonMightWork) {
+                    for (String suffix : suffixes) {
+                        if (tryReflectCache(injector, param, base, attackDedication, i, suffix)) return;
+                    }
+                }
+
+                if (statusPoisonMightWork) {
+                    if (tryStatusCache(injector, param, attackDedication, pathCacheBuster, base404, get404Code, i))
+                        return;
+                }
+            }
+
+            Utilities.log("Failed cache poisoning check");
+        }
+        catch (java.lang.Exception e) {
+            Utilities.err(e.getMessage()+"\n\n"+e.getStackTrace()[0]);
+        }
     }
 
     private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, String pathCacheBuster, byte[] base404, short get404Code, int i) {
@@ -404,7 +411,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
             if (getPoison200Code != get404Code) {
                 Utilities.log("Successful cache poisoning check");
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning", "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning "+i, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
                 return true;
             }
         }
@@ -426,17 +433,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 Utilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
-                try {
-                    byte[] headerSplitReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
-                    cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-                    byte[] headerSplitResp = Utilities.attemptRequest(service, Utilities.helpers.addParameter(headerSplitReq, cacheBuster)).getResponse();
-                    if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
-                        title = "Severe cache poisoning";
-                    }
-                } catch (Exception e) {
-
+                byte[] headerSplitReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
+                cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+                byte[] headerSplitResp = Utilities.attemptRequest(service, Utilities.helpers.addParameter(headerSplitReq, cacheBuster)).getResponse();
+                if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
+                    title = "Severe cache poisoning";
                 }
 
+                title = title + " "+i;
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, title, "Cache poisoning: '" + param + "'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
                 return true;
             }
