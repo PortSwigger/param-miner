@@ -1,8 +1,10 @@
+zhost
+zuser-agent
+zreferer
+zcookie
 upgrade
 expect
 vary
-cookie
-referer
 connection
 accept-encoding
 accept-language
@@ -18,8 +20,6 @@ if
 via
 proxy
 trailer
-user-agent
-host
 zaccess-control-request-method
 zorigin
 zx-request-id

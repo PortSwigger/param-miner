@@ -238,21 +238,26 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                             if (!confirmed.isEmpty()) {
                                 state.alreadyReported.add(submission);
                                 Utilities.out(targetURL + " identified parameter: " + candidates);
-                                String title = "Secret input: "+Utilities.getNameFromType(type);
-                                if ((type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
-                                    title = "Failed hopes: "+title;
-                                }
-                                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 
-                                if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())){
-                                    scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+                                if (!Utilities.CACHE_ONLY) {
+                                    String title = "Secret input: " + Utilities.getNameFromType(type);
+                                    if ((type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
+                                        title = "Failed hopes: " + title;
+                                    }
+                                    Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
+
+                                    if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())) {
+                                        scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
+                                    }
+
+                                    base = state.updateBaseline();
                                 }
 
                                 if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
                                     cachePoison(injector, submission, failAttack.getFirstRequest());
                                 }
                                 //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
-                                base = state.updateBaseline();
+
                                 if (DYNAMIC_KEYLOAD) {
                                     ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
                                     addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);

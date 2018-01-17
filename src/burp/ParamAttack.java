@@ -353,9 +353,17 @@ class ParamAttack {
         params = new ArrayList<>(new LinkedHashSet<>(params));
 
         bonusParams = new WordProvider();
+
+        bonusParams.addSource("/Users/james/Dropbox/lists/favourites/spec-ham.txt");
+
         if (type == Utilities.PARAM_HEADER || Utilities.BRUTEFORCE) {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         }
+
+        if (Utilities.CACHE_ONLY) {
+            return new ArrayList<>();
+        }
+
         bonusParams.addSource(String.join("\n", params));
         if (Utilities.BRUTEFORCE) {
             bonusParams.addSource("/params");

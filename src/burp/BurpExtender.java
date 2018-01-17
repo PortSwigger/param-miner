@@ -72,6 +72,7 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    ROTATION_INTERVAL "+Utilities.ROTATION_INTERVAL);
         Utilities.out("    THREAD_POOL_SIZE "+Utilities.THREAD_POOL_SIZE);
         Utilities.out("    MAX_ONE_PER_HOST "+Utilities.MAX_ONE_PER_HOST);
+        Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 
 
@@ -665,14 +666,31 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 }
 
 class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
+    HashMap<String, String> present;
+
     public HeaderNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type, attackID);
+        present = new HashMap<>();
+        present.put("host", "Host");
+        present.put("referer", "Referer");
+        present.put("user-agent", "User-Agent");
+        present.put("origin", "Origin");
+        present.put("x-forwarded-for", "X-Forwarded-For");
     }
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
         String replaceKey = "TCZqBcS13SA8QRCpW";
         byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
+        Iterator<String> dupeCheck= params.iterator();
+
+        while (dupeCheck.hasNext()) {
+            String param = dupeCheck.next();
+            if (present.containsKey(param)) {
+                String toReplace = present.get(param)+": ";
+                built = Utilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
+            }
+        }
         return Utilities.setHeader(built, replaceKey, "x\r\n"+merged);
     }
 }
