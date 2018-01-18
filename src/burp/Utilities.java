@@ -27,11 +27,13 @@ class Utilities {
     static final byte CONFIRMATIONS = 5;
 
     static final boolean BRUTEFORCE = false;
+    static final boolean WORDLIST = true;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean MAX_ONE_PER_HOST = true;
-    static final boolean CACHE_ONLY = true;
+    static final boolean CACHE_ONLY = false;
     static final int THREAD_POOL_SIZE = 32;
     static final int ROTATION_INTERVAL = 18;
+    static final int ROTATION_INCREMENT = 4;
 
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);

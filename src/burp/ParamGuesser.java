@@ -315,7 +315,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
 
 
-        Utilities.log("Parameter name bruteforce complete: "+targetURL);
+        state.incrStop();
         taskEngine.execute(new ParamGuesser(state, taskEngine));
 
         return attacks;
@@ -373,7 +373,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                         }
                     }
                     if (attackDedication == 2 && canSeeCache(testResp.getResponse())) {
-                        attackDedication = 12;
+                        attackDedication = 7;
                     }
                 }
             }

@@ -67,11 +67,15 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
         Utilities.out("    TRY_MAGIC_VALUE_ATTACKS "+Utilities.TRY_MAGIC_VALUE_ATTACKS);
         Utilities.out("Param guessing:");
+        Utilities.out("    WORDLIST "+Utilities.WORDLIST);
         Utilities.out("    BRUTEFORCE "+Utilities.BRUTEFORCE);
-        Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
-        Utilities.out("    ROTATION_INTERVAL "+Utilities.ROTATION_INTERVAL);
-        Utilities.out("    THREAD_POOL_SIZE "+Utilities.THREAD_POOL_SIZE);
         Utilities.out("    MAX_ONE_PER_HOST "+Utilities.MAX_ONE_PER_HOST);
+
+        Utilities.out("    THREAD_POOL_SIZE "+Utilities.THREAD_POOL_SIZE);
+        Utilities.out("    ROTATION_INTERVAL "+Utilities.ROTATION_INTERVAL);
+        Utilities.out("    ROTATION_INCREMENT "+Utilities.ROTATION_INCREMENT);
+
+        Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 

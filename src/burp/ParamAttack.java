@@ -35,6 +35,10 @@ class ParamAttack {
         return stop;
     }
 
+    void incrStop() {
+        stop += Utilities.ROTATION_INCREMENT;
+    }
+
     private int stop;
 
     WordProvider getBonusParams() {
@@ -138,19 +142,6 @@ class ParamAttack {
         int longest = 20;//params.stream().max(Comparator.comparingInt(String::length)).get().length();
         longest = min(20, longest);
 
-        switch(type) {
-            case IParameter.PARAM_BODY:
-                bucketSize = 128;
-                break;
-            case Utilities.PARAM_HEADER:
-                bucketSize = 8;
-            case IParameter.PARAM_URL:
-                bucketSize = 16;
-                break;
-            default:
-                bucketSize = 32;
-        }
-
         StringBuilder basePayload = new StringBuilder();
         for (int i = 1; i < 8; i++) {
             basePayload.append("|");
@@ -160,30 +151,8 @@ class ParamAttack {
             }
         }
 
-        while (true) {
-            Utilities.log("Trying bucket size: "+ bucketSize);
-            StringBuilder trialPayload = new StringBuilder();
-            trialPayload.append(Utilities.randomString(longest));
-            for (int i = 0; i < bucketSize; i++) {
-                trialPayload.append("|");
-                trialPayload.append(Utilities.randomString(longest));
-            }
-
-            Attack trial = injector.probeAttack(trialPayload.toString());
-            if (!Utilities.similar(base, trial)) {
-                trial.addAttack(injector.probeAttack(trialPayload.toString()));
-                trial.addAttack(injector.probeAttack(trialPayload.toString()));
-                if (!Utilities.similar(base, trial)) {
-                    bucketSize = bucketSize / 2;
-                    break;
-                }
-            }
-            if (bucketSize >= 65536 || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
-                break;
-            }
-
-            bucketSize = bucketSize * 2;
-        }
+        calculateBucketSize(type, longest);
+        //bucketSize = 8;
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
         Utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
@@ -212,6 +181,46 @@ class ParamAttack {
         alreadyReported = getBlacklist(type);
 
         //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
+    }
+
+    private void calculateBucketSize(byte type, int longest) {
+        switch(type) {
+            case IParameter.PARAM_BODY:
+                bucketSize = 128;
+                break;
+            case Utilities.PARAM_HEADER:
+                bucketSize = 8;
+            case IParameter.PARAM_URL:
+                bucketSize = 16;
+                break;
+            default:
+                bucketSize = 32;
+        }
+
+        while (true) {
+            Utilities.log("Trying bucket size: "+ bucketSize);
+            StringBuilder trialPayload = new StringBuilder();
+            trialPayload.append(Utilities.randomString(longest));
+            for (int i = 0; i < bucketSize; i++) {
+                trialPayload.append("|");
+                trialPayload.append(Utilities.randomString(longest));
+            }
+
+            Attack trial = injector.probeAttack(trialPayload.toString());
+            if (!Utilities.similar(base, trial)) {
+                trial.addAttack(injector.probeAttack(trialPayload.toString()));
+                trial.addAttack(injector.probeAttack(trialPayload.toString()));
+                if (!Utilities.similar(base, trial)) {
+                    bucketSize = bucketSize / 2;
+                    break;
+                }
+            }
+            if (bucketSize >= 65536 || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
+                break;
+            }
+
+            bucketSize = bucketSize * 2;
+        }
     }
 
     private HashSet<String> getBlacklist(byte type) {
@@ -354,18 +363,13 @@ class ParamAttack {
 
         bonusParams = new WordProvider();
 
-        bonusParams.addSource("/Users/james/Dropbox/lists/favourites/spec-ham.txt");
+        bonusParams.addSource(String.join("\n", params));
 
-        if (type == Utilities.PARAM_HEADER || Utilities.BRUTEFORCE) {
+        if (type == Utilities.PARAM_HEADER || Utilities.WORDLIST) {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         }
 
-        if (Utilities.CACHE_ONLY) {
-            return new ArrayList<>();
-        }
-
-        bonusParams.addSource(String.join("\n", params));
-        if (Utilities.BRUTEFORCE) {
+        if (Utilities.WORDLIST) {
             bonusParams.addSource("/params");
             bonusParams.addSource("/functions");
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
