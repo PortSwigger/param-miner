@@ -678,6 +678,7 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
         present = new HashMap<>();
         List<String> headers = Utilities.helpers.analyzeRequest(request).getHeaders();
         for (String header: headers) {
+            header = header.split(": ", 2)[0];
             present.put(header.toLowerCase(), header);
         }
     }
