@@ -31,8 +31,14 @@ class ParamHolder {
         removeBadEntries(params);
 
         if(type == Utilities.PARAM_HEADER) {
-            ArrayList<String> custom = new ArrayList<>();
             int max = params.size();
+            for (int i=0; i<max; i++) {
+                String param = params.get(i);
+                if (param.contains("-")) {
+                    params.add(param.replace("-", "_"));
+                }
+            }
+            max = params.size();
             params.ensureCapacity(max*2);
             for (int i=0; i<max; i++) {
                 String param = params.get(i);

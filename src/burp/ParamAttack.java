@@ -363,7 +363,10 @@ class ParamAttack {
 
         bonusParams = new WordProvider();
 
-        bonusParams.addSource(String.join("\n", params));
+
+        if (Utilities.OBSERVED) {
+            bonusParams.addSource(String.join("\n", params));
+        }
 
         if (type == Utilities.PARAM_HEADER || Utilities.WORDLIST) {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");

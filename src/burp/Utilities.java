@@ -26,8 +26,9 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
+    static final boolean OBSERVED = false;
     static final boolean BRUTEFORCE = false;
-    static final boolean WORDLIST = true;
+    static final boolean WORDLIST = false;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean MAX_ONE_PER_HOST = true;
     static final boolean CACHE_ONLY = false;

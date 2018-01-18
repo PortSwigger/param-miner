@@ -183,6 +183,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
 
             candidates.removeAll(state.alreadyReported);
+            candidates.removeIf((String candidate) -> (candidate.contains("_") && state.alreadyReported.contains(candidate.replace('_', '-'))));
+
             String submission = String.join("|", candidates);
             Attack paramGuess = injector.probeAttack(submission);
 
