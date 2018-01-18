@@ -674,12 +674,12 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
 
     public HeaderNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type, attackID);
+
         present = new HashMap<>();
-        present.put("host", "Host");
-        present.put("referer", "Referer");
-        present.put("user-agent", "User-Agent");
-        present.put("origin", "Origin");
-        present.put("x-forwarded-for", "X-Forwarded-For");
+        List<String> headers = Utilities.helpers.analyzeRequest(request).getHeaders();
+        for (String header: headers) {
+            present.put(header.toLowerCase(), header);
+        }
     }
 
     public byte[] buildBulkRequest(ArrayList<String> params) {

@@ -2,6 +2,11 @@ zhost
 zuser-agent
 zreferer
 zcookie
+zvia
+zaccess-control-request-method
+zorigin
+zx-request-id
+zx-timer
 upgrade
 expect
 vary
@@ -17,13 +22,8 @@ if-unmodified-since
 if-modified-since
 if-match
 if
-via
 proxy
 trailer
-zaccess-control-request-method
-zorigin
-zx-request-id
-zx-timer
 waf-stuff-below
 referrer
 negotiate

@@ -32,9 +32,17 @@ class ParamHolder {
 
         if(type == Utilities.PARAM_HEADER) {
             ArrayList<String> custom = new ArrayList<>();
-            custom.addAll(params);
-            custom.replaceAll(x-> "x-"+x);
-            params.addAll(custom);
+            int max = params.size();
+            params.ensureCapacity(max*2);
+            for (int i=0; i<max; i++) {
+                String param = params.get(i);
+                if (param.startsWith("x-")) {
+                    params.add(param.substring(2));
+                }
+                else {
+                    params.add("x-"+param);
+                }
+            }
         }
 
         int limit = params.size();
