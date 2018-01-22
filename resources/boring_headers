@@ -1,7 +1,7 @@
 host
 zuser-agent
 zreferer
-zcookie
+cookie
 zvia
 zaccess-control-request-method
 zorigin
