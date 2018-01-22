@@ -239,7 +239,7 @@ public class Keysmith {
         String[] params = fullparam.split("[|]");
         ArrayList<String> out = new ArrayList<>();
         for (String eachparam: params) {
-            if (allowValueChange && eachparam.contains("~")) {
+            if (allowValueChange && eachparam.contains("~") && !eachparam.contains("%")) {
                 String[] param = eachparam.split("~", 2);
                 out.add(param[0] + "~" + Utilities.invert(param[1]));
             } else {

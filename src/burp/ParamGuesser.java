@@ -407,10 +407,22 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
     }
 
+    private String addStatusPayload(String paramName) {
+        if (paramName.contains("~")) {
+            return paramName;
+        }
+        else if (paramName.equals("x-original-url")) {
+            return paramName+"~/";
+        }
+        else {
+            return paramName;
+        }
+    }
+
     private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, String pathCacheBuster, byte[] base404, short get404Code, int i) {
         IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
 
-        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param+"~/"));
+        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload(param)));
         setPoison200Req = Utilities.appendToPath(setPoison200Req, pathCacheBuster);
 
         for(int j=attackDedication-i; j<attackDedication; j++) {
@@ -462,7 +474,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
 
     private static boolean canSeeCache(byte[] response) {
-        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAYz"};
+        String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAY"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {
                 return true;

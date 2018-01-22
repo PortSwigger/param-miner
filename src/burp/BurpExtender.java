@@ -551,6 +551,8 @@ class ParamInsertionPoint implements IScannerInsertionPoint {
 class ParamNameInsertionPoint extends ParamInsertionPoint {
     String attackID;
     String defaultPrefix;
+    String host;
+    HashMap<String, String> present;
 
     ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
@@ -580,6 +582,16 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         }
         else {
             Utilities.log("No default key available");
+        }
+
+        present = new HashMap<>();
+        List<String> headers = Utilities.helpers.analyzeRequest(request).getHeaders();
+        for (String header: headers) {
+            if (header.startsWith("Host: ")) {
+                host = header.split(": ", 2)[1];
+            }
+            header = header.split(": ", 2)[0];
+            present.put(header.toLowerCase(), header);
         }
     }
 
@@ -651,6 +663,8 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     String[] getValue(String name) {
         if (name.contains("~")) {
             String[] parts = name.split("~", 2);
+            parts[1] = parts[1].replace("%s", calculateValue(name));
+            parts[1] = parts[1].replace("%h", host);
             return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
         }
         else {
@@ -670,17 +684,9 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 }
 
 class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
-    HashMap<String, String> present;
 
     public HeaderNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type, attackID);
-
-        present = new HashMap<>();
-        List<String> headers = Utilities.helpers.analyzeRequest(request).getHeaders();
-        for (String header: headers) {
-            header = header.split(": ", 2)[0];
-            present.put(header.toLowerCase(), header);
-        }
     }
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
@@ -690,7 +696,7 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
         Iterator<String> dupeCheck= params.iterator();
 
         while (dupeCheck.hasNext()) {
-            String param = dupeCheck.next();
+            String param = dupeCheck.next().split("~", 2)[0];
             if (present.containsKey(param)) {
                 String toReplace = present.get(param)+": ";
                 built = Utilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
