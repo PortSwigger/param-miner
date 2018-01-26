@@ -152,7 +152,6 @@ class ParamAttack {
         }
 
         calculateBucketSize(type, longest);
-        //bucketSize = 8;
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
         Utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
@@ -184,6 +183,11 @@ class ParamAttack {
     }
 
     private void calculateBucketSize(byte type, int longest) {
+        if (Utilities.FORCE_BUCKETSIZE != -1) {
+            bucketSize = Utilities.FORCE_BUCKETSIZE;
+            return;
+        }
+
         switch(type) {
             case IParameter.PARAM_BODY:
                 bucketSize = 128;
@@ -365,6 +369,14 @@ class ParamAttack {
 
 
         if (Utilities.OBSERVED) {
+//            int pad = params.size() % bucketSize;
+//            for (int i = 0; i<pad; i++) {
+//                params.add(Utilities.generateCanary());
+//            }
+            if (type == Utilities.PARAM_HEADER) {
+                params.replaceAll(x -> x.toLowerCase().replaceAll("[^a-z0-9_-]", ""));
+            }
+
             bonusParams.addSource(String.join("\n", params));
         }
 

@@ -242,9 +242,14 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                                 state.alreadyReported.add(submission);
                                 Utilities.out(targetURL + " identified parameter: " + candidates);
 
+                                boolean cacheSuccess = false;
+                                if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
+                                    cacheSuccess = cachePoison(injector, submission, failAttack.getFirstRequest());
+                                }
+
                                 if (!Utilities.CACHE_ONLY) {
                                     String title = "Secret input: " + Utilities.getNameFromType(type);
-                                    if ((type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
+                                    if (!cacheSuccess && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
                                         title = "Failed hopes: " + title;
                                     }
                                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
@@ -256,9 +261,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                                     base = state.updateBaseline();
                                 }
 
-                                if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
-                                    cachePoison(injector, submission, failAttack.getFirstRequest());
-                                }
                                 //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
 
                                 if (DYNAMIC_KEYLOAD) {
@@ -324,7 +326,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         return attacks;
     }
 
-    private void cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
+    private boolean cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
         try {
             IHttpRequestResponse base = injector.getBase();
             PayloadInjector altInject = new PayloadInjector(base, new ParamNameInsertionPoint(base.getRequest(), "guesser", "", IParameter.PARAM_URL, "repliblah"));
@@ -341,9 +343,9 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
 
 
-            int attackDedication = 2;
+            int attackDedication = 3;
             if (canSeeCache(base.getResponse())) {
-                attackDedication = 16;
+                attackDedication = 12;
             }
 
             String pathCacheBuster = Utilities.generateCanary() + ".jpg";
@@ -391,13 +393,13 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                 if (reflectPoisonMightWork) {
                     for (String suffix : suffixes) {
-                        if (tryReflectCache(injector, param, base, attackDedication, i, suffix)) return;
+                        if (tryReflectCache(injector, param, base, attackDedication, i, suffix)) return true;
                     }
                 }
 
                 if (statusPoisonMightWork) {
                     if (tryStatusCache(injector, param, attackDedication, pathCacheBuster, base404, get404Code, i))
-                        return;
+                        return true;
                 }
             }
 
@@ -406,6 +408,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         catch (java.lang.Exception e) {
             Utilities.err(e.getMessage()+"\n\n"+e.getStackTrace()[0]);
         }
+        return false;
     }
 
     private String addStatusPayload(String paramName) {

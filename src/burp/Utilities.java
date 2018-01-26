@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 class Utilities {
@@ -33,8 +34,9 @@ class Utilities {
     static final boolean MAX_ONE_PER_HOST = true;
     static final boolean CACHE_ONLY = false;
     static final int THREAD_POOL_SIZE = 32;
-    static final int ROTATION_INTERVAL = 18;
+    static final int ROTATION_INTERVAL = 200;
     static final int ROTATION_INCREMENT = 4;
+    static final int FORCE_BUCKETSIZE = -1;
 
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);
@@ -125,6 +127,18 @@ class Utilities {
             return null;
         }
         return number;
+    }
+
+    static String filter(String input, String safeChars) {
+        StringBuilder out = new StringBuilder(input.length());
+        HashSet<Character> charset = new HashSet<>();
+        charset.addAll(safeChars.chars().mapToObj(c -> (char) c).collect(Collectors.toList()));
+        for(char c: input.toCharArray()) {
+            if (charset.contains(c)) {
+                out.append(c);
+            }
+        }
+        return out.toString();
     }
 
     private static char[] DIGITS = {'0', 'a' , 'b' ,
