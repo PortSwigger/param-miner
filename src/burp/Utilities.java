@@ -33,6 +33,7 @@ class Utilities {
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean MAX_ONE_PER_HOST = true;
     static final boolean CACHE_ONLY = false;
+    static final boolean SKIP_UNCACHEABLE = true;
     static final int THREAD_POOL_SIZE = 32;
     static final int ROTATION_INTERVAL = 200;
     static final int ROTATION_INCREMENT = 4;

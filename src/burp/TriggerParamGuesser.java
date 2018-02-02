@@ -49,6 +49,13 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         Queue<String> cache = new CircularFifoQueue<>(cache_size);
         HashSet<String> remainingHosts = new HashSet<>();
 
+        boolean canSkip = false;
+        byte[] noCache = "no-cache".getBytes();
+        if (Utilities.SKIP_UNCACHEABLE && type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER) {
+            canSkip = true;
+        }
+
+
         int i = 0;
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
@@ -56,6 +63,12 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             Iterator<IHttpRequestResponse> left = reqlist.iterator();
             while (left.hasNext()) {
                 IHttpRequestResponse req = left.next();
+
+                if (canSkip && req.getResponse() != null && Utilities.containsBytes(req.getResponse(), noCache)) {
+                    continue;
+                }
+
+
                 String host = req.getHttpService().getHost();
 
                 if (!cache.contains(host)) {

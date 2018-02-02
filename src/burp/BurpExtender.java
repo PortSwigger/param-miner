@@ -70,12 +70,14 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    WORDLIST "+Utilities.WORDLIST);
         Utilities.out("    BRUTEFORCE "+Utilities.BRUTEFORCE);
         Utilities.out("    MAX_ONE_PER_HOST "+Utilities.MAX_ONE_PER_HOST);
+        Utilities.out("    SKIP_UNCACHEABLE "+Utilities.SKIP_UNCACHEABLE);
 
         Utilities.out("    THREAD_POOL_SIZE "+Utilities.THREAD_POOL_SIZE);
         Utilities.out("    ROTATION_INTERVAL "+Utilities.ROTATION_INTERVAL);
         Utilities.out("    ROTATION_INCREMENT "+Utilities.ROTATION_INCREMENT);
 
         Utilities.out("    FORCE_BUCKETSIZE "+Utilities.FORCE_BUCKETSIZE);
+        Utilities.out("    MAX_PARAM_LENGTH "+Utilities.MAX_PARAM_LENGTH);
         Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
