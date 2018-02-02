@@ -37,6 +37,7 @@ class Utilities {
     static final int ROTATION_INTERVAL = 200;
     static final int ROTATION_INCREMENT = 4;
     static final int FORCE_BUCKETSIZE = -1;
+    static final int MAX_PARAM_LENGTH = 32;
 
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);

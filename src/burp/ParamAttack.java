@@ -139,8 +139,7 @@ class ParamAttack {
         altBase = null;
         tryMethodFlip = false;
 
-        int longest = 20;//params.stream().max(Comparator.comparingInt(String::length)).get().length();
-        longest = min(20, longest);
+        int longest = Utilities.MAX_PARAM_LENGTH;
 
         StringBuilder basePayload = new StringBuilder();
         for (int i = 1; i < 8; i++) {
@@ -368,6 +367,10 @@ class ParamAttack {
         bonusParams = new WordProvider();
 
 
+        if (type == Utilities.PARAM_HEADER) {
+            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+        }
+
         if (Utilities.OBSERVED) {
 //            int pad = params.size() % bucketSize;
 //            for (int i = 0; i<pad; i++) {
@@ -375,18 +378,22 @@ class ParamAttack {
 //            }
             if (type == Utilities.PARAM_HEADER) {
                 params.replaceAll(x -> x.toLowerCase().replaceAll("[^a-z0-9_-]", ""));
+                params.replaceAll(x -> x.replaceFirst("^[_-]+", ""));
+                params.remove("");
             }
+
+            params.replaceAll(x -> x.substring(0, min(x.length(), Utilities.MAX_PARAM_LENGTH)));
 
             bonusParams.addSource(String.join("\n", params));
         }
 
-        if (type == Utilities.PARAM_HEADER || Utilities.WORDLIST) {
-            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
-        }
 
         if (Utilities.WORDLIST) {
             bonusParams.addSource("/params");
             bonusParams.addSource("/functions");
+            if (type != Utilities.PARAM_HEADER) {
+                bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+            }
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
             bonusParams.addSource("/usr/share/dict/words");
         }

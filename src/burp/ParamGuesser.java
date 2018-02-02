@@ -138,11 +138,11 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         ParamHolder paramBuckets = state.getParamBuckets();
 
         if (!state.started) {
-            Utilities.out("Initiating "+Utilities.getNameFromType(type)+" bruteforce of "+paramBuckets.size()+" on "+ targetURL);
+            Utilities.out("Initiating "+Utilities.getNameFromType(type)+" bruteforce on "+ targetURL);
             state.started = true;
         }
         else {
-            Utilities.out("Resuming "+Utilities.getNameFromType(type)+" bruteforce at "+paramBuckets.size()+"/"+state.seed+" on "+ targetURL);
+            Utilities.out("Resuming "+Utilities.getNameFromType(type)+" bruteforce at "+state.seed+" on "+ targetURL);
         }
 
 
