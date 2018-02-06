@@ -696,6 +696,11 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
         String merged = prepBulkParams(params);
         String replaceKey = "TCZqBcS13SA8QRCpW";
         byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
+
+        if (params.isEmpty() || "".equals(merged)) {
+            return built;
+        }
+
         Iterator<String> dupeCheck= params.iterator();
 
         while (dupeCheck.hasNext()) {
@@ -705,6 +710,7 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
                 built = Utilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
             }
         }
+
         return Utilities.setHeader(built, replaceKey, "x\r\n"+merged);
     }
 }

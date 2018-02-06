@@ -368,14 +368,11 @@ class ParamAttack {
 
 
         if (type == Utilities.PARAM_HEADER) {
+            //bonusParams.addSource("User-Agent\nCookie\nHost\n");
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         }
 
         if (Utilities.OBSERVED) {
-//            int pad = params.size() % bucketSize;
-//            for (int i = 0; i<pad; i++) {
-//                params.add(Utilities.generateCanary());
-//            }
             if (type == Utilities.PARAM_HEADER) {
                 params.replaceAll(x -> x.toLowerCase().replaceAll("[^a-z0-9_-]", ""));
                 params.replaceAll(x -> x.replaceFirst("^[_-]+", ""));

@@ -1,7 +1,8 @@
 host
-user-agent
+zcookie
+zuser-agent
 zreferer
-cookie
+zreferrer
 zvia
 zaccess-control-request-method
 zorigin
@@ -25,7 +26,6 @@ if
 proxy
 trailer
 waf-stuff-below
-referrer
 negotiate
 javascript
 action
