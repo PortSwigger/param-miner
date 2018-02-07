@@ -57,6 +57,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
 
         int i = 0;
+        int queued = 0;
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
             Utilities.log("Loop "+i++);
@@ -75,6 +76,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     cache.add(host);
                     left.remove();
                     Utilities.log("Adding request on "+host+" to queue");
+                    queued++;
                     taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop));
                 } else {
                     remainingHosts.add(host);
@@ -88,6 +90,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             if (remainingHosts.size() <= 1) {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
+                    queued++;
                     taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop));
                 }
                 break;
@@ -96,6 +99,8 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 cache = new CircularFifoQueue<>(min(remainingHosts.size()-1, thread_count));
             }
         }
+
+        Utilities.out("Queued " + queued + " attacks");
 
     }
 }
