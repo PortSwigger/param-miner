@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 
 class ConfigurableSettings {
-    private LinkedHashMap<String, String> settings;
+    LinkedHashMap<String, String> settings;
     private NumberFormatter onlyInt;
 
     ConfigurableSettings() {
@@ -34,7 +34,7 @@ class ConfigurableSettings {
         put("skip uncacheable", false);
         put("dynamic keyload", false);
         put("max one per host", true);
-        
+
         put("thread pool size", 32);
         put("rotation interval", 200);
         put("rotation increment", 4);
@@ -56,6 +56,11 @@ class ConfigurableSettings {
         onlyInt.setMaximum(Integer.MAX_VALUE);
         onlyInt.setAllowsInvalid(false);
 
+    }
+
+    ConfigurableSettings(ConfigurableSettings base) {
+        settings = new LinkedHashMap<>(base.settings);
+        onlyInt = base.onlyInt;
     }
 
     void printSettings() {
@@ -101,7 +106,10 @@ class ConfigurableSettings {
         if (val.equals("true") ) {
             return true;
         }
-        return false;
+        else if (val.equals("false")){
+            return false;
+        }
+        throw new RuntimeException();
     }
 
     String getType(String key) {
@@ -163,7 +171,7 @@ class ConfigurableSettings {
                 Utilities.callbacks.saveExtensionSetting(key, encode(val));
             }
 
-            return new ConfigurableSettings();
+            return new ConfigurableSettings(this);
         }
 
         return null;
