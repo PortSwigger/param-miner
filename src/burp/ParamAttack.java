@@ -30,13 +30,14 @@ class ParamAttack {
     private boolean tryMethodFlip;
     private final ParamInsertionPoint insertionPoint;
     final byte type;
+    private ConfigurableSettings config;
 
     int getStop() {
         return stop;
     }
 
     void incrStop() {
-        stop += Utilities.ROTATION_INCREMENT;
+        stop += config.getInt("rotation increment");
     }
 
     private int stop;
@@ -96,10 +97,11 @@ class ParamAttack {
     }
 
 
-    ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop) {
+    ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop, ConfigurableSettings config) {
         started = false;
         this.type = type;
         this.stop = stop;
+        this.config = config;
         this.baseRequestResponse = baseRequestResponse;
         targetURL = baseRequestResponse.getHttpService().getHost();
         params = calculatePayloads(baseRequestResponse, paramGrabber, type);
@@ -139,7 +141,7 @@ class ParamAttack {
         altBase = null;
         tryMethodFlip = false;
 
-        int longest = Utilities.MAX_PARAM_LENGTH;
+        int longest = config.getInt("max param length");
 
         StringBuilder basePayload = new StringBuilder();
         for (int i = 1; i < 8; i++) {
@@ -171,7 +173,7 @@ class ParamAttack {
         paramBuckets.addParams(valueParams, false);
         paramBuckets.addParams(params, false);
 
-        if (!Utilities.DYNAMIC_KEYLOAD) {
+        if (!config.getBoolean("dynamic keyload")) {
             params = null;
             valueParams = null;
         }
@@ -182,8 +184,8 @@ class ParamAttack {
     }
 
     private void calculateBucketSize(byte type, int longest) {
-        if (Utilities.FORCE_BUCKETSIZE != -1) {
-            bucketSize = Utilities.FORCE_BUCKETSIZE;
+        if (config.getInt("force bucketsize") != -1) {
+            bucketSize = config.getInt("force bucketsize");
             return;
         }
 
@@ -372,20 +374,20 @@ class ParamAttack {
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
         }
 
-        if (Utilities.OBSERVED) {
+        if (config.getBoolean("observed")) {
             if (type == Utilities.PARAM_HEADER) {
                 params.replaceAll(x -> x.toLowerCase().replaceAll("[^a-z0-9_-]", ""));
                 params.replaceAll(x -> x.replaceFirst("^[_-]+", ""));
                 params.remove("");
             }
 
-            params.replaceAll(x -> x.substring(0, min(x.length(), Utilities.MAX_PARAM_LENGTH)));
+            params.replaceAll(x -> x.substring(0, min(x.length(), config.getInt("max param length"))));
 
             bonusParams.addSource(String.join("\n", params));
         }
 
 
-        if (Utilities.WORDLIST) {
+        if (config.getBoolean("wordlist")) {
             bonusParams.addSource("/params");
             bonusParams.addSource("/functions");
             if (type != Utilities.PARAM_HEADER) {

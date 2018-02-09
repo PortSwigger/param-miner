@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-import static burp.Utilities.DYNAMIC_KEYLOAD;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -44,14 +43,16 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     private int stop;
     private ParamGrabber paramGrabber;
     private ParamAttack attack;
+    private ConfigurableSettings config;
 
-    ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int stop) {
+    ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int stop, ConfigurableSettings config) {
         this.paramGrabber = paramGrabber;
         this.req = req;
         this.backend = backend;
         this.type = type;
         this.stop = stop;
         this.taskEngine = taskEngine;
+        this.config = config;
     }
 
     ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine) {
@@ -76,7 +77,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     return;
                 }
             }
-            this.attack = new ParamAttack(req, type, paramGrabber, stop);
+            this.attack = new ParamAttack(req, type, paramGrabber, stop, config);
         }
         ArrayList<Attack> paramGuesses = guessParams(attack);
         if (!paramGuesses.isEmpty()) {
@@ -161,7 +162,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                 }
                 else {
-                    if (!Utilities.BRUTEFORCE) {
+                    if (!config.getBoolean("bruteforce")) {
                         Utilities.out("Completed attack on "+ targetURL);
                         return attacks;
                     }
@@ -263,7 +264,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 
                                 //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
 
-                                if (DYNAMIC_KEYLOAD) {
+                                if (config.getBoolean("dynamic keyload")) {
                                     ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
                                     addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
                                 }
@@ -277,7 +278,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     base.addAttack(paramGuess);
                 }
 
-                if(DYNAMIC_KEYLOAD) {
+                if(config.getBoolean("dynamic keyload")) {
                     addNewKeys(Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams), state, bucketSize, paramBuckets, candidates, paramGuess);
                 }
 
@@ -488,7 +489,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
     }
 
     private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, ParamHolder paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
-        if (!DYNAMIC_KEYLOAD) {
+        if (!config.getBoolean("dynamic keyload")) {
             return;
         }
         ArrayList<String> discoveredParams = new ArrayList<>();

@@ -18,6 +18,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
     private byte type;
     private ParamGrabber paramGrabber;
     private ThreadPoolExecutor taskEngine;
+    private ConfigurableSettings config;
 
     TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine) {
         this.taskEngine = taskEngine;
@@ -28,10 +29,11 @@ class TriggerParamGuesser implements ActionListener, Runnable {
     }
 
     public void actionPerformed(ActionEvent e) {
-        int result = Utilities.globalSettings.showSettings();
-        if (result == JOptionPane.OK_OPTION) {
-            Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine);
-            (new Thread(runnable)).start();
+        ConfigurableSettings config = Utilities.globalSettings.showSettings();
+        if (config != null) {
+            this.config = config;
+            //Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine, config);
+            (new Thread(this)).start();
         }
     }
 
@@ -41,7 +43,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         queueSize += reqs.length;
         int thread_count = taskEngine.getCorePoolSize();
 
-        int stop = Utilities.ROTATION_INTERVAL;
+        int stop = config.getInt("rotation interval");
         if (queueSize < thread_count) {
             stop = 256;
         }
@@ -49,7 +51,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
 
         int cache_size = thread_count;
-        if (Utilities.MAX_ONE_PER_HOST) {
+        if (config.getBoolean("rotation interval")) {
             cache_size = queueSize;
         }
         Queue<String> cache = new CircularFifoQueue<>(cache_size);
@@ -57,7 +59,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
         boolean canSkip = false;
         byte[] noCache = "no-cache".getBytes();
-        if (Utilities.SKIP_UNCACHEABLE && (type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER)) {
+        if (config.getBoolean("skip uncacheable") && (type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER)) {
             canSkip = true;
         }
 
@@ -83,13 +85,13 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     left.remove();
                     Utilities.log("Adding request on "+host+" to queue");
                     queued++;
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop));
+                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop, config));
                 } else {
                     remainingHosts.add(host);
                 }
             }
 
-            if(Utilities.MAX_ONE_PER_HOST) {
+            if(config.getBoolean("max one per host")) {
                 break;
             }
 
@@ -97,7 +99,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
                     queued++;
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop));
+                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop, config));
                 }
                 break;
             }

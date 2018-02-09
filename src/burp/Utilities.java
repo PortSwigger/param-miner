@@ -32,14 +32,17 @@ class ConfigurableSettings {
         put("bruteforce", true);
         put("wordlist", true);
         put("skip uncacheable", false);
-
+        put("dynamic keyload", false);
+        put("max one per host", true);
+        
         put("thread pool size", 32);
         put("rotation interval", 200);
         put("rotation increment", 4);
-        put("force bucket size", -1);
+        put("force bucketsize", -1);
         put("max param length", 32);
 
         for(String key: settings.keySet()) {
+            Utilities.callbacks.saveExtensionSetting(key, null); // fixme enable this
             String value = Utilities.callbacks.loadExtensionSetting(key);
             if (Utilities.callbacks.loadExtensionSetting(key) != null) {
                 putRaw(key, value);
@@ -53,6 +56,12 @@ class ConfigurableSettings {
         onlyInt.setMaximum(Integer.MAX_VALUE);
         onlyInt.setAllowsInvalid(false);
 
+    }
+
+    void printSettings() {
+        for(String key: settings.keySet()) {
+            Utilities.out(key + ": "+settings.get(key));
+        }
     }
 
     private String encode(Object value) {
@@ -108,9 +117,8 @@ class ConfigurableSettings {
         }
     }
 
-    int showSettings() {
+    ConfigurableSettings showSettings() {
         JPanel panel = new JPanel();
-        //panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setLayout(new GridLayout(0, 2));
 
         HashMap<String, Object> configured = new HashMap<>();
@@ -121,7 +129,6 @@ class ConfigurableSettings {
 
             if (type.equals("boolean")) {
                 JCheckBox box = new JCheckBox();
-                //box.setText(key);
                 box.setSelected(getBoolean(key));
                 panel.add(box);
                 configured.put(key, box);
@@ -144,16 +151,22 @@ class ConfigurableSettings {
             for(String key: configured.keySet()) {
                 Object val = configured.get(key);
                 if (val instanceof JCheckBox) {
-                    put(key, ((JCheckBox) val).isSelected());
+                    val = ((JCheckBox) val).isSelected();
+                }
+                else if (val instanceof JFormattedTextField) {
+                    val = Integer.parseInt(((JTextField) val).getText());
                 }
                 else {
-                    put(key, ((JTextField) val).getText());
+                     val = ((JTextField) val).getText();
                 }
+                put(key, val);
                 Utilities.callbacks.saveExtensionSetting(key, encode(val));
             }
+
+            return new ConfigurableSettings();
         }
 
-        return result;
+        return null;
     }
 
 
@@ -169,19 +182,7 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
-    static final boolean OBSERVED = true;
-    static final boolean BRUTEFORCE = true;
-    static final boolean WORDLIST = true;
-    static final boolean DYNAMIC_KEYLOAD = false;
-    static final boolean MAX_ONE_PER_HOST = true;
     static final boolean CACHE_ONLY = false;
-    static final boolean SKIP_UNCACHEABLE = false;
-    static final int THREAD_POOL_SIZE = 32;
-    static final int ROTATION_INTERVAL = 200;
-    static final int ROTATION_INCREMENT = 4;
-    static final int FORCE_BUCKETSIZE = -1;
-    static final int MAX_PARAM_LENGTH = 32;
-
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 
@@ -212,6 +213,7 @@ class Utilities {
         helpers = callbacks.getHelpers();
 
         globalSettings = new ConfigurableSettings();
+        globalSettings.printSettings();
 
         Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
         while (s.hasNext()) {

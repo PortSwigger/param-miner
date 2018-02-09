@@ -28,7 +28,7 @@ public class BurpExtender implements IBurpExtender {
 
         new Utilities(callbacks);
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
-        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.THREAD_POOL_SIZE, Utilities.THREAD_POOL_SIZE, 10, TimeUnit.MINUTES, tasks);
+        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         callbacks.setExtensionName(name);
 
         try {
@@ -66,19 +66,6 @@ public class BurpExtender implements IBurpExtender {
         Utilities.out("    TRY_HPP "+Utilities.TRY_HPP);
         Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
         Utilities.out("    TRY_MAGIC_VALUE_ATTACKS "+Utilities.TRY_MAGIC_VALUE_ATTACKS);
-        Utilities.out("Param guessing:");
-        Utilities.out("    WORDLIST "+Utilities.WORDLIST);
-        Utilities.out("    BRUTEFORCE "+Utilities.BRUTEFORCE);
-        Utilities.out("    MAX_ONE_PER_HOST "+Utilities.MAX_ONE_PER_HOST);
-        Utilities.out("    SKIP_UNCACHEABLE "+Utilities.SKIP_UNCACHEABLE);
-
-        Utilities.out("    THREAD_POOL_SIZE "+Utilities.THREAD_POOL_SIZE);
-        Utilities.out("    ROTATION_INTERVAL "+Utilities.ROTATION_INTERVAL);
-        Utilities.out("    ROTATION_INCREMENT "+Utilities.ROTATION_INCREMENT);
-
-        Utilities.out("    FORCE_BUCKETSIZE "+Utilities.FORCE_BUCKETSIZE);
-        Utilities.out("    MAX_PARAM_LENGTH "+Utilities.MAX_PARAM_LENGTH);
-        Utilities.out("    DYNAMIC_KEYLOAD "+Utilities.DYNAMIC_KEYLOAD);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 
