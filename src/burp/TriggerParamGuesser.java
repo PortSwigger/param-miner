@@ -2,12 +2,15 @@ package burp;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.Math.min;
+
 
 class TriggerParamGuesser implements ActionListener, Runnable {
     private IHttpRequestResponse[] reqs;
@@ -25,8 +28,11 @@ class TriggerParamGuesser implements ActionListener, Runnable {
     }
 
     public void actionPerformed(ActionEvent e) {
-        Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine);
-        (new Thread(runnable)).start();
+        int result = Utilities.globalSettings.showSettings();
+        if (result == JOptionPane.OK_OPTION) {
+            Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine);
+            (new Thread(runnable)).start();
+        }
     }
 
     public void run() {
@@ -51,7 +57,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
         boolean canSkip = false;
         byte[] noCache = "no-cache".getBytes();
-        if (Utilities.SKIP_UNCACHEABLE && type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER) {
+        if (Utilities.SKIP_UNCACHEABLE && (type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER)) {
             canSkip = true;
         }
 

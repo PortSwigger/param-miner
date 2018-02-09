@@ -4,10 +4,14 @@ import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import javax.swing.*;
+import javax.swing.text.NumberFormatter;
+import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -17,6 +21,144 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 
+class ConfigurableSettings {
+    private LinkedHashMap<String, String> settings;
+    private NumberFormatter onlyInt;
+
+    ConfigurableSettings() {
+        settings = new LinkedHashMap<>();
+
+        put("observed", true);
+        put("bruteforce", true);
+        put("wordlist", true);
+        put("skip uncacheable", false);
+
+        put("thread pool size", 32);
+        put("rotation interval", 200);
+        put("rotation increment", 4);
+        put("force bucket size", -1);
+        put("max param length", 32);
+
+        for(String key: settings.keySet()) {
+            String value = Utilities.callbacks.loadExtensionSetting(key);
+            if (Utilities.callbacks.loadExtensionSetting(key) != null) {
+                putRaw(key, value);
+            }
+        }
+
+        NumberFormat format = NumberFormat.getInstance();
+        onlyInt = new NumberFormatter(format);
+        onlyInt.setValueClass(Integer.class);
+        onlyInt.setMinimum(-1);
+        onlyInt.setMaximum(Integer.MAX_VALUE);
+        onlyInt.setAllowsInvalid(false);
+
+    }
+
+    private String encode(Object value) {
+        String encoded;
+        if (value instanceof Boolean) {
+            encoded = String.valueOf(value);
+        }
+        else if (value instanceof Integer) {
+            encoded = String.valueOf(value);
+        }
+        else {
+            encoded = "\"" + ((String) value).replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+        }
+        return encoded;
+    }
+
+    private void putRaw(String key, String value) {
+        settings.put(key, value);
+    }
+
+    private void put(String key, Object value) {
+        settings.put(key, encode(value));
+    }
+
+    String getString(String key) {
+        String decoded = settings.get(key);
+        decoded = decoded.substring(1, decoded.length()-1).replace("\\\"", "\"").replace("\\\\", "\\");
+        return decoded;
+    }
+
+    int getInt(String key) {
+        return Integer.parseInt(settings.get(key));
+    }
+
+    boolean getBoolean(String key) {
+        String val = settings.get(key);
+        if (val.equals("true") ) {
+            return true;
+        }
+        return false;
+    }
+
+    String getType(String key) {
+        String val = settings.get(key);
+        if (val.equals("true") || val.equals("false")) {
+            return "boolean";
+        }
+        else if (val.startsWith("\"")) {
+            return "string";
+        }
+        else {
+            return "number";
+        }
+    }
+
+    int showSettings() {
+        JPanel panel = new JPanel();
+        //panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setLayout(new GridLayout(0, 2));
+
+        HashMap<String, Object> configured = new HashMap<>();
+
+        for(String key: settings.keySet()) {
+            String type = getType(key);
+            panel.add(new JLabel("\n"+key+": "));
+
+            if (type.equals("boolean")) {
+                JCheckBox box = new JCheckBox();
+                //box.setText(key);
+                box.setSelected(getBoolean(key));
+                panel.add(box);
+                configured.put(key, box);
+            }
+            else if (type.equals("number")){
+                JTextField box = new JFormattedTextField(onlyInt);
+                box.setText(String.valueOf(getInt(key)));
+                panel.add(box);
+                configured.put(key, box);
+            }
+            else {
+                JTextField box = new JTextField(getString(key));
+                panel.add(box);
+                configured.put(key, box);
+            }
+        }
+
+        int result = JOptionPane.showConfirmDialog(Utilities.getBurpFrame(), panel, "Attack Config", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION) {
+            for(String key: configured.keySet()) {
+                Object val = configured.get(key);
+                if (val instanceof JCheckBox) {
+                    put(key, ((JCheckBox) val).isSelected());
+                }
+                else {
+                    put(key, ((JTextField) val).getText());
+                }
+                Utilities.callbacks.saveExtensionSetting(key, encode(val));
+            }
+        }
+
+        return result;
+    }
+
+
+
+}
 class Utilities {
 
     private static PrintWriter stdout;
@@ -27,13 +169,13 @@ class Utilities {
     static final boolean DIFFING_SCAN = true;
     static final byte CONFIRMATIONS = 5;
 
-    static final boolean OBSERVED = false;
-    static final boolean BRUTEFORCE = false;
-    static final boolean WORDLIST = false;
+    static final boolean OBSERVED = true;
+    static final boolean BRUTEFORCE = true;
+    static final boolean WORDLIST = true;
     static final boolean DYNAMIC_KEYLOAD = false;
     static final boolean MAX_ONE_PER_HOST = true;
     static final boolean CACHE_ONLY = false;
-    static final boolean SKIP_UNCACHEABLE = true;
+    static final boolean SKIP_UNCACHEABLE = false;
     static final int THREAD_POOL_SIZE = 32;
     static final int ROTATION_INTERVAL = 200;
     static final int ROTATION_INCREMENT = 4;
@@ -61,11 +203,15 @@ class Utilities {
     private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
     static Random rnd = new Random();
 
+    static ConfigurableSettings globalSettings;
+
     Utilities(final IBurpExtenderCallbacks incallbacks) {
         callbacks = incallbacks;
         stdout = new PrintWriter(callbacks.getStdout(), true);
         stderr = new PrintWriter(callbacks.getStderr(), true);
         helpers = callbacks.getHelpers();
+
+        globalSettings = new ConfigurableSettings();
 
         Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
         while (s.hasNext()) {
@@ -84,6 +230,19 @@ class Utilities {
             headerNames.add(headers.next().toLowerCase());
         }
     }
+
+    static JFrame getBurpFrame()
+    {
+        for(Frame f : Frame.getFrames())
+        {
+            if(f.isVisible() && f.getTitle().startsWith(("Burp Suite")))
+            {
+                return (JFrame) f;
+            }
+        }
+        return null;
+    }
+
 
     static String getNameFromType(byte type) {
         switch (type) {
