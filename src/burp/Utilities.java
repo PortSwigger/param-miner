@@ -42,7 +42,7 @@ class ConfigurableSettings {
         put("max param length", 32);
 
         for(String key: settings.keySet()) {
-            Utilities.callbacks.saveExtensionSetting(key, null); // fixme enable this
+            //Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
             String value = Utilities.callbacks.loadExtensionSetting(key);
             if (Utilities.callbacks.loadExtensionSetting(key) != null) {
                 putRaw(key, value);
@@ -58,7 +58,7 @@ class ConfigurableSettings {
 
     }
 
-    ConfigurableSettings(ConfigurableSettings base) {
+    private ConfigurableSettings(ConfigurableSettings base) {
         settings = new LinkedHashMap<>(base.settings);
         onlyInt = base.onlyInt;
     }
