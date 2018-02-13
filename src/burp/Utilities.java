@@ -5,6 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
@@ -20,6 +22,40 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static burp.Utilities.getBurpFrame;
+
+
+class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
+    private JMenu menuButton;
+
+    ConfigMenu() {
+        Utilities.callbacks.registerExtensionStateListener(this);
+    }
+
+    public void run()
+    {
+        menuButton = new JMenu("Param Miner");
+        menuButton.addMenuListener(this);
+        JMenuBar burpMenuBar = getBurpFrame().getJMenuBar();
+        burpMenuBar.add(menuButton);
+    }
+
+    public void menuSelected(MenuEvent e) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run(){
+                Utilities.globalSettings.showSettings();
+            }
+        });
+    }
+
+    public void menuDeselected(MenuEvent e) { }
+
+    public void menuCanceled(MenuEvent e) { }
+
+    public void extensionUnloaded() {
+        getBurpFrame().getJMenuBar().remove(menuButton);
+    }
+}
 
 class ConfigurableSettings {
     private LinkedHashMap<String, String> settings;

@@ -15,8 +15,13 @@ import org.apache.commons.lang3.StringEscapeUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
+import javax.swing.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
+import static burp.Utilities.getBurpFrame;
 import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 public class BurpExtender implements IBurpExtender {
@@ -54,6 +59,8 @@ public class BurpExtender implements IBurpExtender {
         //callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
         callbacks.registerScannerCheck(paramGrabber);
         callbacks.registerHttpListener(new Substituter());
+
+        SwingUtilities.invokeLater(new ConfigMenu());
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("Debug mode: " + Utilities.DEBUG);
