@@ -82,6 +82,19 @@ class Substituter implements IHttpListener {
                         Utilities.fixContentLength(Utilities.replace(messageInfo.getRequest(), placeHolder, Utilities.helpers.stringToBytes(Utilities.generateCanary())))
                 );
             }
+
+            String cacheBusterName = null;
+            if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
+                cacheBusterName = Utilities.generateCanary();
+            }
+            else if (Utilities.globalSettings.getBoolean("Add fixed cachebuster")) {
+                cacheBusterName = "noMassPoisonings";
+            }
+
+            if (cacheBusterName != null) {
+                IParameter cacheBuster = burp.Utilities.helpers.buildParameter(cacheBusterName, "1", IParameter.PARAM_URL);
+                messageInfo.setRequest(Utilities.helpers.addParameter(messageInfo.getRequest(), cacheBuster));
+            }
         }
     }
 }

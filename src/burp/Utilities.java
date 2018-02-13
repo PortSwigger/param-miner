@@ -22,11 +22,13 @@ import java.util.stream.Collectors;
 
 
 class ConfigurableSettings {
-    LinkedHashMap<String, String> settings;
+    private LinkedHashMap<String, String> settings;
     private NumberFormatter onlyInt;
 
     ConfigurableSettings() {
         settings = new LinkedHashMap<>();
+        put("Add fixed cachebuster", true);
+        put("Add dynamic cachebuster", false);
 
         put("observed", true);
         put("bruteforce", true);
