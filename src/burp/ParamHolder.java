@@ -42,7 +42,7 @@ class ParamHolder {
             params.ensureCapacity(max*2);
             for (int i=0; i<max; i++) {
                 String param = params.get(i);
-                if (param.startsWith("x-")) {
+                if (param.startsWith("x-") || param.startsWith("x_")) {
                     params.add(param.substring(2));
                 }
                 else {
