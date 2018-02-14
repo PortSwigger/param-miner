@@ -1,8 +1,8 @@
 package burp;
 
 import org.apache.commons.lang3.CharUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
@@ -15,15 +15,9 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
-import static burp.Utilities.getBurpFrame;
-
 
 class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
     private JMenu menuButton;
@@ -36,7 +30,7 @@ class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
     {
         menuButton = new JMenu("Param Miner");
         menuButton.addMenuListener(this);
-        JMenuBar burpMenuBar = getBurpFrame().getJMenuBar();
+        JMenuBar burpMenuBar = Utilities.getBurpFrame().getJMenuBar();
         burpMenuBar.add(menuButton);
     }
 
@@ -53,7 +47,7 @@ class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
     public void menuCanceled(MenuEvent e) { }
 
     public void extensionUnloaded() {
-        getBurpFrame().getJMenuBar().remove(menuButton);
+        Utilities.getBurpFrame().getJMenuBar().remove(menuButton);
     }
 }
 
@@ -105,6 +99,18 @@ class ConfigurableSettings {
         for(String key: settings.keySet()) {
             Utilities.out(key + ": "+settings.get(key));
         }
+    }
+
+    static JFrame getBurpFrame()
+    {
+        for(Frame f : Frame.getFrames())
+        {
+            if(f.isVisible() && f.getTitle().startsWith(("Burp Suite")))
+            {
+                return (JFrame) f;
+            }
+        }
+        return null;
     }
 
     private String encode(Object value) {
@@ -218,26 +224,20 @@ class ConfigurableSettings {
 
 
 }
+
 class Utilities {
 
     private static PrintWriter stdout;
     private static PrintWriter stderr;
-    static final boolean THOROUGH_MODE = true;
     static final boolean DEBUG = false;
-    static final boolean TRANSFORMATION_SCAN = true;
-    static final boolean DIFFING_SCAN = true;
+
     static final byte CONFIRMATIONS = 5;
 
     static final boolean CACHE_ONLY = false;
 
     static AtomicBoolean unloaded = new AtomicBoolean(false);
 
-    static final boolean TRY_HPP = true;
-    static final boolean TRY_HPP_FOLLOWUP = false;
-    static final boolean TRY_SYNTAX_ATTACKS = true;
-    static final boolean TRY_VALUE_PRESERVING_ATTACKS = true;
-    static final boolean TRY_EXPERIMENTAL_CONCAT_ATTACKS = true;
-    static final boolean TRY_MAGIC_VALUE_ATTACKS = true;
+
     static final byte PARAM_HEADER = 7;
 
     static IBurpExtenderCallbacks callbacks;
@@ -251,6 +251,18 @@ class Utilities {
     static Random rnd = new Random();
 
     static ConfigurableSettings globalSettings;
+
+    static JFrame getBurpFrame()
+    {
+        for(Frame f : Frame.getFrames())
+        {
+            if(f.isVisible() && f.getTitle().startsWith(("Burp Suite")))
+            {
+                return (JFrame) f;
+            }
+        }
+        return null;
+    }
 
     Utilities(final IBurpExtenderCallbacks incallbacks) {
         callbacks = incallbacks;
@@ -279,17 +291,7 @@ class Utilities {
         }
     }
 
-    static JFrame getBurpFrame()
-    {
-        for(Frame f : Frame.getFrames())
-        {
-            if(f.isVisible() && f.getTitle().startsWith(("Burp Suite")))
-            {
-                return (JFrame) f;
-            }
-        }
-        return null;
-    }
+
 
 
     static String getNameFromType(byte type) {

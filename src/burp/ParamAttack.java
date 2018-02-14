@@ -371,7 +371,9 @@ class ParamAttack {
 
         if (type == Utilities.PARAM_HEADER) {
             //bonusParams.addSource("User-Agent\nCookie\nHost\n");
-            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+            //bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+            Utilities.out("adding bonus source");
+            bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
         }
 
         if (config.getBoolean("observed")) {

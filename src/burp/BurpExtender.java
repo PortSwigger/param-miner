@@ -1,32 +1,26 @@
 package burp;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.google.gson.*;
-import org.apache.commons.lang3.StringEscapeUtils;
-
-import org.apache.commons.lang3.StringUtils;
-
-import javax.swing.*;
-import javax.swing.event.MenuEvent;
-import javax.swing.event.MenuListener;
 
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
-import static burp.Utilities.getBurpFrame;
-import static java.util.concurrent.ConcurrentHashMap.newKeySet;
 
 public class BurpExtender implements IBurpExtender {
-    private static final String name = "Backslash Powered Scanner";
-    private static final String version = "0.91";
+    private static final String name = "Parameter Miner";
+    private static final String version = "1.02";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -50,10 +44,6 @@ public class BurpExtender implements IBurpExtender {
             throw new NoSuchMethodError();
         }
 
-        FastScan scan = new FastScan(callbacks);
-        callbacks.registerScannerCheck(scan);
-        callbacks.registerExtensionStateListener(scan);
-
         ParamGrabber paramGrabber = new ParamGrabber();
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
         //callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
@@ -63,16 +53,6 @@ public class BurpExtender implements IBurpExtender {
         SwingUtilities.invokeLater(new ConfigMenu());
 
         Utilities.out("Loaded " + name + " v" + version);
-        Utilities.out("Debug mode: " + Utilities.DEBUG);
-        Utilities.out("Thorough mode: " + Utilities.THOROUGH_MODE);
-        Utilities.out("Input transformation detection: " + Utilities.TRANSFORMATION_SCAN);
-        Utilities.out("Suspicious input handling detection: " + Utilities.DIFFING_SCAN);
-        Utilities.out("    TRY_SYNTAX_ATTACKS "+Utilities.TRY_SYNTAX_ATTACKS);
-        Utilities.out("    TRY_VALUE_PRESERVING_ATTACKS "+Utilities.TRY_VALUE_PRESERVING_ATTACKS);
-        Utilities.out("    TRY_EXPERIMENTAL_CONCAT_ATTACKS "+Utilities.TRY_EXPERIMENTAL_CONCAT_ATTACKS);
-        Utilities.out("    TRY_HPP "+Utilities.TRY_HPP);
-        Utilities.out("    TRY_HPP_FOLLOWUP "+Utilities.TRY_HPP_FOLLOWUP);
-        Utilities.out("    TRY_MAGIC_VALUE_ATTACKS "+Utilities.TRY_MAGIC_VALUE_ATTACKS);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 
@@ -223,98 +203,6 @@ class ParamGrabber implements  IScannerCheck {
 
             }
         }
-    }
-
-    @Override
-    public int consolidateDuplicateIssues(IScanIssue existingIssue, IScanIssue newIssue) {
-        if (existingIssue.getIssueName().equals(newIssue.getIssueName()) && existingIssue.getIssueDetail().equals(newIssue.getIssueDetail()))
-            return -1;
-        else return 0;
-    }
-}
-
-class FastScan implements IScannerCheck, IExtensionStateListener {
-    private TransformationScan transformationScan;
-    private DiffingScan diffingScan;
-    private IExtensionHelpers helpers;
-    private IBurpExtenderCallbacks callbacks;
-
-    FastScan(final IBurpExtenderCallbacks callbacks) {
-        transformationScan = new TransformationScan(callbacks);
-        diffingScan = new DiffingScan();
-        this.callbacks = callbacks;
-        helpers = callbacks.getHelpers();
-    }
-
-    public void extensionUnloaded() {
-        Utilities.out("Unloading extension...");
-        Utilities.unloaded.set(true);
-    }
-
-    private IParameter getParameterFromInsertionPoint(IScannerInsertionPoint insertionPoint, byte[] request) {
-        IParameter baseParam = null;
-        int basePayloadStart = insertionPoint.getPayloadOffsets("x".getBytes())[0];
-        List<IParameter> params = helpers.analyzeRequest(request).getParameters();
-        for (IParameter param : params) {
-            if (param.getValueStart() == basePayloadStart && insertionPoint.getBaseValue().equals(param.getValue())) {
-                baseParam = param;
-                break;
-            }
-        }
-        return baseParam;
-    }
-
-    public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-
-        ArrayList<IScanIssue> issues = new ArrayList<>();
-        if(!(Utilities.TRANSFORMATION_SCAN || Utilities.DIFFING_SCAN)) {
-            Utilities.out("Aborting scan - all scanner checks disabled");
-            return issues;
-        }
-
-        // make a custom insertion point to avoid burp excessively URL-encoding payloads
-        IParameter baseParam = getParameterFromInsertionPoint(insertionPoint, baseRequestResponse.getRequest());
-        if (baseParam != null && (baseParam.getType() == IParameter.PARAM_BODY || baseParam.getType() == IParameter.PARAM_URL)) {
-            insertionPoint = new ParamInsertionPoint(baseRequestResponse.getRequest(), baseParam.getName(), baseParam.getValue(), baseParam.getType());
-        }
-
-        if (Utilities.TRANSFORMATION_SCAN) {
-            issues.add(transformationScan.findTransformationIssues(baseRequestResponse, insertionPoint));
-        }
-
-        if (Utilities.DIFFING_SCAN) {
-            issues.add(diffingScan.findReflectionIssues(baseRequestResponse, insertionPoint));
-        }
-
-        if (baseParam != null && (baseParam.getType() == IParameter.PARAM_BODY || baseParam.getType() == IParameter.PARAM_URL) && Utilities.getExtension(baseRequestResponse.getRequest()).equals(".php")) {
-            String param_name = baseParam.getName() + "[]";
-            byte[] newReq = helpers.removeParameter(baseRequestResponse.getRequest(), baseParam);
-            IParameter newParam = helpers.buildParameter(param_name, baseParam.getValue(), baseParam.getType());
-            newReq = helpers.addParameter(newReq, helpers.buildParameter(param_name, "", baseParam.getType()));
-            newReq = helpers.addParameter(newReq, newParam);
-
-            IScannerInsertionPoint arrayInsertionPoint = new ParamInsertionPoint(newReq, param_name, newParam.getValue(), newParam.getType());
-            IHttpRequestResponse newBase = callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), arrayInsertionPoint.buildRequest(newParam.getValue().getBytes()));
-
-            if (Utilities.TRANSFORMATION_SCAN) {
-                issues.add(transformationScan.findTransformationIssues(newBase, arrayInsertionPoint));
-            }
-
-            if (Utilities.DIFFING_SCAN) {
-                issues.add(diffingScan.findReflectionIssues(newBase, arrayInsertionPoint));
-            }
-        }
-
-        return issues
-                .stream()
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
-        return new ArrayList<>();
-
     }
 
     @Override

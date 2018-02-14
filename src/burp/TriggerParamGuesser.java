@@ -2,8 +2,6 @@ package burp;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
-import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;

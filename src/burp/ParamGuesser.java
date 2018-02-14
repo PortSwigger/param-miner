@@ -1,22 +1,9 @@
 package burp;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.sun.tools.internal.ws.wsdl.document.jaxws.Exception;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
-import java.lang.reflect.Array;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 class SimpleScan implements Runnable, IExtensionStateListener {
