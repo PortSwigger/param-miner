@@ -1,7 +1,10 @@
 host
 cookie
-zuser-agent
-zreferer
+user-agent
+cf-connecting-ip
+content-range
+x_alto_ajax_key
+referer
 zreferrer
 zvia
 zaccess-control-request-method

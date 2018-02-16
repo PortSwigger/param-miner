@@ -155,6 +155,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                     }
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
                 }
+                newParams.removeAll(state.alreadyReported);
                 paramBuckets.addParams(newParams, true);
             }
 
