@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
 
-public class BurpExtender implements IBurpExtender {
+public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Parameter Miner";
     private static final String version = "1.02";
 
@@ -52,10 +52,16 @@ public class BurpExtender implements IBurpExtender {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
+        Utilities.callbacks.registerExtensionStateListener(this);
+
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 
+    public void extensionUnloaded() {
+        Utilities.log("Aborting all attacks");
+        Utilities.unloaded.set(true);
+    }
 
 }
 

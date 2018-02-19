@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.lang.Math.min;
+import static org.apache.commons.lang3.math.NumberUtils.max;
 
 
 class TriggerParamGuesser implements ActionListener, Runnable {
@@ -52,6 +53,10 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         if (config.getBoolean("max one per host")) {
             cache_size = queueSize;
         }
+
+        Set<String> keyCache = new HashSet<>();
+        boolean useKeyCache = config.getBoolean("max one per host+status");
+
         Queue<String> cache = new CircularFifoQueue<>(cache_size);
         HashSet<String> remainingHosts = new HashSet<>();
 
@@ -71,15 +76,24 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             while (left.hasNext()) {
                 IHttpRequestResponse req = left.next();
 
-                if (canSkip && req.getResponse() != null && Utilities.containsBytes(req.getResponse(), noCache)) {
+                String host = req.getHttpService().getHost();
+                String key = host;
+                if (req.getResponse() != null) {
+                    if (canSkip && Utilities.containsBytes(req.getResponse(), noCache)) {
+                        continue;
+                    }
+
+                    key = key + Utilities.helpers.analyzeResponse(req.getResponse()).getStatusCode();
+                }
+
+                if (useKeyCache && keyCache.contains(key)) {
+                    left.remove();
                     continue;
                 }
 
-
-                String host = req.getHttpService().getHost();
-
                 if (!cache.contains(host)) {
                     cache.add(host);
+                    keyCache.add(key);
                     left.remove();
                     Utilities.log("Adding request on "+host+" to queue");
                     queued++;
@@ -93,7 +107,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 break;
             }
 
-            if (remainingHosts.size() <= 1) {
+            if (remainingHosts.size() <= 1 && !useKeyCache) {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
                     queued++;
@@ -102,7 +116,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 break;
             }
             else {
-                cache = new CircularFifoQueue<>(min(remainingHosts.size()-1, thread_count));
+                cache = new CircularFifoQueue<>(max(min(remainingHosts.size()-1, thread_count), 1));
             }
         }
 

@@ -21,7 +21,7 @@ class SimpleScan implements Runnable, IExtensionStateListener {
 /**
  * Created by james on 30/08/2017.
  */
-class ParamGuesser implements Runnable, IExtensionStateListener {
+class ParamGuesser implements Runnable {
 
     private IHttpRequestResponse req;
     private boolean backend;
@@ -96,11 +96,6 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
 //
 //            }
 //        }
-    }
-
-    public void extensionUnloaded() {
-        Utilities.log("Aborting param bruteforce");
-        Utilities.unloaded.set(true);
     }
 
     private ArrayList<Attack> guessParams(ParamAttack state) {
@@ -338,7 +333,12 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
             }
 
             String pathCacheBuster = Utilities.generateCanary() + ".jpg";
-            byte[] base404 = Utilities.replace(base.getRequest(), "GET /".getBytes(), ("GET /" + pathCacheBuster).getBytes()); // fixme fails on non-root reqs
+
+            //String path = Utilities.getPathFromRequest(base.getRequest());
+            //byte[] base404 = Utilities.replaceFirst(base.getRequest(), path.getBytes(), (path+pathCacheBuster).getBytes());
+            byte[] base404 = Utilities.appendToPath(base.getRequest(), pathCacheBuster);
+
+
             IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
             short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 
@@ -378,6 +378,7 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
             }
 
+            Utilities.out("Dedicated: "+attackDedication);
             for (int i = 1; i < attackDedication; i++) {
 
                 if (reflectPoisonMightWork) {
@@ -387,7 +388,8 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
                 }
 
                 if (statusPoisonMightWork) {
-                    if (tryStatusCache(injector, param, attackDedication, pathCacheBuster, base404, get404Code, i))
+                    //if (tryStatusCache(injector, param, attackDedication, pathCacheBuster, base404, get404Code, i))
+                    if (tryStatusCache(injector, param, attackDedication, get404Code))
                         return true;
                 }
             }
@@ -412,28 +414,52 @@ class ParamGuesser implements Runnable, IExtensionStateListener {
         }
     }
 
-    private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, String pathCacheBuster, byte[] base404, short get404Code, int i) {
-        IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-
+    private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, short get404Code) {
+        String canary = Utilities.generateCanary()+".jpg";
         byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload(param)));
-        setPoison200Req = Utilities.appendToPath(setPoison200Req, pathCacheBuster);
+        setPoison200Req = Utilities.appendToPath(setPoison200Req, canary);
 
-        for(int j=attackDedication-i; j<attackDedication; j++) {
-            Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
+        byte[] getPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload("xyz"+param)));
+        getPoison200Req = Utilities.appendToPath(getPoison200Req, canary);
+
+        for(int j=0; j<attackDedication; j++) {
+            Utilities.attemptRequest(injector.getService(), setPoison200Req);
         }
 
-        for(int j=attackDedication-i; j<attackDedication; j+=3) {
-            IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base404, cacheBuster));
+        for(int j=0; j<attackDedication; j+=3) {
+            IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), getPoison200Req);
             short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
-
             if (getPoison200Code != get404Code) {
-                Utilities.log("Successful cache poisoning check");
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning "+i, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
-                return true;
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning " + j, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
             }
+            return true;
         }
+
         return false;
     }
+
+//    private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, String pathCacheBuster, byte[] base404, short get404Code, int i) {
+//        IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+//
+//        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload(param)));
+//        setPoison200Req = Utilities.appendToPath(setPoison200Req, pathCacheBuster);
+//
+//        for(int j=attackDedication-i; j<attackDedication; j++) {
+//            Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
+//        }
+//
+//        for(int j=attackDedication-i; j<attackDedication; j+=3) {
+//            IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base404, cacheBuster));
+//            short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
+//
+//            if (getPoison200Code != get404Code) {
+//                Utilities.log("Successful cache poisoning check");
+//                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning "+i, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     private boolean tryReflectCache(PayloadInjector injector, String param, IHttpRequestResponse base, int attackDedication, int i, String pathSuffix) {
         IHttpService service = injector.getService();

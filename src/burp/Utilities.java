@@ -65,7 +65,8 @@ class ConfigurableSettings {
         put("wordlist", true);
         put("skip uncacheable", false);
         put("dynamic keyload", false);
-        put("max one per host", true);
+        put("max one per host", false);
+        put("max one per host+status", true);
 
         put("thread pool size", 32);
         put("rotation interval", 200);
@@ -499,7 +500,7 @@ class Utilities {
     }
 
     // records from the first space to the second space
-    private static String getPathFromRequest(byte[] request) {
+    static String getPathFromRequest(byte[] request) {
         int i = 0;
         boolean recording = false;
         String path = "";
@@ -584,7 +585,18 @@ class Utilities {
     }
 
     static byte[] replace(byte[] request, byte[] find, byte[] replace) {
+        return replace(request, find, replace, -1);
+    }
+
+    static byte[] replaceFirst(byte[] request, byte[] find, byte[] replace) {
+        return replace(request, find, replace, 1);
+    }
+
+    private static byte[] replace(byte[] request, byte[] find, byte[] replace, int limit) {
         List<int[]> matches = getMatches(request, find, -1);
+        if (limit != -1) {
+            matches = matches.subList(0, limit);
+        }
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             for (int i=0;i<matches.size();i++) {
