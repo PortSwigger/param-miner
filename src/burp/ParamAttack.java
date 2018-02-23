@@ -243,7 +243,9 @@ class ParamAttack {
             case IParameter.PARAM_BODY:
                 blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
             case Utilities.PARAM_HEADER:
-                blacklist.addAll(Utilities.headerNames);
+                if (Utilities.globalSettings.getBoolean("skip boring words")) {
+                    blacklist.addAll(Utilities.boringHeaders);
+                }
             default:
                 break;
         }
@@ -369,11 +371,11 @@ class ParamAttack {
         bonusParams = new WordProvider();
 
 
-//        if (type == Utilities.PARAM_HEADER) {
-//            //bonusParams.addSource("User-Agent\nCookie\nHost\n");
-//            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
-//            bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
-//        }
+        if (type == Utilities.PARAM_HEADER) {
+            //bonusParams.addSource("User-Agent\nCookie\nHost\n");
+            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+            bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
+        }
 
         if (config.getBoolean("response")) {
             if (type == Utilities.PARAM_HEADER) {

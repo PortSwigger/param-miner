@@ -60,9 +60,10 @@ class ConfigurableSettings {
         put("Add fixed cachebuster", true);
         put("Add dynamic cachebuster", false);
         put("learn observed words", false);
+        put("skip boring words", true);
         put("response", true);
-        put("bruteforce", true);
         put("wordlist", true);
+        put("bruteforce", true);
         put("skip uncacheable", false);
         put("dynamic keyload", false);
         put("max one per host", false);
@@ -208,7 +209,7 @@ class ConfigurableSettings {
                     val = ((JCheckBox) val).isSelected();
                 }
                 else if (val instanceof JFormattedTextField) {
-                    val = Integer.parseInt(((JTextField) val).getText());
+                    val = Integer.parseInt(((JFormattedTextField) val).getText().replace(",", ""));
                 }
                 else {
                      val = ((JTextField) val).getText();
@@ -246,7 +247,7 @@ class Utilities {
     static IExtensionHelpers helpers;
     static HashSet<String> phpFunctions = new HashSet<>();
     static ArrayList<String> paramNames = new ArrayList<>();
-    static HashSet<String> headerNames = new HashSet<>();
+    static HashSet<String> boringHeaders = new HashSet<>();
 
     private static final String CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz"; // ABCDEFGHIJKLMNOPQRSTUVWXYZ
     private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
@@ -289,7 +290,7 @@ class Utilities {
 
         Scanner headers = new Scanner(getClass().getResourceAsStream("/boring_headers"));
         while (headers.hasNext()) {
-            headerNames.add(headers.next().toLowerCase());
+            boringHeaders.add(headers.next().toLowerCase());
         }
     }
 
