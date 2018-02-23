@@ -81,7 +81,7 @@ class Substituter implements IHttpListener {
                 cacheBusterName = Utilities.generateCanary();
             }
             else if (Utilities.globalSettings.getBoolean("Add fixed cachebuster")) {
-                cacheBusterName = "noMassPoisonings";
+                cacheBusterName = "fcbz";
             }
 
             if (cacheBusterName != null) {
@@ -186,7 +186,9 @@ class ParamGrabber implements  IScannerCheck {
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
-        saveParams(baseRequestResponse);
+        if (Utilities.globalSettings.getBoolean("learn observed words")) {
+            saveParams(baseRequestResponse);
+        }
         return new ArrayList<>();
     }
 

@@ -59,8 +59,8 @@ class ConfigurableSettings {
         settings = new LinkedHashMap<>();
         put("Add fixed cachebuster", true);
         put("Add dynamic cachebuster", false);
-
-        put("observed", true);
+        put("learn observed words", false);
+        put("response", true);
         put("bruteforce", true);
         put("wordlist", true);
         put("skip uncacheable", false);
@@ -72,6 +72,7 @@ class ConfigurableSettings {
         put("rotation interval", 200);
         put("rotation increment", 4);
         put("force bucketsize", -1);
+        put("max bucketsize", 65536);
         put("max param length", 32);
 
         for(String key: settings.keySet()) {

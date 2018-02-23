@@ -220,7 +220,7 @@ class ParamAttack {
                     break;
                 }
             }
-            if (bucketSize >= 65536 || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
+            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize") || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
                 break;
             }
 
@@ -369,13 +369,13 @@ class ParamAttack {
         bonusParams = new WordProvider();
 
 
-        if (type == Utilities.PARAM_HEADER) {
-            //bonusParams.addSource("User-Agent\nCookie\nHost\n");
-            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
-            bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
-        }
+//        if (type == Utilities.PARAM_HEADER) {
+//            //bonusParams.addSource("User-Agent\nCookie\nHost\n");
+//            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+//            bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
+//        }
 
-        if (config.getBoolean("observed")) {
+        if (config.getBoolean("response")) {
             if (type == Utilities.PARAM_HEADER) {
                 params.replaceAll(x -> x.toLowerCase().replaceAll("[^a-z0-9_-]", ""));
                 params.replaceAll(x -> x.replaceFirst("^[_-]+", ""));

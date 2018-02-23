@@ -419,7 +419,7 @@ class ParamGuesser implements Runnable {
         byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload(param)));
         setPoison200Req = Utilities.appendToPath(setPoison200Req, canary);
 
-        byte[] getPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload("xyz"+param)));
+        byte[] getPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload("xyz"+param+"z")));
         getPoison200Req = Utilities.appendToPath(getPoison200Req, canary);
 
         for(int j=0; j<attackDedication; j++) {

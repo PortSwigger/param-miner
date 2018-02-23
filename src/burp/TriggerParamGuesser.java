@@ -77,13 +77,14 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 IHttpRequestResponse req = left.next();
 
                 String host = req.getHttpService().getHost();
-                String key = host;
+                String key = req.getHttpService().getProtocol()+host;
                 if (req.getResponse() != null) {
                     if (canSkip && Utilities.containsBytes(req.getResponse(), noCache)) {
                         continue;
                     }
 
-                    key = key + Utilities.helpers.analyzeResponse(req.getResponse()).getStatusCode();
+                    IResponseInfo info = Utilities.helpers.analyzeResponse(req.getResponse());
+                    key = key + info.getStatusCode() + info.getInferredMimeType();
                 }
 
                 if (useKeyCache && keyCache.contains(key)) {
