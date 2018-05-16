@@ -311,6 +311,10 @@ class ParamGuesser implements Runnable {
     }
 
     private boolean cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
+        if (!Utilities.globalSettings.getBoolean("try cache poison")) {
+            return false;
+        }
+
         try {
             IHttpRequestResponse base = injector.getBase();
             PayloadInjector altInject = new PayloadInjector(base, new ParamNameInsertionPoint(base.getRequest(), "guesser", "", IParameter.PARAM_URL, "repliblah"));
@@ -522,6 +526,13 @@ class ParamGuesser implements Runnable {
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
+
+
+        
+
+
+
+
         byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
         int start = Utilities.helpers.indexOf(scanBaseAttack.getRequest(), scanBaseGrep, true, 0, scanBaseAttack.getRequest().length);
         int end = start + scanBaseGrep.length;

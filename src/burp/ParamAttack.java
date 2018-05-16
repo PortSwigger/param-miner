@@ -160,7 +160,7 @@ class ParamAttack {
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
             altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-            if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404) {
+            if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404 && Utilities.globalSettings.getBoolean("try method flip")) {
                 altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
                 altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
                 altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
@@ -371,7 +371,7 @@ class ParamAttack {
         bonusParams = new WordProvider();
 
 
-        if (type == Utilities.PARAM_HEADER) {
+        if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             //bonusParams.addSource("User-Agent\nCookie\nHost\n");
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
             bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
@@ -389,9 +389,11 @@ class ParamAttack {
             bonusParams.addSource(String.join("\n", params));
         }
 
-
-        if (config.getBoolean("wordlist")) {
+        if (config.getBoolean("use basic wordlist")) {
             bonusParams.addSource("/params");
+        }
+
+        if (config.getBoolean("use bonus wordlist")) {
             bonusParams.addSource("/functions");
             if (type != Utilities.PARAM_HEADER) {
                 bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");

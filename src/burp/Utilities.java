@@ -62,12 +62,15 @@ class ConfigurableSettings {
         put("learn observed words", false);
         put("skip boring words", true);
         put("response", true);
-        put("wordlist", true);
+        put("use basic wordlist", true);
+        put("use bonus wordlist", false);
         put("bruteforce", true);
         put("skip uncacheable", false);
         put("dynamic keyload", false);
         put("max one per host", false);
         put("max one per host+status", true);
+        put("try cache poison", true);
+        put("try method flip", true);
 
         put("thread pool size", 32);
         put("rotation interval", 200);
