@@ -71,7 +71,6 @@ class ConfigurableSettings {
         put("max one per host+status", true);
         put("try cache poison", true);
         put("try method flip", true);
-
         put("thread pool size", 32);
         put("rotation interval", 200);
         put("rotation increment", 4);
@@ -153,16 +152,16 @@ class ConfigurableSettings {
 
     boolean getBoolean(String key) {
         String val = settings.get(key);
-        if (val.equals("true") ) {
+        if ("true".equals(val)) {
             return true;
         }
-        else if (val.equals("false")){
+        else if ("false".equals(val)){
             return false;
         }
         throw new RuntimeException();
     }
 
-    String getType(String key) {
+    private String getType(String key) {
         String val = settings.get(key);
         if (val.equals("true") || val.equals("false")) {
             return "boolean";

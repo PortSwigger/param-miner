@@ -2,6 +2,8 @@ package burp;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -42,10 +44,11 @@ class ParamGuesser implements Runnable {
         this.config = config;
     }
 
-    ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine) {
+    ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine, ConfigurableSettings config) {
         this.attack = attack;
         this.req = attack.getBaseRequestResponse();
         this.taskEngine = taskEngine;
+        this.config = config;
     }
 
     public void run() {
@@ -305,7 +308,7 @@ class ParamGuesser implements Runnable {
 
 
         state.incrStop();
-        taskEngine.execute(new ParamGuesser(state, taskEngine));
+        taskEngine.execute(new ParamGuesser(state, taskEngine, config));
 
         return attacks;
     }
@@ -525,18 +528,38 @@ class ParamGuesser implements Runnable {
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
+
+
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
-
-
-        
-
-
-
-
+        byte[] req = scanBaseAttack.getRequest();
         byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
-        int start = Utilities.helpers.indexOf(scanBaseAttack.getRequest(), scanBaseGrep, true, 0, scanBaseAttack.getRequest().length);
+
+        int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
         int end = start + scanBaseGrep.length;
-        Utilities.doActiveScan(scanBaseAttack, new int[]{start, end});
+        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, start, end);
+        PayloadInjector valueInjector = new PayloadInjector(injector.getBase(), valueInsertionPoint);
+
+        Attack randBase = valueInjector.probeAttack(Utilities.generateCanary());
+        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
+        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
+        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
+
+        String baseValue = "wrtqvetc";
+        ArrayList<String> potentialValues = new ArrayList<>();
+        potentialValues.add("1");
+        potentialValues.add("false");
+        // todo URL, domain, email, phone, postcode, any input validation that might block hitting the backend
+
+        for (String potentialValue : potentialValues) {
+            Attack potentialBase = valueInjector.probeAttack(potentialValue);
+
+            if(!Utilities.similar(randBase, potentialBase)) {
+                baseValue = potentialValue;
+                break;
+            }
+        }
+
+        Utilities.doActiveScan(Utilities.attemptRequest(injector.getService(), valueInsertionPoint.buildRequest(baseValue.getBytes())), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
     }
 
     private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {
