@@ -4,32 +4,27 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
 
-class ParamGrabber implements IScannerCheck {
+public class ParamGrabber implements IHttpListener  {
 
-    public Set<IHttpRequestResponse> getSavedJson() {
+    Set<IHttpRequestResponse> getSavedJson() {
         return savedJson;
     }
-
-    Set<IHttpRequestResponse> savedJson;
-    HashSet<ArrayList<String>> done;
-
-    public Set<String> getSavedGET() {
+    private Set<IHttpRequestResponse> savedJson;
+    private HashSet<ArrayList<String>> done;
+    Set<String> getSavedGET() {
         return savedGET;
     }
-
-    Set<String> savedGET;
-
-    public Set<String> getSavedWords() {
-        return savedWords;
-    }
-
-    Set<String> savedWords;
+    private Set<String> savedGET;
+    private Set<String> savedWords;
 
     ParamGrabber() {
         savedJson = ConcurrentHashMap.newKeySet();
@@ -39,20 +34,24 @@ class ParamGrabber implements IScannerCheck {
         savedGET = ConcurrentHashMap.newKeySet();
     }
 
-    @Override
-    public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        return new ArrayList<>();
-    }
+    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
+        if (messageIsRequest) {
+            if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY && Utilities.globalSettings.getBoolean("autoscan")) {
+                launchScan(messageInfo);
+            }
 
-    @Override
-    public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
-        if (Utilities.globalSettings.getBoolean("learn observed words")) {
-            saveParams(baseRequestResponse);
+            addCacheBusters(messageInfo);
         }
-        return new ArrayList<>();
+        else {
+            saveParams(messageInfo);
+        }
     }
 
-    public void saveParams(IHttpRequestResponse baseRequestResponse) {
+    Set<String> getSavedWords() {
+        return savedWords;
+    }
+
+    void saveParams(IHttpRequestResponse baseRequestResponse) {
         // todo also use observed requests
         String body = Utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {
@@ -73,10 +72,29 @@ class ParamGrabber implements IScannerCheck {
         }
     }
 
-    @Override
-    public int consolidateDuplicateIssues(IScanIssue existingIssue, IScanIssue newIssue) {
-        if (existingIssue.getIssueName().equals(newIssue.getIssueName()) && existingIssue.getIssueDetail().equals(newIssue.getIssueDetail()))
-            return -1;
-        else return 0;
+    private void addCacheBusters(IHttpRequestResponse messageInfo) {
+        byte[] placeHolder = Utilities.helpers.stringToBytes("$randomplz");
+        if (Utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
+            messageInfo.setRequest(
+                    Utilities.fixContentLength(Utilities.replace(messageInfo.getRequest(), placeHolder, Utilities.helpers.stringToBytes(Utilities.generateCanary())))
+            );
+        }
+
+        String cacheBusterName = null;
+        if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
+            cacheBusterName = Utilities.generateCanary();
+        }
+        else if (Utilities.globalSettings.getBoolean("Add fixed cachebuster")) {
+            cacheBusterName = "fcbz";
+        }
+
+        if (cacheBusterName != null) {
+            IParameter cacheBuster = burp.Utilities.helpers.buildParameter(cacheBusterName, "1", IParameter.PARAM_URL);
+            messageInfo.setRequest(Utilities.helpers.addParameter(messageInfo.getRequest(), cacheBuster));
+        }
+    }
+
+    private void launchScan(IHttpRequestResponse messageInfo) {
+        // todo scan this request if we haven't already seen it
     }
 }

@@ -46,9 +46,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         ParamGrabber paramGrabber = new ParamGrabber();
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
-        //callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
-        callbacks.registerScannerCheck(paramGrabber);
-        callbacks.registerHttpListener(new RequestListener());
+        callbacks.registerScannerCheck(new GrabScan(paramGrabber));
+        callbacks.registerHttpListener(paramGrabber);
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
