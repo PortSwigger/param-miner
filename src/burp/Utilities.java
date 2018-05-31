@@ -300,7 +300,9 @@ class Utilities {
         }
     }
 
-
+    static boolean isBurpPro() {
+        return callbacks.getBurpVersion()[0].contains("Professional");
+    }
 
 
     static String getNameFromType(byte type) {

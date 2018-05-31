@@ -529,7 +529,10 @@ class ParamGuesser implements Runnable {
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
-
+        if (!Utilities.isBurpPro()) {
+            Utilities.out("Can't autoscan identified parameter - requires pro edition");
+            return;
+        }
 
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
         byte[] req = scanBaseAttack.getRequest();
