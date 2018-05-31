@@ -250,6 +250,10 @@ class ParamAttack {
                 break;
         }
 
+        if (Utilities.globalSettings.getBoolean("only report unique params")) {
+            blacklist.addAll(Utilities.reportedParams);
+        }
+
         return blacklist;
     }
 

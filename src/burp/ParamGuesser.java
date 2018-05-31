@@ -227,6 +227,7 @@ class ParamGuesser implements Runnable {
                             ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam);
                             if (!confirmed.isEmpty()) {
                                 state.alreadyReported.add(submission);
+                                Utilities.reportedParams.add(submission);
                                 Utilities.out(targetURL + " identified parameter: " + candidates);
 
                                 boolean cacheSuccess = false;

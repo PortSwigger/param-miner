@@ -16,6 +16,7 @@ import java.net.URL;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -61,6 +62,7 @@ class ConfigurableSettings {
         put("Add dynamic cachebuster", false);
         put("learn observed words", false);
         put("skip boring words", true);
+        put("only report unique params", false);
         put("response", true);
         put("use basic wordlist", true);
         put("use bonus wordlist", false);
@@ -250,6 +252,7 @@ class Utilities {
     static HashSet<String> phpFunctions = new HashSet<>();
     static ArrayList<String> paramNames = new ArrayList<>();
     static HashSet<String> boringHeaders = new HashSet<>();
+    static Set<String> reportedParams = ConcurrentHashMap.newKeySet();
 
     private static final String CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz"; // ABCDEFGHIJKLMNOPQRSTUVWXYZ
     private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
