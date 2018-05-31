@@ -71,6 +71,7 @@ class ConfigurableSettings {
         put("dynamic keyload", false);
         put("max one per host", false);
         put("max one per host+status", true);
+        put("autoscan", false);
         put("try cache poison", true);
         put("try method flip", true);
         put("thread pool size", 32);

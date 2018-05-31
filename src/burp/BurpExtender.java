@@ -48,7 +48,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
         //callbacks.registerIntruderPayloadGeneratorFactory(new ParamSpammerFactory(paramGrabber));
         callbacks.registerScannerCheck(paramGrabber);
-        callbacks.registerHttpListener(new Substituter());
+        callbacks.registerHttpListener(new RequestListener());
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
@@ -63,33 +63,6 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         Utilities.unloaded.set(true);
     }
 
-}
-
-class Substituter implements IHttpListener {
-
-    public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
-        if (messageIsRequest) {
-            byte[] placeHolder = Utilities.helpers.stringToBytes("$randomplz");
-            if (Utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
-                messageInfo.setRequest(
-                        Utilities.fixContentLength(Utilities.replace(messageInfo.getRequest(), placeHolder, Utilities.helpers.stringToBytes(Utilities.generateCanary())))
-                );
-            }
-
-            String cacheBusterName = null;
-            if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
-                cacheBusterName = Utilities.generateCanary();
-            }
-            else if (Utilities.globalSettings.getBoolean("Add fixed cachebuster")) {
-                cacheBusterName = "fcbz";
-            }
-
-            if (cacheBusterName != null) {
-                IParameter cacheBuster = burp.Utilities.helpers.buildParameter(cacheBusterName, "1", IParameter.PARAM_URL);
-                messageInfo.setRequest(Utilities.helpers.addParameter(messageInfo.getRequest(), cacheBuster));
-            }
-        }
-    }
 }
 
 
