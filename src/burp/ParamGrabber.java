@@ -109,6 +109,14 @@ public class ParamGrabber implements IHttpListener  {
 
         codeBuidler.append(reqInfo.getUrl().getHost());
         codeBuidler.append(contentType);
+
+        String broadCode = codeBuidler.toString();
+        if (!alreadyScanned.contains(broadCode)){
+            taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_COOKIE, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, Utilities.PARAM_HEADER, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            alreadyScanned.add(broadCode);
+        }
+
         codeBuidler.append(
                 reqInfo.getParameters().stream()
                     .map(IParameter::getName)
@@ -120,15 +128,13 @@ public class ParamGrabber implements IHttpListener  {
             codeBuidler.append(reqInfo.getUrl().getPath());
         }
 
-        String code = codeBuidler.toString();
-
-        if (alreadyScanned.contains(code)) {
+        String paramCode = codeBuidler.toString();
+        if (alreadyScanned.contains(paramCode)) {
             return;
         }
 
-        // pass it into the scan queue!
         taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_URL, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+        alreadyScanned.add(paramCode);
 
-        alreadyScanned.add(code);
     }
 }
