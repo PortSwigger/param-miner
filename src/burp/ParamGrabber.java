@@ -133,8 +133,11 @@ public class ParamGrabber implements IHttpListener  {
             return;
         }
 
-        taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_URL, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+        byte guessType = IParameter.PARAM_URL;
+        if (reqInfo.getMethod().equals("POST")) {
+            guessType = IParameter.PARAM_BODY;
+        }
+        taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, guessType, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
         alreadyScanned.add(paramCode);
-
     }
 }
