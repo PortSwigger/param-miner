@@ -44,7 +44,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             throw new NoSuchMethodError();
         }
 
-        ParamGrabber paramGrabber = new ParamGrabber();
+        ParamGrabber paramGrabber = new ParamGrabber(taskEngine);
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
 
         if(Utilities.isBurpPro()) {

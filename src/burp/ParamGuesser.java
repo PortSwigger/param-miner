@@ -529,7 +529,7 @@ class ParamGuesser implements Runnable {
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
-        if(!Utilities.globalSettings.getBoolean("autoscan")) {
+        if(!Utilities.globalSettings.getBoolean("scan identified params")) {
             return;
         }
 

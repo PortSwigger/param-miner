@@ -3,47 +3,46 @@ package burp;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import org.omg.PortableInterceptor.RequestInfo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
+import java.util.zip.CRC32;
 
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
 
 public class ParamGrabber implements IHttpListener  {
 
+    private Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
+    private HashSet<ArrayList<String>> done = new HashSet<>();
+    private Set<String> savedGET  = ConcurrentHashMap.newKeySet();
+    private Set<String> savedWords  = ConcurrentHashMap.newKeySet();
+    private HashSet<String> alreadyScanned = new HashSet<>();
+    private ThreadPoolExecutor taskEngine;
+
+    ParamGrabber(ThreadPoolExecutor taskEngine) {
+        this.taskEngine = taskEngine;
+    }
+
     Set<IHttpRequestResponse> getSavedJson() {
         return savedJson;
     }
-    private Set<IHttpRequestResponse> savedJson;
-    private HashSet<ArrayList<String>> done;
     Set<String> getSavedGET() {
         return savedGET;
-    }
-    private Set<String> savedGET;
-    private Set<String> savedWords;
-
-    ParamGrabber() {
-        savedJson = ConcurrentHashMap.newKeySet();
-        //savedJson = ConcurrentHashMap.newKeySet();//new HashSet<>();
-        done = new HashSet<>();
-        savedWords = ConcurrentHashMap.newKeySet();
-        savedGET = ConcurrentHashMap.newKeySet();
     }
 
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
         if (messageIsRequest) {
-            if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY && Utilities.globalSettings.getBoolean("autoscan")) {
-                launchScan(messageInfo);
-            }
-
             addCacheBusters(messageInfo);
         }
         else {
             saveParams(messageInfo);
+            if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) {
+                launchScan(messageInfo);
+            }
         }
     }
 
@@ -95,6 +94,41 @@ public class ParamGrabber implements IHttpListener  {
     }
 
     private void launchScan(IHttpRequestResponse messageInfo) {
-        // todo scan this request if we haven't already seen it
+        if (!Utilities.globalSettings.getBoolean("auto-mine proxy traffic")) {
+            return;
+        }
+
+        IRequestInfo reqInfo = Utilities.helpers.analyzeRequest(messageInfo.getHttpService(), messageInfo.getRequest());
+        if (!Utilities.callbacks.isInScope(reqInfo.getUrl())) {
+            return;
+        }
+
+        IResponseInfo respInfo = Utilities.helpers.analyzeResponse(messageInfo.getResponse());
+        StringBuilder codeBuidler = new StringBuilder();
+        String contentType = respInfo.getStatedMimeType();
+
+        codeBuidler.append(reqInfo.getUrl().getHost());
+        codeBuidler.append(contentType);
+        codeBuidler.append(
+                reqInfo.getParameters().stream()
+                    .map(IParameter::getName)
+                    .collect(Collectors.joining(" "))
+        );
+
+
+        if(contentType.equals("JSON") || contentType.equals("HTML")) {
+            codeBuidler.append(reqInfo.getUrl().getPath());
+        }
+
+        String code = codeBuidler.toString();
+
+        if (alreadyScanned.contains(code)) {
+            return;
+        }
+
+        // pass it into the scan queue!
+        taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_URL, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+
+        alreadyScanned.add(code);
     }
 }
