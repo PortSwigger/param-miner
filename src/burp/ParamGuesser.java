@@ -228,7 +228,7 @@ class ParamGuesser implements Runnable {
                             if (!confirmed.isEmpty()) {
                                 state.alreadyReported.add(submission);
                                 Utilities.reportedParams.add(submission);
-                                Utilities.out(targetURL + " identified parameter: " + candidates);
+                                Utilities.out("Identified parameter on "+targetURL + ": " + submission);
 
                                 boolean cacheSuccess = false;
                                 if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
@@ -529,6 +529,10 @@ class ParamGuesser implements Runnable {
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
+        if(!Utilities.globalSettings.getBoolean("autoscan")) {
+            return;
+        }
+
         if (!Utilities.isBurpPro()) {
             Utilities.out("Can't autoscan identified parameter - requires pro edition");
             return;
@@ -590,7 +594,7 @@ class ParamGuesser implements Runnable {
 
             byte[] canary = Utilities.helpers.stringToBytes(Utilities.toCanary(param.split("~", 2)[0]) + attackID);
             if (Utilities.containsBytes(failResp, canary) && !Utilities.containsBytes(req, canary)){
-                Utilities.out(Utilities.getURL(baseRequestResponse) + " identified persistent parameter: " + param);
+                Utilities.out("Identified persistent parameter on "+Utilities.getURL(baseRequestResponse) + ":" + param);
                 params.remove();
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse), paramGuess.getFirstRequest(), "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + Utilities.helpers.bytesToString(canary) + " in the response", "High", "Firm", "Investigate"));
                 alreadyReported.add(param);
