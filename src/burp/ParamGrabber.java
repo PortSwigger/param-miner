@@ -14,7 +14,8 @@ import java.util.zip.CRC32;
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
 
-public class ParamGrabber implements IHttpListener  {
+
+public class ParamGrabber implements IProxyListener, IHttpListener {
 
     private Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
     private HashSet<ArrayList<String>> done = new HashSet<>();
@@ -38,11 +39,12 @@ public class ParamGrabber implements IHttpListener  {
         if (messageIsRequest) {
             addCacheBusters(messageInfo);
         }
-        else {
-            saveParams(messageInfo);
-            if(toolFlag == IBurpExtenderCallbacks.TOOL_PROXY) {
-                launchScan(messageInfo);
-            }
+    }
+
+    public void processProxyMessage(boolean messageIsRequest, IInterceptedProxyMessage messageInfo) {
+        if (!messageIsRequest) {
+            saveParams(messageInfo.getMessageInfo());
+            launchScan(messageInfo.getMessageInfo());
         }
     }
 
@@ -112,6 +114,7 @@ public class ParamGrabber implements IHttpListener  {
 
         String broadCode = codeBuidler.toString();
         if (!alreadyScanned.contains(broadCode)){
+            Utilities.out("Queueing headers+cookies on "+reqInfo.getUrl());
             taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_COOKIE, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
             taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, Utilities.PARAM_HEADER, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
             alreadyScanned.add(broadCode);
@@ -137,6 +140,8 @@ public class ParamGrabber implements IHttpListener  {
         if (reqInfo.getMethod().equals("POST")) {
             guessType = IParameter.PARAM_BODY;
         }
+
+        Utilities.out("Queueing params on "+reqInfo.getUrl());
         taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, guessType, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
         alreadyScanned.add(paramCode);
     }

@@ -28,6 +28,11 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new Utilities(callbacks);
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
         ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
+        Utilities.globalSettings.registerListener("thread pool size", value -> {
+            taskEngine.setMaximumPoolSize(Integer.parseInt(value));
+            taskEngine.setCorePoolSize(Integer.parseInt(value));
+        });
+
         callbacks.setExtensionName(name);
 
         try {
@@ -52,6 +57,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         }
 
         callbacks.registerHttpListener(paramGrabber);
+        callbacks.registerProxyListener(paramGrabber);
 
         SwingUtilities.invokeLater(new ConfigMenu());
 

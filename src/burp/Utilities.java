@@ -52,9 +52,19 @@ class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
     }
 }
 
+interface ConfigListener {
+    void valueUpdated(String value);
+}
+
 class ConfigurableSettings {
     private LinkedHashMap<String, String> settings;
     private NumberFormatter onlyInt;
+
+    private HashMap<String, ConfigListener> callbacks = new HashMap<>();
+
+    public void registerListener(String key, ConfigListener listener) {
+        callbacks.put(key, listener);
+    }
 
     ConfigurableSettings() {
         settings = new LinkedHashMap<>();
@@ -138,10 +148,14 @@ class ConfigurableSettings {
 
     private void putRaw(String key, String value) {
         settings.put(key, value);
+        ConfigListener callback = callbacks.getOrDefault(key, null);
+        if (callback != null) {
+            callback.valueUpdated(value);
+        }
     }
 
     private void put(String key, Object value) {
-        settings.put(key, encode(value));
+        putRaw(key, encode(value));
     }
 
     String getString(String key) {
@@ -630,6 +644,29 @@ class Utilities {
         }
 
         return request;
+    }
+
+    static byte[] appendToQuery(byte[] request, String suffix) {
+        if (suffix == null || suffix.equals("")) {
+            return request;
+        }
+
+        int lineEnd = 0;
+        while (lineEnd < request.length && request[lineEnd++] != '\n') {
+        }
+
+        int queryStart = 0;
+        while (queryStart < lineEnd && request[queryStart++] != '?') {
+        }
+
+        if (queryStart >= lineEnd) {
+            suffix = "?" + suffix;
+        }
+        else {
+            suffix = "&";
+        }
+
+        return replace(request, " HTTP/1.1".getBytes(), (suffix+" HTTP/1.1").getBytes());
     }
 
     static byte[] appendToPath(byte[] request, String suffix) {
