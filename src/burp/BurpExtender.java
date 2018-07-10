@@ -19,7 +19,7 @@ import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
-    private static final String name = "Parameter Miner";
+    private static final String name = "Param Miner";
     private static final String version = "1.03";
 
     @Override
