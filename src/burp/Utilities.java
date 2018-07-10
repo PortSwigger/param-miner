@@ -80,12 +80,13 @@ class ConfigurableSettings {
         put("skip uncacheable", false);
         put("dynamic keyload", false);
         put("max one per host", false);
-        put("max one per host+status", true);
-        put("scan identified params", true);
+        put("max one per host+status", false);
+        put("scan identified params", false);
         put("auto-mine proxy traffic", false);
+        put("auto-nest params", false);
         put("try cache poison", true);
-        put("try method flip", true);
-        put("thread pool size", 32);
+        put("try method flip", false);
+        put("thread pool size", 16);
         put("rotation interval", 200);
         put("rotation increment", 4);
         put("force bucketsize", -1);

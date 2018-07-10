@@ -20,7 +20,7 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Parameter Miner";
-    private static final String version = "1.02";
+    private static final String version = "1.03";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -291,11 +291,14 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         }
 
         String maxKey = null;
-        int max = 0;
-        for (Map.Entry<String, Integer> entry: freq.entrySet()) {
-            if (entry.getValue() > max) {
-                maxKey = entry.getKey();
-                max = entry.getValue();
+
+        if (Utilities.globalSettings.getBoolean("auto-nest params")) {
+            int max = 0;
+            for (Map.Entry<String, Integer> entry : freq.entrySet()) {
+                if (entry.getValue() > max) {
+                    maxKey = entry.getKey();
+                    max = entry.getValue();
+                }
             }
         }
         defaultPrefix = maxKey;
