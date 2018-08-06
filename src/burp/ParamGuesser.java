@@ -238,7 +238,7 @@ class ParamGuesser implements Runnable {
                                 if (!Utilities.CACHE_ONLY) {
                                     String title = "Secret input: " + Utilities.getNameFromType(type);
                                     if (!cacheSuccess && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
-                                        title = "Failed hopes: " + title;
+                                        title = "Secret uncached input: " + Utilities.getNameFromType(type);
                                     }
                                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 

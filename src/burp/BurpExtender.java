@@ -76,7 +76,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
 
 class Fuzzable extends CustomScanIssue {
-    private final static String DETAIL = "The application reacts to inputs in a way that suggests it might be vulnerable to some kind of server-side code injection. The probes are listed below in chronological order, with evidence. Response attributes that only stay consistent in one probe-set are italicised, with the variable attribute starred.";
+    private final static String DETAIL =
+            "A unlinked input was identified, based on the following evidence. " +
+            "Response attributes that only stay consistent in one probe-set are italicised, with the variable attribute starred.";
     private final static String REMEDIATION = "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. Try to determine the root cause of the observed behaviour." +
             "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
 
