@@ -1,12 +1,12 @@
 Uuid: 9cff8c55432a45808432e26dbb2b41d8
 ExtensionType: 1
-Name: Backslash Powered Scanner
-RepoName: backslash-powered-scanner
-ScreenVersion: 0.91
-SerialVersion: 6
+Name: Param Miner
+RepoName: param-miner
+ScreenVersion: 1.03
+SerialVersion: 1
 MinPlatformVersion: 0
-ProOnly: True
+ProOnly: False
 Author: James 'albinowax' Kettle, PortSwigger Web Security
-ShortDescription: Finds unknown classes of injection vulnerabilities.
-EntryPoint: build/libs/backslash-powered-scanner-all.jar
+ShortDescription: This extension identifies hidden, unlinked parameters. It's particularly useful for finding web cache poisoning vulnerabilities.
+EntryPoint: build/libs/param-miner-all.jar
 BuildCommand: gradle fatJar
