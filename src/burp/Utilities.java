@@ -76,7 +76,7 @@ class ConfigurableSettings {
         put("response", true);
         put("use basic wordlist", true);
         put("use bonus wordlist", false);
-        put("bruteforce", true);
+        put("bruteforce", false);
         put("skip uncacheable", false);
         put("dynamic keyload", false);
         put("max one per host", false);
@@ -86,7 +86,7 @@ class ConfigurableSettings {
         put("auto-nest params", false);
         put("try cache poison", true);
         put("try method flip", false);
-        put("thread pool size", 16);
+        put("thread pool size", 8);
         put("rotation interval", 200);
         put("rotation increment", 4);
         put("force bucketsize", -1);
