@@ -377,8 +377,8 @@ class ParamAttack {
 
         if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             //bonusParams.addSource("User-Agent\nCookie\nHost\n");
-            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
-            bonusParams.addSource("/Users/james/Documents/notes/presentations/webCachePoison/bonusHeaders");
+            bonusParams.addSource("/headers");
+            // todo add bonus header wordlist
         }
 
         if (config.getBoolean("response")) {
@@ -400,7 +400,7 @@ class ParamAttack {
         if (config.getBoolean("use bonus wordlist")) {
             bonusParams.addSource("/functions");
             if (type != Utilities.PARAM_HEADER) {
-                bonusParams.addSource("/Users/james/Dropbox/lists/favourites/request-headers.txt");
+                bonusParams.addSource("/headers");
             }
             bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
             bonusParams.addSource("/usr/share/dict/words");
