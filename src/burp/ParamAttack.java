@@ -376,9 +376,7 @@ class ParamAttack {
 
 
         if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
-            //bonusParams.addSource("User-Agent\nCookie\nHost\n");
             bonusParams.addSource("/headers");
-            // todo add bonus header wordlist
         }
 
         if (config.getBoolean("response")) {
@@ -402,7 +400,7 @@ class ParamAttack {
             if (type != Utilities.PARAM_HEADER) {
                 bonusParams.addSource("/headers");
             }
-            bonusParams.addSource("/Users/james/Dropbox/lists/favourites/disc_words-caseless.txt");
+            bonusParams.addSource("/words");
             bonusParams.addSource("/usr/share/dict/words");
         }
 
