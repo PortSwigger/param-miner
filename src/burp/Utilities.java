@@ -232,7 +232,7 @@ class ConfigurableSettings {
                     val = ((JCheckBox) val).isSelected();
                 }
                 else if (val instanceof JFormattedTextField) {
-                    val = Integer.parseInt(((JFormattedTextField) val).getText().replace(",", ""));
+                    val = Integer.parseInt(((JFormattedTextField) val).getText().replace(",", "").replace(" ", ""));
                 }
                 else {
                      val = ((JTextField) val).getText();
