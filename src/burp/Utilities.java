@@ -88,6 +88,7 @@ class ConfigurableSettings {
         put("auto-nest params", false);
         put("try cache poison", true);
         put("try method flip", false);
+        put("try -_ bypass", false);
         put("thread pool size", 8);
         put("rotation interval", 200);
         put("rotation increment", 4);

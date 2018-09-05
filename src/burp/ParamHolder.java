@@ -34,7 +34,7 @@ class ParamHolder {
             int max = params.size();
             for (int i=0; i<max; i++) {
                 String param = params.get(i);
-                if (param.contains("-")) {
+                if (param.contains("-") && Utilities.globalSettings.getBoolean("try -_ bypass")) {
                     params.add(param.replace("-", "_"));
                 }
             }
