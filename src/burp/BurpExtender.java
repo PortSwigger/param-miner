@@ -324,7 +324,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     String calculateValue(String unparsed) {
-        return Utilities.toCanary(unparsed) + attackID + value;
+        return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
     }
 
     @Override
@@ -470,7 +470,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     String calculateValue(String unparsed) {
-        return Utilities.toCanary(unparsed) + attackID + value;
+        return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
     }
 
 

@@ -86,6 +86,7 @@ class ConfigurableSettings {
         put("scan identified params", false);
         put("auto-mine proxy traffic", false);
         put("auto-nest params", false);
+        put("fuzz detect", false);
         put("try cache poison", true);
         put("try method flip", false);
         put("try -_ bypass", false);
@@ -731,6 +732,15 @@ class Utilities {
             );
         } catch (IllegalArgumentException e) {
             Utilities.err("Couldn't scan, bad insertion points: "+Arrays.toString(offsetList.get(0)));
+        }
+    }
+
+    static String fuzzSuffix() {
+        if(Utilities.globalSettings.getBoolean("fuzz detect")) {
+            return "<a`'\\\"${{\\\\";
+        }
+        else {
+            return "";
         }
     }
 
