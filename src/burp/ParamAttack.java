@@ -20,7 +20,7 @@ class ParamAttack {
     private WordProvider bonusParams;
     private HashMap<String, String> requestParams;
     private ParamHolder paramBuckets;
-    private int bucketSize;
+    private int bucketSize = 1;
     private IHttpRequestResponse baseRequestResponse;
     private PayloadInjector injector;
     private String attackID;
@@ -143,8 +143,11 @@ class ParamAttack {
 
         int longest = config.getInt("max param length");
 
+        // fixme this may exceed the max bucket size
+        calculateBucketSize(type, longest);
+
         StringBuilder basePayload = new StringBuilder();
-        for (int i = 1; i < 8; i++) {
+        for (int i = 1; i < min(8, bucketSize); i++) {
             basePayload.append("|");
             basePayload.append(Utilities.randomString(longest));
             if(i % 4 == 0) {
@@ -152,7 +155,7 @@ class ParamAttack {
             }
         }
 
-        calculateBucketSize(type, longest);
+        // calculateBucketSize(type, longest); was here
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
         Utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
@@ -262,7 +265,9 @@ class ParamAttack {
         for(int i=0; i<4; i++) {
             base.addAttack(this.injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
         }
-        base.addAttack(this.injector.probeAttack(Utilities.randomString(6)+"|"+Utilities.randomString(12)));
+        if (bucketSize > 1) {
+            base.addAttack(this.injector.probeAttack(Utilities.randomString(6) + "|" + Utilities.randomString(12)));
+        }
         return base;
     }
 
