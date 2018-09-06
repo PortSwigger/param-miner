@@ -84,7 +84,10 @@ class ConfigurableSettings {
         put("max one per host", false);
         put("max one per host+status", false);
         put("scan identified params", false);
-        put("auto-mine proxy traffic", false);
+        put("enable auto-mine", false);
+        put("auto-mine headers", false);
+        put("auto-mine cookies", false);
+        put("auto-mine params", false);
         put("auto-nest params", false);
         put("fuzz detect", false);
         put("try cache poison", true);

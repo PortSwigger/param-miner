@@ -96,7 +96,7 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
     }
 
     private void launchScan(IHttpRequestResponse messageInfo) {
-        if (!Utilities.globalSettings.getBoolean("auto-mine proxy traffic")) {
+        if (!Utilities.globalSettings.getBoolean("enable auto-mine")) {
             return;
         }
 
@@ -114,10 +114,19 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
 
         String broadCode = codeBuidler.toString();
         if (!alreadyScanned.contains(broadCode)){
-            Utilities.out("Queueing headers+cookies on "+reqInfo.getUrl());
-            taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_COOKIE, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
-            taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, Utilities.PARAM_HEADER, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            //Utilities.out("Queueing headers+cookies on "+reqInfo.getUrl());
+            if (Utilities.globalSettings.getBoolean("auto-mine headers")) {
+                taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, Utilities.PARAM_HEADER, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            }
+            if (Utilities.globalSettings.getBoolean("auto-mine cookies")) {
+                taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_COOKIE, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            }
+
             alreadyScanned.add(broadCode);
+        }
+
+        if (!Utilities.globalSettings.getBoolean("auto-mine params")) {
+            return;
         }
 
         codeBuidler.append(

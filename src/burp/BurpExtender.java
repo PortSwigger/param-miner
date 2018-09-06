@@ -29,8 +29,14 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
         ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
-            taskEngine.setMaximumPoolSize(Integer.parseInt(value));
-            taskEngine.setCorePoolSize(Integer.parseInt(value));
+            Utilities.out("Updating active thread pool size to "+value);
+            try {
+                taskEngine.setCorePoolSize(Integer.parseInt(value));
+                taskEngine.setMaximumPoolSize(Integer.parseInt(value));
+            } catch (IllegalArgumentException e) {
+                taskEngine.setMaximumPoolSize(Integer.parseInt(value));
+                taskEngine.setCorePoolSize(Integer.parseInt(value));
+            }
         });
 
         callbacks.setExtensionName(name);
