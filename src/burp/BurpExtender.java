@@ -18,6 +18,9 @@ import java.util.concurrent.*;
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
 
+
+
+
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
     private static final String version = "1.04";
@@ -26,7 +29,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
         new Utilities(callbacks);
-        BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
+        BlockingQueue<Runnable> tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
         ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
             Utilities.out("Updating active thread pool size to "+value);
