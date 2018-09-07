@@ -740,7 +740,7 @@ class Utilities {
 
     static String fuzzSuffix() {
         if(Utilities.globalSettings.getBoolean("fuzz detect")) {
-            return "<a`'\\\"${{\\\\";
+            return "`'\"${{\\"; // <a
         }
         else {
             return "";
