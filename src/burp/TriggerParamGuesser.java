@@ -48,6 +48,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         }
 
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
+        Collections.shuffle(reqlist);
 
         int cache_size = thread_count;
         if (config.getBoolean("max one per host")) {
