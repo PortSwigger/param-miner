@@ -58,6 +58,7 @@ Public-Key-Pins-Report-Only
 Range
 Referer~http://%s.%h/
 Referrer-Policy
+Report-To
 Retry-After
 Server
 Set-Cookie
