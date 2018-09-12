@@ -23,13 +23,20 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.04";
+    private static final String version = "1.05";
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
         new Utilities(callbacks);
-        BlockingQueue<Runnable> tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
+        BlockingQueue<Runnable> tasks;
+        if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
+            tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
+        }
+        else {
+            tasks = new LinkedBlockingQueue<>();
+        }
+
         ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
             Utilities.out("Updating active thread pool size to "+value);
