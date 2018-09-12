@@ -380,6 +380,8 @@ class ParamAttack {
         bonusParams = new WordProvider();
 
 
+
+
         if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             bonusParams.addSource("/headers");
         }
@@ -396,7 +398,7 @@ class ParamAttack {
             bonusParams.addSource(String.join("\n", params));
         }
 
-        if (config.getBoolean("use basic wordlist")) {
+        if (type != Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             bonusParams.addSource("/params");
         }
 
@@ -404,6 +406,9 @@ class ParamAttack {
             bonusParams.addSource("/functions");
             if (type != Utilities.PARAM_HEADER) {
                 bonusParams.addSource("/headers");
+            }
+            else {
+                bonusParams.addSource("/params");
             }
             bonusParams.addSource("/words");
             bonusParams.addSource("/usr/share/dict/words");

@@ -246,7 +246,7 @@ class ParamGuesser implements Runnable {
                                     }
                                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 
-                                    if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())) {
+                                    if (true || type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())) {
                                         scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
                                     }
 
