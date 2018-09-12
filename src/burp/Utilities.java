@@ -70,7 +70,7 @@ class ConfigurableSettings {
 
     ConfigurableSettings() {
         settings = new LinkedHashMap<>();
-        put("Add fixed cachebuster", true);
+        put("Add 'fcbz' cachebuster", false);
         put("Add dynamic cachebuster", false);
         put("learn observed words", false);
         put("skip boring words", true);

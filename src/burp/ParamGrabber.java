@@ -85,7 +85,7 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
         if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
             cacheBusterName = Utilities.generateCanary();
         }
-        else if (Utilities.globalSettings.getBoolean("Add fixed cachebuster")) {
+        else if (Utilities.globalSettings.getBoolean("Add 'fcbz' cachebuster")) {
             cacheBusterName = "fcbz";
         }
 
