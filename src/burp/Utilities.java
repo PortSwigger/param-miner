@@ -237,7 +237,7 @@ class ConfigurableSettings {
                     val = ((JCheckBox) val).isSelected();
                 }
                 else if (val instanceof JFormattedTextField) {
-                    val = Integer.parseInt(((JFormattedTextField) val).getText().replace(",", "").replace(" ", ""));
+                    val = Integer.parseInt(((JFormattedTextField) val).getText().replaceAll("[^\\d]", ""));
                 }
                 else {
                      val = ((JTextField) val).getText();
