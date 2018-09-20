@@ -24,6 +24,7 @@ import static burp.Keysmith.getWords;
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
     private static final String version = "1.05";
+    private ThreadPoolExecutor taskEngine;
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -37,7 +38,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             tasks = new LinkedBlockingQueue<>();
         }
 
-        ThreadPoolExecutor taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
+        taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
             Utilities.out("Updating active thread pool size to "+value);
             try {
@@ -86,6 +87,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     public void extensionUnloaded() {
         Utilities.log("Aborting all attacks");
         Utilities.unloaded.set(true);
+        taskEngine.getQueue().clear();
+        taskEngine.shutdown();
     }
 
 }
