@@ -654,7 +654,9 @@ class Utilities {
         return request;
     }
 
-    static byte[] appendToQuery(byte[] request, String suffix) {
+
+
+    static byte[] appendToQueryzzz(byte[] request, String suffix) {
         if (suffix == null || suffix.equals("")) {
             return request;
         }
@@ -675,6 +677,23 @@ class Utilities {
         }
 
         return replace(request, " HTTP/1.1".getBytes(), (suffix+" HTTP/1.1").getBytes());
+    }
+
+    static byte[] appendToQuery(byte[] request, String suffix) {
+        String url = getPathFromRequest(request);
+        if(url.contains("?")) {
+            if (url.indexOf("?") == url.length()-1) {
+                // add suffix
+            }
+            else {
+                suffix = "&" + suffix;
+            }
+        }
+        else {
+            suffix = "?" + suffix;
+        }
+
+        return replace(request, url.getBytes(), (url+suffix).getBytes());
     }
 
     static byte[] appendToPath(byte[] request, String suffix) {
