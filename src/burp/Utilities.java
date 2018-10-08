@@ -693,7 +693,7 @@ class Utilities {
             suffix = "?" + suffix;
         }
 
-        return replace(request, url.getBytes(), (url+suffix).getBytes());
+        return replaceFirst(request, url.getBytes(), (url+suffix).getBytes());
     }
 
     static byte[] appendToPath(byte[] request, String suffix) {
