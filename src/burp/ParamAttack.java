@@ -379,7 +379,9 @@ class ParamAttack {
 
         bonusParams = new WordProvider();
 
-
+        if (config.getBoolean("use custom wordlist")) {
+            bonusParams.addSource(config.getString("custom wordlist path"));
+        }
 
 
         if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
@@ -411,7 +413,6 @@ class ParamAttack {
                 bonusParams.addSource("/params");
             }
             bonusParams.addSource("/words");
-            bonusParams.addSource("/usr/share/dict/words");
         }
 
         // only use keys if the request isn't JSON

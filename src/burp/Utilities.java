@@ -78,6 +78,8 @@ class ConfigurableSettings {
         put("response", true);
         put("use basic wordlist", true);
         put("use bonus wordlist", false);
+        put("use custom wordlist", false);
+        put("custom wordlist path", "/usr/share/dict/words");
         put("bruteforce", false);
         put("skip uncacheable", false);
         put("dynamic keyload", false);
