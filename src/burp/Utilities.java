@@ -376,18 +376,6 @@ class Utilities {
         return number;
     }
 
-    static String filter(String input, String safeChars) {
-        StringBuilder out = new StringBuilder(input.length());
-        HashSet<Character> charset = new HashSet<>();
-        charset.addAll(safeChars.chars().mapToObj(c -> (char) c).collect(Collectors.toList()));
-        for(char c: input.toCharArray()) {
-            if (charset.contains(c)) {
-                out.append(c);
-            }
-        }
-        return out.toString();
-    }
-
     private static char[] DIGITS = {'0', 'a' , 'b' ,
             'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
             'i' , 'j' , 'k' , 'l' , 'm' , 'n' ,
@@ -416,6 +404,17 @@ class Utilities {
     }
 
 
+    static String filter(String input, String safeChars) {
+        StringBuilder out = new StringBuilder(input.length());
+        HashSet<Character> charset = new HashSet<>();
+        charset.addAll(safeChars.chars().mapToObj(c -> (char) c).collect(Collectors.toList()));
+        for(char c: input.toCharArray()) {
+            if (charset.contains(c)) {
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
 
     static boolean invertable(String value) {
         return !value.equals(invert(value));

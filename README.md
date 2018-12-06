@@ -15,11 +15,18 @@ For further information, please refer to the whitepaper at https://portswigger.n
 
 The code can be found at https://github.com/portswigger/param-miner
 
+If you'd like to rate limit your attack, use the Distribute Damage extension.
+
 Contributions and feature requests are welcome.
 
 # Changelog
  
-**1.03 20180809**
+**1.06 2018-10-10**
+ - Support custom wordlists
+ - Support fuzz-based detection
+ - Numerous bug fixes and quality of life tweaks
+ 
+**1.03 2018-08-09**
  - First public release
 
 # Installation
