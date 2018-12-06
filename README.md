@@ -20,6 +20,8 @@ If you'd like to rate limit your attack, use the Distribute Damage extension.
 Contributions and feature requests are welcome.
 
 # Changelog
+**1.07 2018-12-06**
+ - Fix config window size for small screens (thanks @misoxxx)
  
 **1.06 2018-10-10**
  - Support custom wordlists
