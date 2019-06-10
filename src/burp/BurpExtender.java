@@ -401,7 +401,12 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             if ("".equals(fullParam[0])) {
                 continue;
             }
-            preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
+            if (type == Utilities.PARAM_HEADER) {
+                preppedParams.add(fullParam[0] + equals + fullParam[1]);
+            }
+            else {
+                preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
+            }
         }
 
         return String.join(join, preppedParams) + trail;
