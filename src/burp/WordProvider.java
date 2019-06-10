@@ -16,14 +16,14 @@ class WordProvider {
 
     String getNext() {
         getNextSource();
-        if (currentSource == null || !currentSource.hasNext()){
+        if (currentSource == null || !currentSource.hasNextLine()){
             return null;
         }
-        return currentSource.next();
+        return currentSource.nextLine();
     }
 
     private void getNextSource() {
-        if (currentSource != null && currentSource.hasNext()) {
+        if (currentSource != null && currentSource.hasNextLine()) {
             return;
         }
 
@@ -31,13 +31,13 @@ class WordProvider {
             String filename = sources.removeFirst();
             try {
                 currentSource = new Scanner(getClass().getResourceAsStream(filename));
-                if (currentSource.hasNext()) {
+                if (currentSource.hasNextLine()) {
                     return;
                 }
             } catch (NullPointerException e) {
                 try {
                     currentSource = new Scanner(new File(filename));
-                    if (currentSource.hasNext()) {
+                    if (currentSource.hasNextLine()) {
                         return;
                     }
                 }
