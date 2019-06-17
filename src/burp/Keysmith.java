@@ -235,7 +235,7 @@ public class Keysmith {
     }
 
     static String permute(String fullparam) {
-        return permute(fullparam, true);
+        return permute(fullparam, false);
     }
 
     static String permute(String fullparam, boolean allowValueChange) {

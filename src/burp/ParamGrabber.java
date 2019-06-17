@@ -3,7 +3,6 @@ package burp;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.omg.PortableInterceptor.RequestInfo;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

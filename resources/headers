@@ -1164,3 +1164,6 @@ X-FORWARDED-FOR
 REFERER
 USER-AGENT
 HOST
+Command
+__requestUri
+__RequestVerb

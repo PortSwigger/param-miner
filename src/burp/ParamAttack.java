@@ -367,7 +367,9 @@ class ParamAttack {
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
 
-        params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
+        if (config.getBoolean("request")) {
+            params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
+        }
 
         // todo move this stuff elsewhere - no need to load it into memory in advance
         params.addAll(paramGrabber.getSavedGET());

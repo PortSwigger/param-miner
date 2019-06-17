@@ -338,7 +338,12 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
                 host = header.split(": ", 2)[1];
             }
             header = header.split(": ", 2)[0];
-            present.put(header.toLowerCase(), header);
+            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
+                present.put(header.toLowerCase(), header);
+            }
+            else {
+                present.put(header, header);
+            }
         }
     }
 

@@ -76,6 +76,7 @@ class ConfigurableSettings {
         put("skip boring words", true);
         put("only report unique params", false);
         put("response", true);
+        put("request", true);
         put("use basic wordlist", true);
         put("use bonus wordlist", false);
         put("use custom wordlist", false);
@@ -101,6 +102,8 @@ class ConfigurableSettings {
         put("force bucketsize", -1);
         put("max bucketsize", 65536);
         put("max param length", 32);
+        put("lowercase headers", true);
+        put("name in issue", false);
 
         for(String key: settings.keySet()) {
             //Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings

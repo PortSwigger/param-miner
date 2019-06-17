@@ -244,6 +244,9 @@ class ParamGuesser implements Runnable {
                                     if (!cacheSuccess && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
                                         title = "Secret uncached input: " + Utilities.getNameFromType(type);
                                     }
+                                    if (Utilities.globalSettings.getBoolean("name in issue")) {
+                                        title +=  ": " + submission.split("~")[0];
+                                    }
                                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 
                                     if (true || type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())) {
@@ -338,11 +341,27 @@ class ParamGuesser implements Runnable {
                 Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param"));
             }
 
+            byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
+            IParameter testCacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+            testReq = Utilities.helpers.addParameter(testReq, testCacheBuster);
 
-            int attackDedication = 3;
+            int attackDedication;
             if (canSeeCache(base.getResponse())) {
-                attackDedication = 12;
+                attackDedication = 30;
             }
+            else {
+                attackDedication = 5;
+                for (int i=0;i<5;i++) {
+                    IHttpRequestResponse base2 = Utilities.attemptRequest(injector.getService(), testReq);
+                    if (canSeeCache(base2.getResponse())) {
+                        attackDedication = 30;
+                        break;
+                    }
+                }
+            }
+
+
+
 
             String pathCacheBuster = Utilities.generateCanary() + ".jpg";
 
@@ -354,9 +373,7 @@ class ParamGuesser implements Runnable {
             IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
             short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 
-            byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
-            IParameter testCacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-            testReq = Utilities.helpers.addParameter(testReq, testCacheBuster);
+
             IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
 
             boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes());

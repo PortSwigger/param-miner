@@ -83,7 +83,9 @@ class ParamHolder {
 
         if (type == Utilities.PARAM_HEADER) {
             params.removeIf(x -> Character.isDigit(x.charAt(0)));
-            params.replaceAll(String::toLowerCase);
+            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
+                params.replaceAll(String::toLowerCase);
+            }
         }
     }
 }
