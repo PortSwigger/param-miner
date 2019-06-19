@@ -93,6 +93,7 @@ class ConfigurableSettings {
         put("auto-mine params", false);
         put("auto-nest params", false);
         put("fuzz detect", false);
+        put("carpet bomb", false);
         put("try cache poison", true);
         put("try method flip", false);
         put("try -_ bypass", false);

@@ -196,7 +196,7 @@ class ParamGuesser implements Runnable {
                 localBase = base;
             }
 
-            if (!Utilities.similar(localBase, paramGuess)) {
+            if (!Utilities.globalSettings.getBoolean("carpet bomb") && !Utilities.similar(localBase, paramGuess)) {
                 Attack confirmParamGuess = injector.probeAttack(submission);
 
                 Attack failAttack = injector.probeAttack(Keysmith.permute(submission));

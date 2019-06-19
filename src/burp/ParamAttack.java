@@ -146,12 +146,14 @@ class ParamAttack {
         // fixme this may exceed the max bucket size
         calculateBucketSize(type, longest);
 
-        StringBuilder basePayload = new StringBuilder();
-        for (int i = 1; i < min(8, bucketSize); i++) {
-            basePayload.append("|");
-            basePayload.append(Utilities.randomString(longest));
-            if(i % 4 == 0) {
-                base.addAttack(injector.probeAttack(basePayload.toString()));
+        if (!Utilities.globalSettings.getBoolean("carpet bomb")) {
+            StringBuilder basePayload = new StringBuilder();
+            for (int i = 1; i < min(8, bucketSize); i++) {
+                basePayload.append("|");
+                basePayload.append(Utilities.randomString(longest));
+                if (i % 4 == 0) {
+                    base.addAttack(injector.probeAttack(basePayload.toString()));
+                }
             }
         }
 
