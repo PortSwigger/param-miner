@@ -84,7 +84,7 @@ X-Forwarded-Proto
 X-Forwarded-Port
 Front-End-Https
 X-Forwarded-Protocol
-X-Forwarded-Ssl 
+X-Forwarded-Ssl
 X-Url-Scheme
 X-Cluster-Client-IP
 X-Forwarded-Server~%s.%h
@@ -363,7 +363,7 @@ REDIRECTION-USE-PROXY
 REDIRECT-PROBLEM-WITHOUTWWW
 REDIRECT-PROBLEM-WITHWWW
 REF
-REFERER 
+REFERER
 REFRESH
 REMIX-HASH
 REMOTE-HOST-WP
