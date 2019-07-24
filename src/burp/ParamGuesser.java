@@ -407,6 +407,10 @@ class ParamGuesser implements Runnable {
                 }
             }
 
+            // fixme remove this
+            reflectPoisonMightWork = false;
+            statusPoisonMightWork = false;
+
             Utilities.log("Dedicated: "+attackDedication);
             for (int i = 1; i < attackDedication; i++) {
 
@@ -420,6 +424,12 @@ class ParamGuesser implements Runnable {
                     //if (tryStatusCache(injector, param, attackDedication, pathCacheBuster, base404, get404Code, i))
                     if (tryStatusCache(injector, param, attackDedication, get404Code))
                         return true;
+                }
+
+                if (!reflectPoisonMightWork && !statusPoisonMightWork) {
+                    if (tryDiffCache(injector, param, attackDedication)) {
+                        return true;
+                    }
                 }
             }
 
@@ -441,6 +451,46 @@ class ParamGuesser implements Runnable {
         else {
             return paramName;
         }
+    }
+
+    private boolean tryDiffCache(PayloadInjector injector, String param, int attackDedication) {
+        String canary = Utilities.generateCanary()+".jpg";
+        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
+        setPoison200Req = Utilities.appendToPath(setPoison200Req, canary);
+        for(int j=0; j<attackDedication; j++) {
+            Utilities.attemptRequest(injector.getService(), setPoison200Req);
+        }
+
+        byte[] getPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes("z"+param+"z"));
+        byte[] fakePoisonReq =  Utilities.appendToPath(getPoisonReq, Utilities.generateCanary()+".jpg");
+        getPoisonReq = Utilities.appendToPath(getPoisonReq, canary);
+        IHttpRequestResponse getPoisoned = Utilities.attemptRequest(injector.getService(), getPoisonReq);
+
+        IResponseVariations baseline = Utilities.helpers.analyzeResponseVariations();
+        IResponseVariations poisoned = Utilities.helpers.analyzeResponseVariations(getPoisoned.getResponse());
+        boolean diff = false;
+        HashSet<String> diffed = new HashSet<>();
+        for(int i=0; i<10; i++) {
+            diffed.clear();
+            diff = false;
+            baseline.updateWith(Utilities.attemptRequest(injector.getService(), fakePoisonReq).getResponse());
+            for (String attribute: baseline.getInvariantAttributes()) {
+                if (baseline.getAttributeValue(attribute, 0) != poisoned.getAttributeValue(attribute, 0)) {
+                    diff = true;
+                    diffed.add(attribute);
+                }
+            }
+            if (!diff) {
+                break;
+            }
+        }
+
+        if (diff) {
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), getPoisoned, "Extra Dubious cache poisoning ", "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
+            return true;
+        }
+
+        return false;
     }
 
     private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, short get404Code) {
