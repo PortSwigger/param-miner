@@ -468,12 +468,14 @@ class ParamGuesser implements Runnable {
 
         IResponseVariations baseline = Utilities.helpers.analyzeResponseVariations();
         IResponseVariations poisoned = Utilities.helpers.analyzeResponseVariations(getPoisoned.getResponse());
+        IHttpRequestResponse resp = null;
         boolean diff = false;
         HashSet<String> diffed = new HashSet<>();
         for(int i=0; i<10; i++) {
             diffed.clear();
             diff = false;
-            baseline.updateWith(Utilities.attemptRequest(injector.getService(), fakePoisonReq).getResponse());
+            resp = Utilities.attemptRequest(injector.getService(), fakePoisonReq);
+            baseline.updateWith(resp.getResponse());
             for (String attribute: baseline.getInvariantAttributes()) {
                 if (baseline.getAttributeValue(attribute, 0) != poisoned.getAttributeValue(attribute, 0)) {
                     diff = true;
@@ -486,7 +488,10 @@ class ParamGuesser implements Runnable {
         }
 
         if (diff) {
-            Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), getPoisoned, "Extra Dubious cache poisoning ", "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
+            IHttpRequestResponse[] attachedRequests = new IHttpRequestResponse[2];
+            attachedRequests[0] = resp;
+            attachedRequests[1] = getPoisoned;
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), attachedRequests, "Extra Dubious cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
             return true;
         }
 
