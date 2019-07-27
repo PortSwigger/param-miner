@@ -407,10 +407,6 @@ class ParamGuesser implements Runnable {
                 }
             }
 
-            // fixme remove this
-            reflectPoisonMightWork = false;
-            statusPoisonMightWork = false;
-
             Utilities.log("Dedicated: "+attackDedication);
             for (int i = 1; i < attackDedication; i++) {
 
