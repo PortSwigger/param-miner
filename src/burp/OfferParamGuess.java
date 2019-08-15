@@ -22,7 +22,7 @@ class OfferParamGuess implements IContextMenuFactory {
         IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
         List<JMenuItem> options = new ArrayList<>();
 
-        if(reqs.length == 0) {
+        if(reqs == null || reqs.length == 0) {
             return options;
         }
 
@@ -34,9 +34,15 @@ class OfferParamGuess implements IContextMenuFactory {
         cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
         options.add(cookieProbeButton);
 
-        JMenuItem headerProbeButton = new JMenuItem("Guess headers!");
+        JMenuItem headerProbeButton = new JMenuItem("Guess headers");
         headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
         options.add(headerProbeButton);
+
+        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
+            JMenuItem valueProbeButton = new JMenuItem("Guess value");
+            valueProbeButton.addActionListener(new ValueGuesser(reqs, invocation.getSelectionBounds()));
+            options.add(valueProbeButton);
+        }
 
 
         if (reqs.length == 1 && reqs[0] != null) {
