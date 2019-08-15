@@ -49,11 +49,18 @@ class ValueGuesser implements Runnable, ActionListener {
         // todo try observed values, wordlists etc
         // todo multi-step exploration? number->observed numbers
 
+        ArrayList<Resp> attacks = new ArrayList<>();
+        attacks.add(new Resp(randBase.getFirstRequest()));
+
         for (String potentialValue : potentialValues) {
             int count = 0;
 
+            Attack potentialBase = null;
             for(;count<5;count++) {
-                Attack potentialBase = valueInjector.probeAttack(potentialValue);
+                potentialBase = valueInjector.probeAttack(potentialValue);
+                if (Utilities.similar(randBase, potentialBase)) {
+                    break;
+                }
                 randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
                 if (Utilities.similar(randBase, potentialBase)) {
                     break;
@@ -62,9 +69,12 @@ class ValueGuesser implements Runnable, ActionListener {
 
             if (count == 5) {
                 baseValue = potentialValue;
+                Utilities.out("Alternative code path triggered by value '"+baseValue+"'");
+                attacks.add(new Resp(potentialBase.getFirstRequest()));
                 break;
             }
         }
-        Utilities.out(baseValue);
+
+        Scan.report("Alternative code path", "details", attacks.toArray(new Resp[0]));
     }
 }

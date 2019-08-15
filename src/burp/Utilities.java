@@ -1010,6 +1010,16 @@ class Utilities {
         return attack;
     }
 
+    static URL getURL(byte[] request, IHttpService service) {
+        URL url;
+        try {
+            url = new URL(service.getProtocol(), service.getHost(), service.getPort(), getPathFromRequest(request));
+        } catch (java.net.MalformedURLException e) {
+            url = null;
+        }
+        return url;
+    }
+
     static IHttpRequestResponse attemptRequest(IHttpService service, byte[] req) {
         if(unloaded.get()) {
             Utilities.out("Extension unloaded - aborting attack");
