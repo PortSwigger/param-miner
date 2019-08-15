@@ -95,6 +95,7 @@ class ConfigurableSettings {
         put("fuzz detect", false);
         put("carpet bomb", false);
         put("try cache poison", true);
+        put("twitchy cache poison", false);
         put("try method flip", false);
         put("try -_ bypass", false);
         put("thread pool size", 8);

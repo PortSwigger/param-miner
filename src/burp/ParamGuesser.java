@@ -422,7 +422,7 @@ class ParamGuesser implements Runnable {
                         return true;
                 }
 
-                if (!reflectPoisonMightWork && !statusPoisonMightWork) {
+                if (!reflectPoisonMightWork && !statusPoisonMightWork && Utilities.globalSettings.getBoolean("twitchy cache poison")) {
                     if (tryDiffCache(injector, param, attackDedication)) {
                         return true;
                     }
@@ -458,9 +458,8 @@ class ParamGuesser implements Runnable {
         }
 
         byte[] getPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes("z"+param+"z"));
-        byte[] fakePoisonReq =  Utilities.appendToPath(getPoisonReq, Utilities.generateCanary()+".jpg");
-        getPoisonReq = Utilities.appendToPath(getPoisonReq, canary);
-        IHttpRequestResponse getPoisoned = Utilities.attemptRequest(injector.getService(), getPoisonReq);
+
+        IHttpRequestResponse getPoisoned = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(getPoisonReq, canary));
 
         IResponseVariations baseline = Utilities.helpers.analyzeResponseVariations();
         IResponseVariations poisoned = Utilities.helpers.analyzeResponseVariations(getPoisoned.getResponse());
@@ -470,6 +469,7 @@ class ParamGuesser implements Runnable {
         for(int i=0; i<10; i++) {
             diffed.clear();
             diff = false;
+            byte[] fakePoisonReq =  Utilities.appendToPath(getPoisonReq, Utilities.generateCanary()+".jpg");
             resp = Utilities.attemptRequest(injector.getService(), fakePoisonReq);
             baseline.updateWith(resp.getResponse());
             for (String attribute: baseline.getInvariantAttributes()) {
@@ -487,7 +487,7 @@ class ParamGuesser implements Runnable {
             IHttpRequestResponse[] attachedRequests = new IHttpRequestResponse[2];
             attachedRequests[0] = resp;
             attachedRequests[1] = getPoisoned;
-            Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), attachedRequests, "Extra Dubious cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), attachedRequests, "Attribute-diff cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
             return true;
         }
 
@@ -510,7 +510,7 @@ class ParamGuesser implements Runnable {
             IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), getPoison200Req);
             short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
             if (getPoison200Code != get404Code) {
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning " + j, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Status-code cache poisoning " + j, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
             }
             return true;
         }
