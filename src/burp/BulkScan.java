@@ -63,8 +63,81 @@ class BulkScan implements Runnable  {
         this.config = config;
     }
 
+    public void run() {
+        ScanPool taskEngine = BulkScanLauncher.getTaskEngine();
 
-    private String getKey(IHttpRequestResponse req) {
+        int queueSize = taskEngine.getQueue().size();
+        Utilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
+        queueSize += reqs.length;
+        int thread_count = taskEngine.getCorePoolSize();
+
+        ArrayList<ScanItem> reqlist = new ArrayList<>();
+        for (IHttpRequestResponse req: reqs) {
+            reqlist.add(new ScanItem(req, config));
+        }
+        Collections.shuffle(reqlist);
+
+        int cache_size = queueSize; //thread_count;
+
+        Set<String> keyCache = new HashSet<>();
+
+        Queue<String> cache = new CircularFifoQueue<>(cache_size);
+        HashSet<String> remainingHosts = new HashSet<>();
+
+        int i = 0;
+        int queued = 0;
+
+        // every pass adds at least one item from every host
+        while(!reqlist.isEmpty()) {
+            Utilities.log("Loop "+i++);
+            Iterator<ScanItem> left = reqlist.iterator();
+            while (left.hasNext()) {
+                ScanItem req = left.next();
+                String host = req.host;
+                if (cache.contains(host)) {
+                    remainingHosts.add(host);
+                    continue;
+                }
+
+                if (config.getBoolean("use key")) {
+                    String key = req.getKey();
+                    if (keyCache.contains(key)) {
+                        left.remove();
+                        continue;
+                    }
+                    keyCache.add(key);
+                }
+
+                cache.add(host);
+                left.remove();
+                Utilities.log("Adding request on "+host+" to queue");
+                queued++;
+                taskEngine.execute(new BulkScanItem(scan, req.req));
+            }
+
+            cache = new CircularFifoQueue<>(max(min(remainingHosts.size()-1, thread_count), 1));
+        }
+
+        Utilities.out("Queued " + queued + " attacks");
+
+    }
+}
+
+class ScanItem {
+    IHttpRequestResponse req;
+    String host;
+    private ConfigurableSettings config;
+    IParameter param;
+
+
+    ScanItem(IHttpRequestResponse req, ConfigurableSettings config) {
+        this.req = req;
+        this.host = req.getHttpService().getHost();
+        this.config = config;
+        //Utilities.helpers.analyzeRequest(req).getParameters().get(1).
+    }
+
+    String getKey() {
         IRequestInfo reqInfo = Utilities.helpers.analyzeRequest(req.getRequest());
 
         StringBuilder key = new StringBuilder();
@@ -100,71 +173,6 @@ class BulkScan implements Runnable  {
         }
 
         return key.toString();
-    }
-
-    public void run() {
-        ScanPool taskEngine = BulkScanLauncher.getTaskEngine();
-
-        int queueSize = taskEngine.getQueue().size();
-        Utilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
-        queueSize += reqs.length;
-        int thread_count = taskEngine.getCorePoolSize();
-
-        ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
-        Collections.shuffle(reqlist);
-
-        int cache_size = queueSize; //thread_count;
-
-        Set<String> keyCache = new HashSet<>();
-
-        Queue<String> cache = new CircularFifoQueue<>(cache_size);
-        HashSet<String> remainingHosts = new HashSet<>();
-
-        int i = 0;
-        int queued = 0;
-
-        // every pass adds at least one item from every host
-        while(!reqlist.isEmpty()) {
-            Utilities.log("Loop "+i++);
-            Iterator<IHttpRequestResponse> left = reqlist.iterator();
-            while (left.hasNext()) {
-                IHttpRequestResponse req = left.next();
-                String host = req.getHttpService().getHost();
-                if (cache.contains(host)) {
-                    remainingHosts.add(host);
-                    continue;
-                }
-
-                if (config.getBoolean("use key")) {
-                    String key = getKey(req);
-                    if (keyCache.contains(key)) {
-                        left.remove();
-                        continue;
-                    }
-                    keyCache.add(key);
-                }
-
-                cache.add(host);
-                left.remove();
-                Utilities.log("Adding request on "+host+" to queue");
-                queued++;
-                taskEngine.execute(new BulkScanItem(scan, req));
-            }
-
-            cache = new CircularFifoQueue<>(max(min(remainingHosts.size()-1, thread_count), 1));
-        }
-
-        Utilities.out("Queued " + queued + " attacks");
-
-    }
-}
-
-class ScanItem {
-    IHttpRequestResponse req;
-    IParameter param;
-
-    ScanItem(IHttpRequestResponse req) {
-        //Utilities.helpers.analyzeRequest(req).getParameters().get(1).
     }
 
 }
