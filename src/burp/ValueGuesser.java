@@ -4,9 +4,10 @@ package burp;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
 
 class ValueGuesser implements Runnable, ActionListener {
-    private ConfigurableSettings config;
     private IHttpRequestResponse[] reqs;
     private int[] selection;
 
@@ -18,16 +19,14 @@ class ValueGuesser implements Runnable, ActionListener {
     public void actionPerformed(ActionEvent e) {
         ConfigurableSettings config = Utilities.globalSettings.showSettings();
         if (config != null) {
-            this.config = config;
             (new Thread(this)).start();
         }
     }
 
-    @Override
-    public void run() {
-        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(reqs[0].getRequest(), selection[0], selection[1]);
-        PayloadInjector valueInjector = new PayloadInjector(reqs[0], valueInsertionPoint);
-        String domain = reqs[0].getHttpService().getHost();
+    static void guessValue(IHttpRequestResponse req, int start, int end) {
+        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req.getRequest(), start, end);
+        PayloadInjector valueInjector = new PayloadInjector(req, valueInsertionPoint);
+        String domain = req.getHttpService().getHost();
 
         Attack randBase = valueInjector.probeAttack(Utilities.generateCanary());
         randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
@@ -41,6 +40,7 @@ class ValueGuesser implements Runnable, ActionListener {
         potentialValues.add("1");
         potentialValues.add("false");
         potentialValues.add("true");
+        potentialValues.add("/cow");
         potentialValues.add("https://"+domain+"/");
         potentialValues.add("test@"+domain);
         potentialValues.add("{}");
@@ -71,10 +71,31 @@ class ValueGuesser implements Runnable, ActionListener {
                 baseValue = potentialValue;
                 Utilities.out("Alternative code path triggered by value '"+baseValue+"'");
                 attacks.add(new Resp(potentialBase.getFirstRequest()));
-                break;
             }
         }
 
-        Scan.report("Alternative code path", "details", attacks.toArray(new Resp[0]));
+        if (attacks.size() > 1) {
+            Scan.report("Alternative code path", "details", attacks.toArray(new Resp[0]));
+            // Utilities.doActiveScan(Utilities.attemptRequest(injector.getService(), valueInsertionPoint.buildRequest(baseValue.getBytes())), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+        }
+    }
+
+    @Override
+    public void run() {
+        guessValue(reqs[0], selection[0], selection[1]);
+    }
+}
+
+class ValueScan extends Scan {
+    ValueScan(String name) {
+        super(name);
+    }
+
+    @Override
+    List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+
+
+
+        return null;
     }
 }

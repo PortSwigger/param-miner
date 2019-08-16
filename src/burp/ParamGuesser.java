@@ -616,30 +616,8 @@ class ParamGuesser implements Runnable {
 
         int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
         int end = start + scanBaseGrep.length;
-        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, start, end);
-        PayloadInjector valueInjector = new PayloadInjector(injector.getBase(), valueInsertionPoint);
 
-        Attack randBase = valueInjector.probeAttack(Utilities.generateCanary());
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-
-        String baseValue = "wrtqvetc";
-        ArrayList<String> potentialValues = new ArrayList<>();
-        potentialValues.add("1");
-        potentialValues.add("false");
-        // todo URL, domain, email, phone, postcode, any input validation that might block hitting the backend
-
-        for (String potentialValue : potentialValues) {
-            Attack potentialBase = valueInjector.probeAttack(potentialValue);
-
-            if(!Utilities.similar(randBase, potentialBase)) {
-                baseValue = potentialValue;
-                break;
-            }
-        }
-
-        Utilities.doActiveScan(Utilities.attemptRequest(injector.getService(), valueInsertionPoint.buildRequest(baseValue.getBytes())), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+        ValueGuesser.guessValue(scanBaseAttack, start, end);
     }
 
     private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {

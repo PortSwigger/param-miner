@@ -159,6 +159,16 @@ class BulkScan implements Runnable  {
     }
 }
 
+class ScanItem {
+    IHttpRequestResponse req;
+    IParameter param;
+
+    ScanItem(IHttpRequestResponse req) {
+        //Utilities.helpers.analyzeRequest(req).getParameters().get(1).
+    }
+
+}
+
 class TriggerBulkScan implements ActionListener {
 
     private IHttpRequestResponse[] reqs;
