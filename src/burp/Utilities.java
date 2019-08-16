@@ -68,6 +68,20 @@ class ConfigurableSettings {
         callbacks.put(key, listener);
     }
 
+    void registerSetting(String key, Object value) {
+        if (settings.containsKey(key)) {
+            return;
+        }
+
+        String oldValue = Utilities.callbacks.loadExtensionSetting(key);
+        if (oldValue != null) {
+            putRaw(key, oldValue);
+            return;
+        }
+
+        putRaw(key, encode(value));
+    }
+
     ConfigurableSettings() {
         settings = new LinkedHashMap<>();
         put("Add 'fcbz' cachebuster", false);

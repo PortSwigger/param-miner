@@ -78,6 +78,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
+        ValueScan scanner = new ValueScan("explore param values");
+        new BulkScanLauncher(scanner);
+
         Utilities.callbacks.registerExtensionStateListener(this);
 
         Utilities.out("Loaded " + name + " v" + version);

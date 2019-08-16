@@ -25,6 +25,11 @@ class ValueGuesser implements Runnable, ActionListener {
 
     static void guessValue(IHttpRequestResponse req, int start, int end) {
         IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req.getRequest(), start, end);
+        guessValue(req, valueInsertionPoint);
+    }
+
+
+    static void guessValue(IHttpRequestResponse req, IScannerInsertionPoint valueInsertionPoint) {
         PayloadInjector valueInjector = new PayloadInjector(req, valueInsertionPoint);
         String domain = req.getHttpService().getHost();
 
@@ -86,16 +91,20 @@ class ValueGuesser implements Runnable, ActionListener {
     }
 }
 
-class ValueScan extends Scan {
+class ValueScan extends ParamScan {
+
     ValueScan(String name) {
         super(name);
     }
 
     @Override
     List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+        return null;
+    }
 
-
-
+    @Override
+    List<IScanIssue> doScan(IHttpRequestResponse baseReq, IScannerInsertionPoint insertionPoint) {
+        ValueGuesser.guessValue(baseReq, insertionPoint);
         return null;
     }
 }

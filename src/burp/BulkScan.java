@@ -32,6 +32,15 @@ class BulkScanLauncher {
         BlockingQueue<Runnable> tasks;
         tasks = new LinkedBlockingQueue<>();
 
+        Utilities.globalSettings.registerSetting("thread pool size", 8);
+        Utilities.globalSettings.registerSetting("use key", true);
+        Utilities.globalSettings.registerSetting("key method", true);
+        Utilities.globalSettings.registerSetting("key status", true);
+        Utilities.globalSettings.registerSetting("key content-type", true);
+        Utilities.globalSettings.registerSetting("key server", true);
+        Utilities.globalSettings.registerSetting("key header names", false);
+        Utilities.globalSettings.registerSetting("param-scan cookies", false);
+
 
         ScanPool taskEngine = new ScanPool(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
@@ -71,9 +80,12 @@ class BulkScan implements Runnable  {
         queueSize += reqs.length;
         int thread_count = taskEngine.getCorePoolSize();
 
+
+        //ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
+
         ArrayList<ScanItem> reqlist = new ArrayList<>();
         for (IHttpRequestResponse req: reqs) {
-            reqlist.add(new ScanItem(req, config));
+            reqlist.add(new ScanItem(req, config, scan));
         }
         Collections.shuffle(reqlist);
 
@@ -86,12 +98,14 @@ class BulkScan implements Runnable  {
 
         int i = 0;
         int queued = 0;
+        boolean remove;
 
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
             Utilities.log("Loop "+i++);
-            Iterator<ScanItem> left = reqlist.iterator();
+            ListIterator<ScanItem> left = reqlist.listIterator();
             while (left.hasNext()) {
+                remove = true;
                 ScanItem req = left.next();
                 String host = req.host;
                 if (cache.contains(host)) {
@@ -99,20 +113,35 @@ class BulkScan implements Runnable  {
                     continue;
                 }
 
+
+                if (scan instanceof ParamScan && !req.prepared()) {
+                    ArrayList<ScanItem> newItems = req.prepare();
+                    left.remove();
+                    remove = false;
+                    req = newItems.remove(0);
+                    for (ScanItem item: newItems) {
+                        left.add(item);
+                    }
+                }
+
                 if (config.getBoolean("use key")) {
                     String key = req.getKey();
                     if (keyCache.contains(key)) {
-                        left.remove();
+                        if (remove) {
+                            left.remove();
+                        }
                         continue;
                     }
                     keyCache.add(key);
                 }
 
                 cache.add(host);
-                left.remove();
+                if (remove) {
+                    left.remove();
+                }
                 Utilities.log("Adding request on "+host+" to queue");
                 queued++;
-                taskEngine.execute(new BulkScanItem(scan, req.req));
+                taskEngine.execute(new BulkScanItem(scan, req));
             }
 
             cache = new CircularFifoQueue<>(max(min(remainingHosts.size()-1, thread_count), 1));
@@ -124,25 +153,62 @@ class BulkScan implements Runnable  {
 }
 
 class ScanItem {
+    private Scan scan;
     IHttpRequestResponse req;
     String host;
     private ConfigurableSettings config;
+    private boolean prepared = false;
+    IScannerInsertionPoint insertionPoint;
     IParameter param;
+    IRequestInfo reqInfo = null;
 
 
-    ScanItem(IHttpRequestResponse req, ConfigurableSettings config) {
+    ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan) {
         this.req = req;
         this.host = req.getHttpService().getHost();
         this.config = config;
-        //Utilities.helpers.analyzeRequest(req).getParameters().get(1).
+        this.scan = scan;
+    }
+
+    ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan, IParameter param) {
+        this.req = req;
+        this.host = req.getHttpService().getHost();
+        this.config = config;
+        this.param = param;
+        insertionPoint = new RawInsertionPoint(req.getRequest(), param.getValueStart(), param.getValueEnd());
+        this.prepared = true;
+        this.scan = scan;
+    }
+
+    boolean prepared() {
+        return prepared;
+    }
+
+    ArrayList<ScanItem> prepare() {
+        ArrayList<ScanItem> items = new ArrayList<>();
+        reqInfo = Utilities.helpers.analyzeRequest(req);
+        ArrayList<IParameter> params = new ArrayList<>(reqInfo.getParameters());
+
+        // todo only scan enabled param-types
+        for (IParameter param: params) {
+            items.add(new ScanItem(req, config, scan, param));
+        }
+        return items;
     }
 
     String getKey() {
-        IRequestInfo reqInfo = Utilities.helpers.analyzeRequest(req.getRequest());
+        if (reqInfo == null) {
+            reqInfo = Utilities.helpers.analyzeRequest(req.getRequest());
+        }
 
         StringBuilder key = new StringBuilder();
         key.append(req.getHttpService().getProtocol());
         key.append(req.getHttpService().getHost());
+
+        if (scan instanceof ParamScan) {
+            key.append(param.getName());
+            key.append(param.getType());
+        }
 
         if(  config.getBoolean("key method")) {
             key.append(reqInfo.getMethod());
@@ -168,7 +234,7 @@ class ScanItem {
             }
 
             if (config.getBoolean("key server")) {
-                key.append(Utilities.getHeader(req.getRequest(), "Server"));
+                key.append(Utilities.getHeader(req.getResponse(), "Server"));
             }
         }
 
@@ -237,20 +303,42 @@ class OfferBulkScan implements IContextMenuFactory {
 
 class BulkScanItem implements Runnable {
 
+    private final ScanItem baseItem;
     private final IHttpRequestResponsePersisted baseReq;
     private final Scan scanner;
 
-    BulkScanItem(Scan scanner, IHttpRequestResponse baseReq) {
-        this.baseReq = Utilities.callbacks.saveBuffersToTempFiles(baseReq);
+    BulkScanItem(Scan scanner, ScanItem baseReq) {
+        this.baseReq = Utilities.callbacks.saveBuffersToTempFiles(baseReq.req);
+        this.baseItem = baseReq;
         this.scanner = scanner;
     }
 
     public void run() {
-        scanner.doScan(baseReq.getRequest(), this.baseReq.getHttpService());
+        if (scanner instanceof ParamScan) {
+            scanner.doActiveScan(baseReq, baseItem.insertionPoint);
+        }
+        else {
+            scanner.doScan(baseReq.getRequest(), this.baseReq.getHttpService());
+        }
         ScanPool engine = BulkScanLauncher.getTaskEngine();
         long done = engine.getCompletedTaskCount()+1;
         Utilities.out("Completed "+ done + " of "+(engine.getQueue().size()+done));
     }
+}
+
+
+abstract class ParamScan extends Scan {
+    public ParamScan(String name) {
+        super(name);
+    }
+
+    abstract List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint);
+
+    public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+        // todo convert insertion point into appropriate format
+        return doScan(baseRequestResponse, insertionPoint);
+    }
+
 }
 
 abstract class Scan implements IScannerCheck {
