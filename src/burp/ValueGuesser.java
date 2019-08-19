@@ -80,7 +80,7 @@ class ValueGuesser implements Runnable, ActionListener {
 
                 baseValue = potentialValue;
                 Utilities.out("Alternative code path triggered by value '"+baseValue+"'");
-                IHttpRequestResponse altBase = potentialBase.getFirstRequest();
+                IHttpRequestResponse altBase = valueInjector.buildRequest(potentialValue, false);//potentialBase.getFirstRequest();
                 attacks.add(new Resp(altBase));
 
                 if (potentialValue.equals("z")) {
