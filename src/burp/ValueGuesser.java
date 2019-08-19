@@ -81,7 +81,7 @@ class ValueGuesser implements Runnable, ActionListener {
 
         if (attacks.size() > 1) {
             Scan.report("Alternative code path", "details", attacks.toArray(new Resp[0]));
-            // Utilities.doActiveScan(Utilities.attemptRequest(injector.getService(), valueInsertionPoint.buildRequest(baseValue.getBytes())), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+            Utilities.doActiveScan(Utilities.attemptRequest(valueInjector.getService(), valueInsertionPoint.buildRequest(baseValue.getBytes())), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
         }
     }
 

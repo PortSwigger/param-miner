@@ -118,6 +118,9 @@ class BulkScan implements Runnable  {
                     ArrayList<ScanItem> newItems = req.prepare();
                     left.remove();
                     remove = false;
+                    if (newItems.size() == 0) {
+                        continue;
+                    }
                     req = newItems.remove(0);
                     for (ScanItem item: newItems) {
                         left.add(item);
