@@ -31,7 +31,8 @@ class ValueGuesser implements Runnable, ActionListener {
 
     static void guessValue(IHttpRequestResponse req, IScannerInsertionPoint valueInsertionPoint) {
         PayloadInjector valueInjector = new PayloadInjector(req, valueInsertionPoint);
-        String domain = req.getHttpService().getHost();
+        IHttpService service = req.getHttpService();
+        String domain = service.getHost();
 
         Attack randBase = valueInjector.probeAttack(Utilities.generateCanary());
         randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
@@ -41,10 +42,11 @@ class ValueGuesser implements Runnable, ActionListener {
         String baseValue = "wrtqvetc";
         ArrayList<String> potentialValues = new ArrayList<>();
         // order by severity?
-        potentialValues.add("0");
+        potentialValues.add("z"); // false positive catcher
         potentialValues.add("1");
-        potentialValues.add("false");
+        //potentialValues.add("0");
         potentialValues.add("true");
+        //potentialValues.add("false");
         potentialValues.add("/cow");
         potentialValues.add("https://"+domain+"/");
         potentialValues.add("test@"+domain);
@@ -57,6 +59,7 @@ class ValueGuesser implements Runnable, ActionListener {
         ArrayList<Resp> attacks = new ArrayList<>();
         attacks.add(new Resp(randBase.getFirstRequest()));
 
+        String title = "Alternative code path";
         for (String potentialValue : potentialValues) {
             int count = 0;
 
@@ -73,15 +76,29 @@ class ValueGuesser implements Runnable, ActionListener {
             }
 
             if (count == 5) {
+
+
                 baseValue = potentialValue;
                 Utilities.out("Alternative code path triggered by value '"+baseValue+"'");
-                attacks.add(new Resp(potentialBase.getFirstRequest()));
+                IHttpRequestResponse altBase = potentialBase.getFirstRequest();
+                attacks.add(new Resp(altBase));
+
+                if (potentialValue.equals("z")) {
+                    title = "Fake code path";
+                    break;
+                }
+
+                // scan this insertion point with our new base value
+                // Utilities.doActiveScan(Utilities.attemptRequest(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+
+                // scan the entire request with our new base value
+                Utilities.callbacks.doActiveScan(domain, service.getPort(), Utilities.isHTTPS(service), altBase.getRequest());
             }
         }
 
         if (attacks.size() > 1) {
-            Scan.report("Alternative code path", "details", attacks.toArray(new Resp[0]));
-            Utilities.doActiveScan(Utilities.attemptRequest(valueInjector.getService(), valueInsertionPoint.buildRequest(baseValue.getBytes())), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+
+            Scan.report(title, "details", attacks.toArray(new Resp[0]));
         }
     }
 

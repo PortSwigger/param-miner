@@ -762,6 +762,10 @@ class Utilities {
         return matches;
     }
 
+    static boolean isHTTPS(IHttpService service) {
+        return service.getProtocol().toLowerCase().contains("https");
+    }
+
     public static void doActiveScan(IHttpRequestResponse req, int[] offsets) {
         String host = helpers.analyzeRequest(req).getUrl().getHost();
         int port = helpers.analyzeRequest(req).getUrl().getPort();
