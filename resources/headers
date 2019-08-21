@@ -15,6 +15,7 @@ Access-Control-Request-Headers
 Access-Control-Request-Method
 Age
 Allow
+Alt-Used
 Authorization
 Cache-Control
 Connection
