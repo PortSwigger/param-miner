@@ -99,6 +99,8 @@ class BulkScan implements Runnable  {
         int i = 0;
         int queued = 0;
         boolean remove;
+        int prepared = 0;
+        int totalRequests = reqlist.size();
 
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
@@ -116,6 +118,8 @@ class BulkScan implements Runnable  {
 
                 if (scan instanceof ParamScan && !req.prepared()) {
                     ArrayList<ScanItem> newItems = req.prepare();
+                    Utilities.log("Prepared "+prepared + " of "+totalRequests);
+                    prepared++;
                     left.remove();
                     remove = false;
                     if (newItems.size() == 0) {
@@ -123,7 +127,9 @@ class BulkScan implements Runnable  {
                     }
                     req = newItems.remove(0);
                     for (ScanItem item: newItems) {
-                        left.add(item);
+                        if(!keyCache.contains(item.getKey())) {
+                            left.add(item);
+                        }
                     }
                 }
 
@@ -162,8 +168,9 @@ class ScanItem {
     private ConfigurableSettings config;
     private boolean prepared = false;
     IScannerInsertionPoint insertionPoint;
-    IParameter param;
-    IRequestInfo reqInfo = null;
+    private IParameter param;
+    private IRequestInfo reqInfo = null;
+    private String key = null;
 
 
     ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan) {
@@ -192,8 +199,12 @@ class ScanItem {
         reqInfo = Utilities.helpers.analyzeRequest(req);
         ArrayList<IParameter> params = new ArrayList<>(reqInfo.getParameters());
 
-        // todo only scan enabled param-types
+        // todo support non-URL params
+        // Utilities.globalSettings.getBoolean("param-scan cookies")
         for (IParameter param: params) {
+            if (param.getType() != IParameter.PARAM_URL) {
+                continue;
+            }
             items.add(new ScanItem(req, config, scan, param));
         }
         return items;
@@ -202,6 +213,10 @@ class ScanItem {
     String getKey() {
         if (reqInfo == null) {
             reqInfo = Utilities.helpers.analyzeRequest(req.getRequest());
+        }
+
+        if (key != null) {
+            return key;
         }
 
         StringBuilder key = new StringBuilder();
@@ -241,7 +256,9 @@ class ScanItem {
             }
         }
 
-        return key.toString();
+        this.key = key.toString();
+
+        return this.key;
     }
 
 }

@@ -1,6 +1,8 @@
 package burp;
 
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -39,26 +41,44 @@ class ValueGuesser implements Runnable, ActionListener {
         randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
         randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
 
-        String baseValue = "wrtqvetc";
+        String baseValue = valueInsertionPoint.getBaseValue();
         ArrayList<String> potentialValues = new ArrayList<>();
-        // order by severity?
-        potentialValues.add("z"); // false positive catcher
-        potentialValues.add("1");
-        //potentialValues.add("0");
-        potentialValues.add("true");
-        //potentialValues.add("false");
-        potentialValues.add("/cow");
-        potentialValues.add("https://"+domain+"/");
-        potentialValues.add("test@"+domain);
-        potentialValues.add("{}");
-        potentialValues.add("[]");
-        potentialValues.add("`z'z\"${{%{{\\");
+
         // todo try observed values, wordlists etc
         // todo multi-step exploration? number->observed numbers
+        potentialValues.add("z"); // false positive catcher
+
+        if (!StringUtils.isNumeric(baseValue)) {
+            potentialValues.add("1");
+            //potentialValues.add("0");
+        }
+
+        if (!baseValue.equals("true") && !baseValue.equals("false")) {
+            potentialValues.add("true");
+            //potentialValues.add("false");
+        }
+
+        if (!baseValue.startsWith("/") && !baseValue.startsWith("http")) {
+            potentialValues.add("/cow");
+            potentialValues.add("https://"+domain+"/");
+        }
+
+        if (!baseValue.contains("@")) {
+            potentialValues.add("test@" + domain);
+        }
+
+        if (!baseValue.startsWith("{") && !baseValue.startsWith("[")) {
+            potentialValues.add("{}");
+            potentialValues.add("[]");
+        }
+
+        potentialValues.add("`z'z\"${{\\"); // removed % because it isn't getting URL-encoded
+
 
         ArrayList<Resp> attacks = new ArrayList<>();
         attacks.add(new Resp(randBase.getFirstRequest()));
 
+        boolean launchedScan = false;
         String title = "Alternative code path";
         for (String potentialValue : potentialValues) {
             int count = 0;
@@ -73,6 +93,12 @@ class ValueGuesser implements Runnable, ActionListener {
                 if (Utilities.similar(randBase, potentialBase)) {
                     break;
                 }
+
+                Object status = potentialBase.getPrint().get("status_code");
+                if(status != null && "400".equals(status.toString())) {
+                    break;
+                }
+
             }
 
             if (count == 5) {
@@ -88,16 +114,22 @@ class ValueGuesser implements Runnable, ActionListener {
                     break;
                 }
 
-                // scan this insertion point with our new base value
-                // Utilities.doActiveScan(Utilities.attemptRequest(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
 
-                // scan the entire request with our new base value
-                Utilities.callbacks.doActiveScan(domain, service.getPort(), Utilities.isHTTPS(service), altBase.getRequest());
+
+                if (!launchedScan) {
+                    // scan this insertion point with our new base value
+                    // Utilities.doActiveScan(Utilities.attemptRequest(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+
+                    // scan the entire request with our new base value
+                    title = "Alternative code path: "+potentialValue;
+                    Utilities.callbacks.doActiveScan(domain, service.getPort(), Utilities.isHTTPS(service), altBase.getRequest());
+                    launchedScan = true;
+                }
             }
         }
 
         if (attacks.size() > 1) {
-
+            title += "#"+(attacks.size()-1);
             Scan.report(title, "details", attacks.toArray(new Resp[0]));
         }
     }
