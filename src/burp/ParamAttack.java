@@ -225,7 +225,7 @@ class ParamAttack {
                     break;
                 }
             }
-            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize") || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
+            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize")) {
                 break;
             }
 
