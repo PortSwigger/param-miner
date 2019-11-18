@@ -321,6 +321,8 @@ class ParamGuesser implements Runnable {
         return attacks;
     }
 
+    private static String staticCanary = "13375"; // wrtqva
+
     private boolean cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
         if (!Utilities.globalSettings.getBoolean("try cache poison")) {
             return false;
@@ -376,7 +378,7 @@ class ParamGuesser implements Runnable {
 
             IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
 
-            boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes());
+            boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), staticCanary.getBytes());
             boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
 
 
@@ -388,7 +390,7 @@ class ParamGuesser implements Runnable {
             if (reflectPoisonMightWork) {
                 for (String suffix : potentialSuffixes) {
                     testResp = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(testReq, suffix));
-                    if (Utilities.containsBytes(testResp.getResponse(), "wrtqv".getBytes())) {
+                    if (Utilities.containsBytes(testResp.getResponse(), staticCanary.getBytes())) {
                         if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
                             suffixes.add(suffix);
                         } else {
@@ -552,7 +554,7 @@ class ParamGuesser implements Runnable {
 
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
             IHttpRequestResponse getPoison = Utilities.attemptRequest(service, Utilities.appendToPath(Utilities.helpers.addParameter(base.getRequest(), cacheBuster), pathSuffix));
-            if (Utilities.containsBytes(getPoison.getResponse(), "wrtqv".getBytes())) {
+            if (Utilities.containsBytes(getPoison.getResponse(), staticCanary.getBytes())) {
                 Utilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
@@ -630,7 +632,7 @@ class ParamGuesser implements Runnable {
             return false;
         }
 
-        if (!Utilities.containsBytes(failResp, "wrtqva".getBytes())) {
+        if (!Utilities.containsBytes(failResp, staticCanary.getBytes())) {
             return false;
         }
 
