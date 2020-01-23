@@ -9,6 +9,8 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -68,8 +70,7 @@ class ConfigurableSettings {
         callbacks.put(key, listener);
     }
 
-    ConfigurableSettings() {
-        settings = new LinkedHashMap<>();
+    public void setDefaultSettings() {
         put("Add 'fcbz' cachebuster", false);
         put("Add dynamic cachebuster", false);
         put("learn observed words", false);
@@ -101,9 +102,13 @@ class ConfigurableSettings {
         put("force bucketsize", -1);
         put("max bucketsize", 65536);
         put("max param length", 32);
+    }
+
+    ConfigurableSettings() {
+        settings = new LinkedHashMap<>();
+        setDefaultSettings();
 
         for(String key: settings.keySet()) {
-            //Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
             String value = Utilities.callbacks.loadExtensionSetting(key);
             if (Utilities.callbacks.loadExtensionSetting(key) != null) {
                 putRaw(key, value);
@@ -207,6 +212,8 @@ class ConfigurableSettings {
         panel.setLayout(new GridLayout(0, 4));
 
         HashMap<String, Object> configured = new HashMap<>();
+        JButton buttonResetSettings = new JButton("Reset Settings");
+
 
         for(String key: settings.keySet()) {
             String type = getType(key);
@@ -230,7 +237,23 @@ class ConfigurableSettings {
                 configured.put(key, box);
             }
         }
+        panel.add(new JLabel(""));
+        panel.add(new JLabel(""));
+        panel.add(buttonResetSettings);
 
+
+        buttonResetSettings.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                setDefaultSettings();
+                for(String key: settings.keySet()) {
+                    Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
+                }
+                JComponent comp = (JComponent) e.getSource();
+                Window win = SwingUtilities.getWindowAncestor(comp);
+                win.dispose();
+
+            }
+        } );
         int result = JOptionPane.showConfirmDialog(Utilities.getBurpFrame(), panel, "Attack Config", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {
             for(String key: configured.keySet()) {
