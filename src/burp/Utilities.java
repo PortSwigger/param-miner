@@ -231,7 +231,7 @@ class ConfigurableSettings {
             }
         }
 
-        int result = JOptionPane.showConfirmDialog(Utilities.getBurpFrame(), panel, "Attack Config", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(null, panel, "Attack Config", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE); // setting parent frame to null, otherwise the dialog has no focus
         if (result == JOptionPane.OK_OPTION) {
             for(String key: configured.keySet()) {
                 Object val = configured.get(key);
