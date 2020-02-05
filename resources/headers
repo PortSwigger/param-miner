@@ -1,5 +1,6 @@
 x-amzn-remapped-host
 x-amz-website-redirect-location
+x-up-devcap-post-charset
 Accept
 Accept-Charset
 Accept-Encoding
