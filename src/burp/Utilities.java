@@ -846,7 +846,7 @@ class Utilities {
     }
 
     public static boolean containsBytes(byte[] request, byte[] value) {
-        return helpers.indexOf(request, value, false, 1, request.length - 1) != -1;
+        return helpers.indexOf(request, value, false, 1, request.length) != -1;
     }
 
     public static byte[] setHeader(byte[] request, String header, String value) {
