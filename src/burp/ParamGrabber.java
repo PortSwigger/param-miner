@@ -88,10 +88,20 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
             cacheBusterName = "fcbz";
         }
 
+        byte[] req = messageInfo.getRequest();
         if (cacheBusterName != null) {
-            IParameter cacheBuster = burp.Utilities.helpers.buildParameter(cacheBusterName, "1", IParameter.PARAM_URL);
-            messageInfo.setRequest(Utilities.helpers.addParameter(messageInfo.getRequest(), cacheBuster));
+            req = Utilities.appendToQuery(req, cacheBusterName + "=1");
         }
+
+        if (Utilities.globalSettings.getBoolean("Add header cachebuster")) {
+            String cacheBusterValue = Utilities.generateCanary();
+            req = Utilities.addOrReplaceHeader(req, "Origin", "https://" + cacheBusterValue + ".com");
+            req = Utilities.appendToHeader(req, "Accept", ", text/" + cacheBusterValue);
+            req = Utilities.appendToHeader(req, "Accept-Encoding", ", " + cacheBusterValue);
+            req = Utilities.appendToHeader(req, "User-Agent", " " + cacheBusterValue);
+        }
+
+        messageInfo.setRequest(req);
     }
 
     private void launchScan(IHttpRequestResponse messageInfo) {

@@ -86,6 +86,7 @@ class ConfigurableSettings {
         settings = new LinkedHashMap<>();
         put("Add 'fcbz' cachebuster", false);
         put("Add dynamic cachebuster", false);
+        put("Add header cachebuster", false);
         put("learn observed words", false);
         put("skip boring words", true);
         put("only report unique params", false);
@@ -495,6 +496,11 @@ class Utilities {
 
     static String generateCanary() {
         return randomString(4+rnd.nextInt(7)) + Integer.toString(rnd.nextInt(9));
+    }
+
+    public static byte[] appendToHeader(byte[] request, String header, String value) {
+        String baseValue = getHeader(request, header);
+        return addOrReplaceHeader(request, header, baseValue+value);
     }
 
     private static String sensibleURL(URL url) {
