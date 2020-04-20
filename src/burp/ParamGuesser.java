@@ -34,6 +34,8 @@ class ParamGuesser implements Runnable {
     private ParamAttack attack;
     private ConfigurableSettings config;
 
+    private byte[] staticCanary;
+
     ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int stop, ConfigurableSettings config) {
         this.paramGrabber = paramGrabber;
         this.req = req;
@@ -42,6 +44,7 @@ class ParamGuesser implements Runnable {
         this.stop = stop;
         this.taskEngine = taskEngine;
         this.config = config;
+        staticCanary = config.getString("canary").getBytes();
     }
 
     ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine, ConfigurableSettings config) {
@@ -49,6 +52,7 @@ class ParamGuesser implements Runnable {
         this.req = attack.getBaseRequestResponse();
         this.taskEngine = taskEngine;
         this.config = config;
+        staticCanary = config.getString("canary").getBytes();
     }
 
     public void run() {
@@ -249,7 +253,7 @@ class ParamGuesser implements Runnable {
                                     }
                                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 
-                                    if (true || type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), "wrtqva".getBytes())) {
+                                    if (true || type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), staticCanary)) {
                                         scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
                                     }
 
@@ -321,7 +325,7 @@ class ParamGuesser implements Runnable {
         return attacks;
     }
 
-    private static String staticCanary = "13375"; // wrtqva
+
 
     private boolean cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
         if (!Utilities.globalSettings.getBoolean("try cache poison")) {
@@ -378,7 +382,7 @@ class ParamGuesser implements Runnable {
 
             IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
 
-            boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), staticCanary.getBytes());
+            boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), staticCanary);
             boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
 
 
@@ -390,7 +394,7 @@ class ParamGuesser implements Runnable {
             if (reflectPoisonMightWork) {
                 for (String suffix : potentialSuffixes) {
                     testResp = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(testReq, suffix));
-                    if (Utilities.containsBytes(testResp.getResponse(), staticCanary.getBytes())) {
+                    if (Utilities.containsBytes(testResp.getResponse(), staticCanary)) {
                         if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
                             suffixes.add(suffix);
                         } else {
@@ -554,7 +558,7 @@ class ParamGuesser implements Runnable {
 
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
             IHttpRequestResponse getPoison = Utilities.attemptRequest(service, Utilities.appendToPath(Utilities.helpers.addParameter(base.getRequest(), cacheBuster), pathSuffix));
-            if (Utilities.containsBytes(getPoison.getResponse(), staticCanary.getBytes())) {
+            if (Utilities.containsBytes(getPoison.getResponse(), staticCanary)) {
                 Utilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
@@ -622,7 +626,7 @@ class ParamGuesser implements Runnable {
         ValueGuesser.guessValue(scanBaseAttack, start, end);
     }
 
-    private static boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {
+    private boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {
         if (currentParams == null) {
             currentParams = new ArrayList<>();
         }
@@ -632,7 +636,7 @@ class ParamGuesser implements Runnable {
             return false;
         }
 
-        if (!Utilities.containsBytes(failResp, staticCanary.getBytes())) {
+        if (!Utilities.containsBytes(failResp, staticCanary)) {
             return false;
         }
 

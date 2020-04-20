@@ -121,6 +121,7 @@ class ConfigurableSettings {
         put("max param length", 32);
         put("lowercase headers", true);
         put("name in issue", false);
+        put("canary", "zwrtxqva");
 
         for(String key: settings.keySet()) {
             //Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
@@ -797,7 +798,7 @@ class Utilities {
     }
 
     static String toCanary(String payload) {
-        return "wrtqva" + mangle(payload);
+        return Utilities.globalSettings.getString("canary") + mangle(payload);
     }
 
     public static int getBodyStart(byte[] response) {
