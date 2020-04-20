@@ -353,7 +353,7 @@ class ParamGuesser implements Runnable {
 
             int attackDedication;
             if (canSeeCache(base.getResponse())) {
-                attackDedication = 30;
+                attackDedication = 10;
             }
             else {
                 attackDedication = 5;
@@ -570,7 +570,7 @@ class ParamGuesser implements Runnable {
                 }
 
                 title = title + " "+i;
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, title, "Cache poisoning: '" + param + "'. Disregard the request and look for wrtqv in the response", "High", "Firm", "Investigate"));
+                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, title, "Cache poisoning: '" + param + "'. Disregard the request and look for "+config.getString("canary")+" in the response", "High", "Firm", "Investigate"));
                 return true;
             }
         }
