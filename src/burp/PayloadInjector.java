@@ -139,8 +139,7 @@ class PayloadInjector {
         byte[] request = insertionPoint.buildRequest(payload.getBytes());
 
         if (needCacheBuster) {
-            IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-            request = burp.Utilities.helpers.addParameter(request, cacheBuster);
+            request = Utilities.addCacheBuster(request, Utilities.generateCanary());
         }
 
         IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(service, request);
@@ -154,8 +153,8 @@ class PayloadInjector {
 
         //IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         //request = burp.Utilities.helpers.addParameter(request, cacheBuster);
-        request = burp.Utilities.appendToQuery(request, Utilities.generateCanary()+"=1");
-        // todo replace with addCanary method
+        //request = burp.Utilities.appendToQuery(request, Utilities.generateCanary()+"=1");
+        request = Utilities.addCacheBuster(request, Utilities.generateCanary());
 
         IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(service, request);
         return new Attack(requestResponse, null, null, "");
