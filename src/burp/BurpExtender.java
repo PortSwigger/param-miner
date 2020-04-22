@@ -25,6 +25,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
     private static final String version = "1.08";
     private ThreadPoolExecutor taskEngine;
+    public static List<Scan> scans = new ArrayList<>();
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -79,7 +80,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         SwingUtilities.invokeLater(new ConfigMenu());
 
         ValueScan scanner = new ValueScan("param-value probe");
-        new BulkScanLauncher(scanner);
+        scans.add(scanner);
+        new BulkScanLauncher(scans);
 
         Utilities.callbacks.registerExtensionStateListener(this);
 
@@ -335,8 +337,9 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         }
 
         present = new HashMap<>();
-        List<String> headers = Utilities.helpers.analyzeRequest(request).getHeaders();
+        List<String> headers = Utilities.analyzeRequest(request).getHeaders();
         for (String header: headers) {
+            Utilities.out("'"+header+"'");
             if (header.startsWith("Host: ")) {
                 host = header.split(": ", 2)[1];
             }

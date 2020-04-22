@@ -5,7 +5,9 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.sql.*;
@@ -18,14 +20,15 @@ import static org.apache.commons.lang3.math.NumberUtils.max;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class BulkScanLauncher {
 
     private static ScanPool taskEngine;
 
-    BulkScanLauncher(Scan scan) {
+    BulkScanLauncher(List<Scan> scans) {
         taskEngine = buildTaskEngine();
-        Utilities.callbacks.registerContextMenuFactory(new OfferBulkScan(scan));
+        Utilities.callbacks.registerContextMenuFactory(new OfferBulkScan(scans));
     }
 
     private static ScanPool buildTaskEngine() {
@@ -40,6 +43,9 @@ class BulkScanLauncher {
         Utilities.globalSettings.registerSetting("key server", true);
         Utilities.globalSettings.registerSetting("key header names", false);
         Utilities.globalSettings.registerSetting("param-scan cookies", false);
+        Utilities.globalSettings.registerSetting("filter", "");
+        Utilities.globalSettings.registerSetting("mimetype-filter", "");
+        Utilities.globalSettings.registerSetting("resp-filter", "");
 
 
         ScanPool taskEngine = new ScanPool(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
@@ -73,6 +79,7 @@ class BulkScan implements Runnable  {
     }
 
     public void run() {
+        long start = System.currentTimeMillis();
         ScanPool taskEngine = BulkScanLauncher.getTaskEngine();
 
         int queueSize = taskEngine.getQueue().size();
@@ -101,14 +108,53 @@ class BulkScan implements Runnable  {
         boolean remove;
         int prepared = 0;
         int totalRequests = reqlist.size();
+        String filter = Utilities.globalSettings.getString("filter");
+        String respFilter = Utilities.globalSettings.getString("resp-filter");
+        boolean applyRespFilter = !"".equals(respFilter);
+        boolean applyFilter = !"".equals(filter);
+        String mimeFilter = Utilities.globalSettings.getString("mimetype-filter");
+        boolean applyMimeFilter = !"".equals(mimeFilter);
 
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
-            Utilities.log("Loop "+i++);
+            Utilities.out("Loop "+i++);
             ListIterator<ScanItem> left = reqlist.listIterator();
             while (left.hasNext()) {
                 remove = true;
                 ScanItem req = left.next();
+
+
+                if (applyFilter && !Utilities.containsBytes(req.req.getRequest(), filter.getBytes())) {
+                    left.remove();
+                    continue;
+                }
+
+                if (applyMimeFilter) {
+                    byte[] resp = req.req.getResponse();
+                    if (resp == null) {
+                        if (!Utilities.getHeader(req.req.getRequest(), "Accept").toLowerCase().contains(mimeFilter)) {
+                            left.remove();
+                            continue;
+                        }
+                    }
+                    else {
+                        if (!Utilities.getHeader(req.req.getResponse(), "Content-Type").toLowerCase().contains(mimeFilter)) {
+                            left.remove();
+                            continue;
+                        }
+                    }
+                }
+
+                // fixme doesn't actually work - maybe the resp is always null?
+                if (applyRespFilter) {
+                    byte[] resp = req.req.getResponse();
+                    if (resp == null || !Utilities.containsBytes(resp, respFilter.getBytes())) {
+                        Utilities.log("Skipping request due to response filter");
+                        left.remove();
+                        continue;
+                    }
+                }
+
                 String host = req.host;
                 if (cache.contains(host)) {
                     remainingHosts.add(host);
@@ -156,8 +202,7 @@ class BulkScan implements Runnable  {
             cache = new CircularFifoQueue<>(max(min(remainingHosts.size()-1, thread_count), 1));
         }
 
-        Utilities.out("Queued " + queued + " attacks");
-
+        Utilities.out("Queued " + queued + " attacks from "+ totalRequests + " requests in "+(System.currentTimeMillis()-start)/100+" seconds");
     }
 }
 
@@ -169,8 +214,8 @@ class ScanItem {
     private boolean prepared = false;
     IScannerInsertionPoint insertionPoint;
     private IParameter param;
-    private IRequestInfo reqInfo = null;
     private String key = null;
+    String method = null;
 
 
     ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan) {
@@ -185,7 +230,7 @@ class ScanItem {
         this.host = req.getHttpService().getHost();
         this.config = config;
         this.param = param;
-        insertionPoint = new RawInsertionPoint(req.getRequest(), param.getValueStart(), param.getValueEnd());
+        insertionPoint = new RawInsertionPoint(req.getRequest(), param.getName(), param.getValueStart(), param.getValueEnd());
         this.prepared = true;
         this.scan = scan;
     }
@@ -196,10 +241,38 @@ class ScanItem {
 
     ArrayList<ScanItem> prepare() {
         ArrayList<ScanItem> items = new ArrayList<>();
-        reqInfo = Utilities.helpers.analyzeRequest(req);
-        ArrayList<IParameter> params = new ArrayList<>(reqInfo.getParameters());
 
-        // todo support non-URL params
+        method = Utilities.getMethod(req.getRequest());
+
+// no longer required as the filter is done earlier
+//        String filterValue = Utilities.globalSettings.getString("filter");
+//        if (!"".equals(filterValue)) {
+//            if (req.getResponse() == null || !Utilities.containsBytes(req.getResponse(), filterValue.getBytes())) {
+//                return items;
+//            }
+//        }
+
+        // don't waste time analysing GET requests with no = in the request line
+        if (!Utilities.getPathFromRequest(req.getRequest()).contains("=")) {
+            if (!Utilities.globalSettings.getBoolean("add dummy param")) {
+                prepared = true;
+                return items;
+            }
+
+            // if you use setRequest instead, it will overwrite the original!
+            // fixme somehow triggers a stackOverflow
+        }
+
+        if (Utilities.globalSettings.getBoolean("add dummy param")) {
+            req = new Req(Utilities.appendToQuery(req.getRequest(), Utilities.globalSettings.getString("dummy param name")+"=z"), req.getResponse(), req.getHttpService());
+        }
+
+        // analyzeRequest is really slow
+        //reqInfo = Utilities.helpers.analyzeRequest(req);
+        //ArrayList<IParameter> params = new ArrayList<>(reqInfo.getParameters());
+        // fixme why is this null?
+        ArrayList<PartialParam> params = Utilities.getParams(req.getRequest());
+
         // Utilities.globalSettings.getBoolean("param-scan cookies")
         for (IParameter param: params) {
             if (param.getType() != IParameter.PARAM_URL) {
@@ -207,12 +280,14 @@ class ScanItem {
             }
             items.add(new ScanItem(req, config, scan, param));
         }
+        prepared = true;
         return items;
     }
 
     String getKey() {
-        if (reqInfo == null) {
-            reqInfo = Utilities.helpers.analyzeRequest(req.getRequest());
+
+        if (method == null) {
+            method = Utilities.getMethod(req.getRequest());
         }
 
         if (key != null) {
@@ -228,11 +303,11 @@ class ScanItem {
             key.append(param.getType());
         }
 
-        if(  config.getBoolean("key method")) {
-            key.append(reqInfo.getMethod());
+        if(config.getBoolean("key method")) {
+            key.append(method);
         }
 
-        if (req.getResponse() != null) {
+        if (req.getResponse() != null && (config.getBoolean("key header names") || config.getBoolean("key status") || config.getBoolean("key content-type") || config.getBoolean("key server"))) {
             IResponseInfo respInfo = Utilities.helpers.analyzeResponse(req.getResponse());
 
             if (config.getBoolean("key header names")) {
@@ -297,10 +372,10 @@ class TriggerBulkScan implements ActionListener {
 }
 
 class OfferBulkScan implements IContextMenuFactory {
-    private Scan scan;
+    private List<Scan> scans;
 
-    OfferBulkScan(Scan scan) {
-        this.scan = scan;
+    OfferBulkScan(List<Scan> scans) {
+        this.scans = scans;
     }
 
     @Override
@@ -308,15 +383,23 @@ class OfferBulkScan implements IContextMenuFactory {
         IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
         List<JMenuItem> options = new ArrayList<>();
 
-        JMenuItem probeButton = new JMenuItem("Launch "+scan.name);
-        if(reqs != null && reqs.length > 0) {
-            probeButton.addActionListener(new TriggerBulkScan(scan, reqs));
-            options.add(probeButton);
-        } else if(invocation.getSelectedIssues().length > 0) {
-            probeButton.addActionListener(new TriggerBulkScan(scan, invocation.getSelectedIssues()));
-            options.add(probeButton);
+        JMenu scanMenu = new JMenu("Bulk Scan");
+
+        if (reqs != null && reqs.length > 0) {
+            for (Scan scan : scans) {
+                JMenuItem probeButton = new JMenuItem(scan.name);
+                probeButton.addActionListener(new TriggerBulkScan(scan, reqs));
+                scanMenu.add(probeButton);
+            }
+        } else if (invocation.getSelectedIssues().length > 0) {
+            for (Scan scan : scans) {
+                JMenuItem probeButton = new JMenuItem(scan.name);
+                probeButton.addActionListener(new TriggerBulkScan(scan, invocation.getSelectedIssues()));
+                scanMenu.add(probeButton);
+            }
         }
 
+        options.add(scanMenu);
         return options;
     }
 }
@@ -342,7 +425,7 @@ class BulkScanItem implements Runnable {
         }
         ScanPool engine = BulkScanLauncher.getTaskEngine();
         long done = engine.getCompletedTaskCount()+1;
-        Utilities.out("Completed "+ done + " of "+(engine.getQueue().size()+done));
+        Utilities.out("Completed "+ done + " of "+(engine.getQueue().size()+done) + " with ? requests, "+engine.candidates + " candidates and "+engine.findings + " findings ");
     }
 }
 
@@ -367,6 +450,7 @@ abstract class Scan implements IScannerCheck {
 
     Scan(String name) {
         this.name = name;
+        //BurpExtender.scans.add(this);
         //Utilities.callbacks.registerScannerCheck(this);
     }
 
@@ -392,6 +476,8 @@ abstract class Scan implements IScannerCheck {
     }
 
     static void report(String title, String detail, Resp... requests) {
+        BulkScanLauncher.getTaskEngine().findings.incrementAndGet();
+
         IHttpRequestResponse base = requests[0].getReq();
         IHttpService service = base.getHttpService();
 
@@ -407,6 +493,10 @@ abstract class Scan implements IScannerCheck {
     }
 
     Resp request(IHttpService service, byte[] req, int maxRetries, String comment) {
+        if (Utilities.unloaded.get()) {
+            throw new RuntimeException("Unloaded - aborting request");
+        }
+
         IHttpRequestResponse resp = null;
 
         if (loader == null) {
@@ -414,6 +504,10 @@ abstract class Scan implements IScannerCheck {
             while (( resp == null || resp.getResponse() == null) && attempts <= maxRetries) {
                 try {
                     resp = Utilities.callbacks.makeHttpRequest(service, req);
+
+//                    TurboEngine engine = new TurboEngine(service);
+//                    engine.queue(req);
+//                    resp = engine.waitFor().get(0).getReq();
                 } catch (java.lang.RuntimeException e) {
                     Utilities.out("Recovering from request exception");
                     Utilities.err("Recovering from request exception");
@@ -453,6 +547,9 @@ abstract class Scan implements IScannerCheck {
 }
 
 class ScanPool extends ThreadPoolExecutor implements IExtensionStateListener {
+
+    AtomicInteger candidates = new AtomicInteger(0);
+    AtomicInteger findings = new AtomicInteger(0);
 
     ScanPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
@@ -621,62 +718,51 @@ class Req implements IHttpRequestResponse {
 //    }
 }
 
+class RawInsertionPoint implements IScannerInsertionPoint {
+    private byte[] prefix;
+    private byte[] suffix;
+    private String baseValue;
+    private String name;
 
-class ZgrabLoader {
-
-    private Connection conn;
-    private Scan scanner;
-
-    ZgrabLoader(Scan scanner) {
-        this.scanner = scanner;
-
-        try {
-            Class.forName("org.sqlite.JDBC");
-            conn = DriverManager.getConnection("jdbc:sqlite:/Users/james/PycharmProjects/zscanpipeline/requests.db");
-            //Utilities.out(conn.createStatement().executeQuery("select * from requests").getString(1));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    RawInsertionPoint(byte[] req, String name, int start, int end) {
+        this.name = name;
+        this.prefix = Arrays.copyOfRange(req, 0, start);
+        this.suffix = Arrays.copyOfRange(req, end, req.length);
+        baseValue = new String(Arrays.copyOfRange(req, start, end));
     }
 
-    void launchSmugglePipeline() {
-        String template = "POST /cowbar?x=123 HTTP/1.1\r\nHost: %d\r\nAccept: */*\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\n";
 
-        List<String> domains = Arrays.asList("hackxor.net", "store.unity.com", "www.redhat.com");
-
-        scanner.setRequestMethod(this);
-
-        for (String domain: domains) {
-            byte[] request = template.replace("%d", domain).getBytes();
-            IHttpService service = Utilities.callbacks.getHelpers().buildHttpService(domain, 443, true);
-            scanner.doScan(request, service);
-        }
-        Utilities.out("Scan complete");
-
+    @Override
+    public String getInsertionPointName() {
+        return name;
     }
 
-    synchronized byte[] getResponse(String host, byte[] request) {
+    @Override
+    public String getBaseValue() {
+        return baseValue;
+    }
+
+    @Override
+    public byte[] buildRequest(byte[] payload) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
-            PreparedStatement query = conn.prepareStatement("select domain, read from requests where domain = ? and write = ?");
-            query.setString(1, host);
-            query.setString(2, Utilities.helpers.bytesToString(request));
-            ResultSet res = query.executeQuery();
+            outputStream.write(prefix);
+            outputStream.write(payload);
+            outputStream.write(suffix);
+        } catch (IOException e) {
 
-            if (res.isClosed()) {
-                Utilities.out("Couldn't find request");
-                return null;
-            }
-
-            String resp = res.getString(2);
-            if (resp == null) {
-                Utilities.out("returning timeout...");
-                return "".getBytes();
-            }
-
-            return resp.getBytes();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
         }
+
+        return Utilities.fixContentLength(outputStream.toByteArray());
+    }
+
+    @Override
+    public int[] getPayloadOffsets(byte[] payload) {
+        return new int[]{prefix.length, prefix.length+payload.length};
+    }
+
+    @Override
+    public byte getInsertionPointType() {
+        return IScannerInsertionPoint.INS_EXTENSION_PROVIDED;
     }
 }

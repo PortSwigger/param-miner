@@ -26,7 +26,7 @@ class ValueGuesser implements Runnable, ActionListener {
     }
 
     static void guessValue(IHttpRequestResponse req, int start, int end) {
-        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req.getRequest(), start, end);
+        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req.getRequest(), "name", start, end);
         guessValue(req, valueInsertionPoint);
     }
 

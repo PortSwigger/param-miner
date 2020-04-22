@@ -54,6 +54,7 @@ class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
     }
 }
 
+
 interface ConfigListener {
     void valueUpdated(String value);
 }
@@ -790,9 +791,9 @@ class Utilities {
     }
 
     public static void doActiveScan(IHttpRequestResponse req, int[] offsets) {
-        String host = helpers.analyzeRequest(req).getUrl().getHost();
-        int port = helpers.analyzeRequest(req).getUrl().getPort();
-        boolean useHTTPS = helpers.analyzeRequest(req).getUrl().toString().startsWith("https");
+        String host = analyzeRequest(req).getUrl().getHost();
+        int port = analyzeRequest(req).getUrl().getPort();
+        boolean useHTTPS = analyzeRequest(req).getUrl().toString().startsWith("https");
         ArrayList<int[]> offsetList = new ArrayList<>();
         offsetList.add(offsets);
         try {
@@ -1210,6 +1211,96 @@ class Utilities {
         return true;
     }
 
+    public static String getMethod(byte[] request) {
+        int i = 0;
+        while (request[i] != ' ') {
+            i++;
+        }
+        return new String(Arrays.copyOfRange(request, 0, i));
+    }
+
+    static String getHeaders(byte[] response) {
+        if (response == null) { return ""; }
+        int bodyStart = Utilities.getBodyStart(response);
+        String body = Utilities.helpers.bytesToString(Arrays.copyOfRange(response, 0, bodyStart));
+        body = body.substring(body.indexOf("\n")+1);
+        return body;
+    }
+
+
+    // todo support non-URL params
+    public static ArrayList<PartialParam> getParams(byte[] request) {
+        ArrayList<PartialParam> params = new ArrayList<>();
+
+        if (request.length == 0) {
+            return params;
+        }
+
+        int i = 0;
+        while(request[i] != '?') {
+            i += 1;
+            if (i == request.length) {
+                return params;
+            }
+        }
+
+        i += 1;
+
+        while (request[i] != ' ') {
+            StringBuilder name = new StringBuilder();
+            while (request[i] != ' ') {
+                char c = (char) request[i];
+                if (c == '=') {
+                    i++;
+                    break;
+                }
+                name.append(c);
+                i++;
+            }
+
+//            if (request[i] == ' ') {
+//                break;
+//            }
+
+            int valueStart = i;
+            int valueEnd;
+
+            while (true) {
+                char c = (char) request[i];
+                if (c == '&') {
+                    valueEnd = i;
+                    i++;
+                    break;
+                }
+                if (c == ' ') {
+                    valueEnd = i;
+                    break;
+                }
+
+                i++;
+            }
+
+            //Utilities.out("Param: "+name.toString()+"="+value.toString() + " | " + (char) request[valueStart] + " to " + (char) request[valueEnd]);
+            params.add(new PartialParam(name.toString(), valueStart, valueEnd, IParameter.PARAM_URL));
+            //Utilities.out(Utilities.helpers.bytesToString(new RawInsertionPoint(request, valueStart, valueEnd).buildRequest("injected".getBytes())));
+        }
+
+        return params;
+    }
+
+
+    static IRequestInfo analyzeRequest(byte[] request) {
+        return analyzeRequest(request, null);
+    }
+
+    static IRequestInfo analyzeRequest(IHttpRequestResponse request) {
+        return analyzeRequest(request.getRequest(), request.getHttpService());
+    }
+
+    static IRequestInfo analyzeRequest(byte[] request, IHttpService service) {
+        return new LazyRequestInfo(request, service);
+    }
+
     static IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequestResponse) {
         return reportReflectionIssue(attacks, baseRequestResponse, "");
     }
@@ -1304,7 +1395,7 @@ class Utilities {
             title = "Interesting input handling:" +bestProbe.getName();
         }
 
-        return new Fuzzable(requests, helpers.analyzeRequest(baseRequestResponse).getUrl(), title, detail, reliable, reportedSeverity); //attacks[attacks.length-2].getProbe().getName()
+        return new Fuzzable(requests, analyzeRequest(baseRequestResponse).getUrl(), title, detail, reliable, reportedSeverity); //attacks[attacks.length-2].getProbe().getName()
     }
 }
 
@@ -1312,16 +1403,24 @@ class PartialParam implements IParameter {
 
     private int valueStart, valueEnd;
     private String name;
+    private byte type;
 
     PartialParam(String name, int valueStart, int valueEnd) {
+        this(name, valueStart, valueEnd, IParameter.PARAM_COOKIE);
+    }
+
+    PartialParam(String name, int valueStart, int valueEnd, byte type) {
         this.name = name;
         this.valueStart = valueStart;
         this.valueEnd = valueEnd;
+        this.type = type;
     }
+
+
 
     @Override
     public byte getType() {
-        return IParameter.PARAM_COOKIE;
+        return type;
     }
 
     @Override
@@ -1354,5 +1453,4 @@ class PartialParam implements IParameter {
         return valueEnd;
     }
 }
-
 
