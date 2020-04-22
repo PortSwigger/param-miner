@@ -348,8 +348,7 @@ class ParamGuesser implements Runnable {
             }
 
             byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
-            IParameter testCacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-            testReq = Utilities.helpers.addParameter(testReq, testCacheBuster);
+            testReq = Utilities.addCacheBuster(testReq, Utilities.generateCanary());
 
             int attackDedication;
             if (canSeeCache(base.getResponse())) {
@@ -550,21 +549,22 @@ class ParamGuesser implements Runnable {
     private boolean tryReflectCache(PayloadInjector injector, String param, IHttpRequestResponse base, int attackDedication, int i, String pathSuffix) {
         IHttpService service = injector.getService();
         byte[] setPoisonReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param)), pathSuffix);
-        IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-        setPoisonReq = Utilities.helpers.addParameter(setPoisonReq, cacheBuster);
+
+        String cacheBuster = Utilities.generateCanary();
+        setPoisonReq = Utilities.addCacheBuster(setPoisonReq, cacheBuster);
         for (int j = attackDedication - i; j < attackDedication; j++) {
             Utilities.attemptRequest(service, setPoisonReq);
         }
 
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
-            IHttpRequestResponse getPoison = Utilities.attemptRequest(service, Utilities.appendToPath(Utilities.helpers.addParameter(base.getRequest(), cacheBuster), pathSuffix));
+            IHttpRequestResponse getPoison = Utilities.attemptRequest(service, Utilities.appendToPath(Utilities.addCacheBuster(base.getRequest(), cacheBuster), pathSuffix));
             if (Utilities.containsBytes(getPoison.getResponse(), staticCanary)) {
                 Utilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
                 byte[] headerSplitReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
-                cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
-                byte[] headerSplitResp = Utilities.attemptRequest(service, Utilities.helpers.addParameter(headerSplitReq, cacheBuster)).getResponse();
+                cacheBuster = Utilities.generateCanary();
+                byte[] headerSplitResp = Utilities.attemptRequest(service, Utilities.addCacheBuster(headerSplitReq, cacheBuster)).getResponse();
                 if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
                     title = "Severe cache poisoning";
                 }

@@ -35,7 +35,7 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
     }
 
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
-        if (messageIsRequest) {
+        if (messageIsRequest && toolFlag != IBurpExtenderCallbacks.TOOL_EXTENDER) {
             addCacheBusters(messageInfo);
         }
     }
