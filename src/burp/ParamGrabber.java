@@ -80,26 +80,16 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
             );
         }
 
-        String cacheBusterName = null;
+        byte[] req = messageInfo.getRequest();
+        String cacheBuster = null;
         if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
-            cacheBusterName = Utilities.generateCanary();
+            cacheBuster = Utilities.generateCanary();
         }
         else if (Utilities.globalSettings.getBoolean("Add 'fcbz' cachebuster")) {
-            cacheBusterName = "fcbz";
+            cacheBuster = "fcbz";
         }
 
-        byte[] req = messageInfo.getRequest();
-        if (cacheBusterName != null) {
-            req = Utilities.appendToQuery(req, cacheBusterName + "=1");
-        }
-
-        if (Utilities.globalSettings.getBoolean("Add header cachebuster")) {
-            String cacheBusterValue = Utilities.generateCanary();
-            req = Utilities.addOrReplaceHeader(req, "Origin", "https://" + cacheBusterValue + ".com");
-            req = Utilities.appendToHeader(req, "Accept", ", text/" + cacheBusterValue);
-            req = Utilities.appendToHeader(req, "Accept-Encoding", ", " + cacheBusterValue);
-            req = Utilities.appendToHeader(req, "User-Agent", " " + cacheBusterValue);
-        }
+        req = Utilities.addCacheBuster(req, cacheBuster);
 
         messageInfo.setRequest(req);
     }

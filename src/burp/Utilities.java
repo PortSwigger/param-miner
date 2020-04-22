@@ -350,6 +350,22 @@ class Utilities {
         return callbacks.getBurpVersion()[0].contains("Professional");
     }
 
+    static byte[] addCacheBuster(byte[] req, String cacheBuster) {
+        if (cacheBuster != null) {
+            req = Utilities.appendToQuery(req, cacheBuster + "=1");
+        } else {
+            cacheBuster = Utilities.generateCanary();
+        }
+
+        if (Utilities.globalSettings.getBoolean("Add header cachebuster")) {
+            req = Utilities.addOrReplaceHeader(req, "Origin", "https://" + cacheBuster + ".com");
+            req = Utilities.appendToHeader(req, "Accept", ", text/" + cacheBuster);
+            req = Utilities.appendToHeader(req, "Accept-Encoding", ", " + cacheBuster);
+            req = Utilities.appendToHeader(req, "User-Agent", " " + cacheBuster);
+        }
+
+        return req;
+    }
 
     static String getNameFromType(byte type) {
         switch (type) {
