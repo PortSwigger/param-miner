@@ -339,7 +339,6 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         present = new HashMap<>();
         List<String> headers = Utilities.analyzeRequest(request).getHeaders();
         for (String header: headers) {
-            Utilities.out("'"+header+"'");
             if (header.startsWith("Host: ")) {
                 host = header.split(": ", 2)[1];
             }

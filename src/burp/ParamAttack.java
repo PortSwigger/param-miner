@@ -160,7 +160,7 @@ class ParamAttack {
         // calculateBucketSize(type, longest); was here
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
-        Utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
+        Utilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());

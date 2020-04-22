@@ -50,8 +50,8 @@ public class Keysmith {
 
     static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types) {
         ArrayList<String> keys = new ArrayList<>();
-        IRequestInfo info = Utilities.helpers.analyzeRequest(resp);
-        List<IParameter> currentParams = info.getParameters();
+
+        List<IParameter> currentParams = Utilities.helpers.analyzeRequest(resp).getParameters();
 
         for (IParameter param : currentParams) {
             String parsedParam = parseParam(param.getName().replace(':', ';'));
