@@ -128,7 +128,7 @@ class ValueGuesser implements Runnable, ActionListener {
             }
         }
 
-        if (attacks.size() > 1) {
+        if (false && attacks.size() > 1) {
             title += "#"+(attacks.size()-1);
             Scan.report(title, "details", attacks.toArray(new Resp[0]));
         }

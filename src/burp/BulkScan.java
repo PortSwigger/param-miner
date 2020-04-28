@@ -46,6 +46,10 @@ class BulkScanLauncher {
         Utilities.globalSettings.registerSetting("filter", "");
         Utilities.globalSettings.registerSetting("mimetype-filter", "");
         Utilities.globalSettings.registerSetting("resp-filter", "");
+        Utilities.globalSettings.registerSetting("add dummy param", false);
+        Utilities.globalSettings.registerSetting("dummy param name", "utm_campaign");
+        Utilities.globalSettings.registerSetting("confirmations", 5);
+        Utilities.globalSettings.registerSetting("report tentative", true);
 
 
         ScanPool taskEngine = new ScanPool(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
@@ -425,7 +429,7 @@ class BulkScanItem implements Runnable {
         }
         ScanPool engine = BulkScanLauncher.getTaskEngine();
         long done = engine.getCompletedTaskCount()+1;
-        Utilities.out("Completed "+ done + " of "+(engine.getQueue().size()+done) + " with ? requests, "+engine.candidates + " candidates and "+engine.findings + " findings ");
+        Utilities.out("Completed "+ done + " of "+(engine.getQueue().size()+done) + " with "+Utilities.requestCount.get()+" requests, "+engine.candidates + " candidates and "+engine.findings + " findings ");
     }
 }
 
@@ -450,7 +454,7 @@ abstract class Scan implements IScannerCheck {
 
     Scan(String name) {
         this.name = name;
-        //BurpExtender.scans.add(this);
+        BurpExtender.scans.add(this);
         //Utilities.callbacks.registerScannerCheck(this);
     }
 
@@ -764,5 +768,123 @@ class RawInsertionPoint implements IScannerInsertionPoint {
     @Override
     public byte getInsertionPointType() {
         return IScannerInsertionPoint.INS_EXTENSION_PROVIDED;
+    }
+}
+
+class CustomScanIssue implements IScanIssue {
+    private IHttpService httpService;
+    private URL url;
+    private IHttpRequestResponse[] httpMessages;
+    private String name;
+    private String detail;
+    private String severity;
+    private String confidence;
+    private String remediation;
+
+    CustomScanIssue(
+            IHttpService httpService,
+            URL url,
+            IHttpRequestResponse[] httpMessages,
+            String name,
+            String detail,
+            String severity,
+            String confidence,
+            String remediation) {
+        this.name = name;
+        this.detail = detail;
+        this.severity = severity;
+        this.httpService = httpService;
+        this.url = url;
+        this.httpMessages = httpMessages;
+        this.confidence = confidence;
+        this.remediation = remediation;
+    }
+
+    CustomScanIssue(
+            IHttpService httpService,
+            URL url,
+            IHttpRequestResponse httpMessages,
+            String name,
+            String detail,
+            String severity,
+            String confidence,
+            String remediation) {
+        this.name = name;
+        this.detail = detail;
+        this.severity = severity;
+        this.httpService = httpService;
+        this.url = url;
+        this.httpMessages = new IHttpRequestResponse[1];
+        this.httpMessages[0] = httpMessages;
+
+        this.confidence = confidence;
+        this.remediation = remediation;
+    }
+
+    @Override
+    public URL getUrl() {
+        return url;
+    }
+
+    @Override
+    public String getIssueName() {
+        return name;
+    }
+
+    @Override
+    public int getIssueType() {
+        return 0;
+    }
+
+    @Override
+    public String getSeverity() {
+        return severity;
+    }
+
+    @Override
+    public String getConfidence() {
+        return confidence;
+    }
+
+    @Override
+    public String getIssueBackground() {
+        return null;
+    }
+
+    @Override
+    public String getRemediationBackground() {
+        return null;
+    }
+
+    @Override
+    public String getIssueDetail() {
+        return detail;
+    }
+
+    @Override
+    public String getRemediationDetail() {
+        return remediation;
+    }
+
+    @Override
+    public IHttpRequestResponse[] getHttpMessages() {
+        return httpMessages;
+    }
+
+    @Override
+    public IHttpService getHttpService() {
+        return httpService;
+    }
+
+    public String getHost() {
+        return null;
+    }
+
+    public int getPort() {
+        return 0;
+    }
+
+    public String getProtocol() {
+        return null;
     }
 }

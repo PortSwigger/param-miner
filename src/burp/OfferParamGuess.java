@@ -38,11 +38,11 @@ class OfferParamGuess implements IContextMenuFactory {
         headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
         options.add(headerProbeButton);
 
-        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
-            JMenuItem valueProbeButton = new JMenuItem("Guess value");
-            valueProbeButton.addActionListener(new ValueGuesser(reqs, invocation.getSelectionBounds()));
-            options.add(valueProbeButton);
-        }
+//        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
+//            JMenuItem valueProbeButton = new JMenuItem("Guess value");
+//            valueProbeButton.addActionListener(new ValueGuesser(reqs, invocation.getSelectionBounds()));
+//            options.add(valueProbeButton);
+//        }
 
 
         if (reqs.length == 1 && reqs[0] != null) {

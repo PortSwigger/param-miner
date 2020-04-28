@@ -254,7 +254,7 @@ class ParamGuesser implements Runnable {
                                     }
                                     Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
 
-                                    if (true || type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), staticCanary)) {
+                                    if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), staticCanary)) {
                                         scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
                                     }
 
@@ -624,7 +624,17 @@ class ParamGuesser implements Runnable {
         int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
         int end = start + scanBaseGrep.length;
 
-        ValueGuesser.guessValue(scanBaseAttack, start, end);
+        ArrayList<int[]> offsets = new ArrayList<>();
+        offsets.add(new int[]{start, end});
+        IHttpService service = scanBaseAttack.getHttpService();
+        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, "name", start, end);
+        for (Scan scan: BurpExtender.scans) {
+            if (scan instanceof ParamScan) {
+                ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+            }
+        }
+        //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
+        //ValueGuesser.guessValue(scanBaseAttack, start, end);
     }
 
     private boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {

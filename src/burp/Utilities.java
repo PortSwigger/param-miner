@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
@@ -306,6 +307,9 @@ class Utilities {
     private static final String START_CHARSET = "ghijklmnopqrstuvwxyz";
     static Random rnd = new Random();
 
+    static AtomicInteger requestCount = new AtomicInteger(0);
+
+
     static ConfigurableSettings globalSettings;
 
     static JFrame getBurpFrame()
@@ -366,6 +370,38 @@ class Utilities {
         }
 
         return req;
+    }
+
+    static byte[] addCacheBuster(byte[] req, String cacheBuster, boolean pathBust) {
+
+        if (pathBust) {
+            String path = Utilities.getPathFromRequest(req);
+            if (path.length() > 1 && path.charAt(1) != '?') {
+                char c = path.charAt(1);
+                String encoded = String.format("%02x", (int) c);
+                req = Utilities.setPath(req, "/%" + encoded + path.substring(2));
+            }
+            else {
+                // this method sucks - only used as a last resort
+                req = Utilities.replaceFirst(req, "/", "//");
+            }
+        }
+
+        req = Utilities.appendToQuery(req, cacheBuster+"=1");
+        req = Utilities.addOrReplaceHeader(req, "Origin", "https://"+cacheBuster+".com");
+        req = Utilities.appendToHeader(req, "Accept", ", text/"+cacheBuster);
+        req = Utilities.appendToHeader(req, "Accept-Encoding", ", "+cacheBuster);
+        req = Utilities.appendToHeader(req, "User-Agent", " " + cacheBuster);
+        return req;
+    }
+
+    static byte[] setPath(byte[] request, String newPath) {
+        String oldPath = getPathFromRequest(request);
+        return replaceFirst(request, oldPath.getBytes(), newPath.getBytes());
+    }
+
+    static byte[] replaceFirst(byte[] request, String find, String replace) {
+        return replace(request, find.getBytes(), replace.getBytes(), 1);
     }
 
     static String getNameFromType(byte type) {
