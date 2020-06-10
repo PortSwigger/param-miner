@@ -479,6 +479,10 @@ abstract class Scan implements IScannerCheck {
         return 0;
     }
 
+    static void recordCandidateFound() {
+        BulkScanLauncher.getTaskEngine().candidates.incrementAndGet();
+    }
+
     static void report(String title, String detail, Resp... requests) {
         BulkScanLauncher.getTaskEngine().findings.incrementAndGet();
 
