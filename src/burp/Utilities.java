@@ -697,6 +697,10 @@ class Utilities {
         return matches;
     }
 
+    static byte[] replace(byte[] request, String find, String replace) {
+        return replace(request, find.getBytes(), replace.getBytes());
+    }
+
     static byte[] replace(byte[] request, byte[] find, byte[] replace) {
         return replace(request, find, replace, -1);
     }
@@ -797,6 +801,19 @@ class Utilities {
         }
 
         return request;
+    }
+
+    public static byte[] setMethod(byte[] request, String newMethod) {
+        int i = 0;
+        while (request[++i] != ' ') { }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            outputStream.write(newMethod.getBytes());
+            outputStream.write(Arrays.copyOfRange(request, i, request.length));
+        } catch (IOException e) {
+
+        }
+        return outputStream.toByteArray();
     }
 
     static List<int[]> getMatches(byte[] response, byte[] match, int giveUpAfter) {

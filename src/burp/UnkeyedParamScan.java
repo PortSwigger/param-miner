@@ -29,10 +29,9 @@ public class UnkeyedParamScan extends ParamScan {
 
         byte[] poison = insertionPoint.buildRequest(canary.getBytes());
 
-        // todo flip this back to false afterwards
-        boolean pathBust = true;
-        poison = Utilities.addCacheBuster(poison, cacheBuster, pathBust);
+        poison = Utilities.addCacheBuster(poison, cacheBuster);
 
+        // confirm we have input reflection
         Resp resp = request(service, poison);
         if (!Utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
 
@@ -47,22 +46,22 @@ public class UnkeyedParamScan extends ParamScan {
             return null;
         }
 
+        // try to apply poison
         for (int i=0; i<5; i++) {
             request(service, poison);
         }
 
+        // see if the poison stuck
         byte[] victim = insertionPoint.buildRequest("foobar".getBytes());
-
-        victim = Utilities.addCacheBuster(victim, cacheBuster, pathBust);
-
+        victim = Utilities.addCacheBuster(victim, cacheBuster);
         Resp poisoned = request(service, victim);
         if (!Utilities.containsBytes(poisoned.getReq().getResponse(), canary.getBytes())) {
             return null;
         }
 
-        byte[] victim2 = Utilities.replaceFirst(victim, cacheBuster, cacheBuster+"2");
+        // identify whether the URL-based cachebuster is necessary
+        byte[] victim2 = Utilities.replace(victim, cacheBuster, cacheBuster+"2");
         Resp poisonedDueToUnkeyedQuery = request(service, victim2);
-
 
 //        if (insertionPoint.getInsertionPointName().equals(Utilities.globalSettings.getString("dummy param name"))) {
 //            // if this is a dummy param, it can't be a blacklist
@@ -70,10 +69,10 @@ public class UnkeyedParamScan extends ParamScan {
 //        }
 
         if (Utilities.containsBytes(poisonedDueToUnkeyedQuery.getReq().getResponse(), canary.getBytes())) {
-            report("Query string unkeyed/whitelist "+pathBust, canary, resp, poisonedDueToUnkeyedQuery);
+            report("Query string unkeyed/whitelist ", canary, resp, poisonedDueToUnkeyedQuery);
         }
         else {
-            report("Query param blacklist "+pathBust, canary, resp, poisoned);
+            report("Query param blacklist ", canary, resp, poisoned);
         }
 
         return null;

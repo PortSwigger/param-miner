@@ -79,8 +79,13 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
+        new PortDOS("port-DoS");
         new ValueScan("param-value probe");
-        new UnkeyedParamScan("Unkeyed param scan");
+        new UnkeyedParamScan("Unkeyed param");
+        new FatGet("fat GET");
+        new NormalisedParamScan("normalised param");
+        new NormalisedPathScan("normalised path");
+
 
         new BulkScanLauncher(scans);
 
