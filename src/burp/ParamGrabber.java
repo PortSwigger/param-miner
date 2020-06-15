@@ -89,7 +89,9 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
             cacheBuster = "fcbz";
         }
 
-        req = Utilities.addCacheBuster(req, cacheBuster);
+        if (cacheBuster != null) {
+            req = Utilities.addCacheBuster(req, cacheBuster);
+        }
 
         messageInfo.setRequest(req);
     }

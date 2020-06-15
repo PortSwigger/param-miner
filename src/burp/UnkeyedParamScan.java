@@ -52,27 +52,27 @@ public class UnkeyedParamScan extends ParamScan {
         }
 
         // see if the poison stuck
-        byte[] victim = insertionPoint.buildRequest("foobar".getBytes());
+        String victimCanary = "zzmkdfq";
+        byte[] victim = insertionPoint.buildRequest(victimCanary.getBytes());
         victim = Utilities.addCacheBuster(victim, cacheBuster);
         Resp poisoned = request(service, victim);
         if (!Utilities.containsBytes(poisoned.getReq().getResponse(), canary.getBytes())) {
             return null;
         }
 
+        if (Utilities.containsBytes(poisoned.getReq().getResponse(), victimCanary.getBytes())) {
+            report("Internal cache poisoning?", "The second response contains elements of the previous request and the victim request: "+canary + " "+victimCanary, resp, poisoned);
+        }
+
         // identify whether the URL-based cachebuster is necessary
         byte[] victim2 = Utilities.replace(victim, cacheBuster, cacheBuster+"2");
         Resp poisonedDueToUnkeyedQuery = request(service, victim2);
 
-//        if (insertionPoint.getInsertionPointName().equals(Utilities.globalSettings.getString("dummy param name"))) {
-//            // if this is a dummy param, it can't be a blacklist
-//            // unless.. argh! need a followup
-//        }
-
         if (Utilities.containsBytes(poisonedDueToUnkeyedQuery.getReq().getResponse(), canary.getBytes())) {
-            report("Query string unkeyed/whitelist ", canary, resp, poisonedDueToUnkeyedQuery);
+            report("Query string unkeyed/whitelist ", "The second response contains a payload from the previous request: "+canary, resp, poisonedDueToUnkeyedQuery);
         }
         else {
-            report("Query param blacklist ", canary, resp, poisoned);
+            report("Query param blacklist ", "The second response contains a payload from previous request: "+canary, resp, poisoned);
         }
 
         return null;

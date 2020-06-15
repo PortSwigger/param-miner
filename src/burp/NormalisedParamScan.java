@@ -11,7 +11,7 @@ public class NormalisedParamScan extends ParamScan {
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         String canary = "kkvjq%61mdk";
-        byte[] poisonReq = Utilities.addCacheBuster(insertionPoint.buildRequest(canary.getBytes()), Utilities.generateCanary(), false);
+        byte[] poisonReq = Utilities.addCacheBuster(insertionPoint.buildRequest(canary.getBytes()), Utilities.generateCanary());
         byte[] victimReq = Utilities.replaceFirst(poisonReq, "kkvjq%61".getBytes(), "kkvjqa".getBytes());
 
         IHttpService service = baseRequestResponse.getHttpService();
