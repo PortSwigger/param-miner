@@ -15,7 +15,7 @@ public class FatGet extends ParamScan {
         }
 
         // set value to canary
-        String canary = "aktldka";
+        String canary = Utilities.generateCanary();
 
         String fullValue = insertionPoint.getBaseValue()+canary;
         byte[] poison = insertionPoint.buildRequest(fullValue.getBytes());
@@ -40,6 +40,9 @@ public class FatGet extends ParamScan {
         byte[] response = resp.getReq().getResponse();
 
         if (Utilities.containsBytes(response, canary.getBytes())) {
+
+            recordCandidateFound();
+
             // report("Fat-GET body reflection", canary, resp);
             for (int i=0; i<5; i++) {
                 request(service, poison);

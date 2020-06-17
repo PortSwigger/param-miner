@@ -10,8 +10,7 @@ public class PortDOS extends Scan {
 
     @Override
     List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        baseReq = Utilities.appendToQuery(baseReq, "cb="+Utilities.generateCanary());
-        baseReq = Utilities.addOrReplaceHeader(baseReq, "Origin", "https://"+Utilities.generateCanary()+".net");
+        baseReq = Utilities.addCacheBuster(baseReq, Utilities.generateCanary());
 
         String canary = "41810";
         byte[] poisonReq = Utilities.addOrReplaceHeader(baseReq, "Host", service.getHost()+":"+canary);
@@ -23,7 +22,7 @@ public class PortDOS extends Scan {
 
         Resp resp = request(service, poisonReq);
         if (Utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
-            BulkScanLauncher.getTaskEngine().candidates.incrementAndGet();
+            recordCandidateFound();
 
             for (int i=0; i<5; i++) {
                 request(service, poisonReq);
