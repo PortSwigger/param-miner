@@ -624,15 +624,18 @@ class ParamGuesser implements Runnable {
         int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
         int end = start + scanBaseGrep.length;
 
+        // todo test this
+        // todo make separate option for core scan vs param scan
         ArrayList<int[]> offsets = new ArrayList<>();
         offsets.add(new int[]{start, end});
         IHttpService service = scanBaseAttack.getHttpService();
-        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, "name", start, end);
+        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
         for (Scan scan: BurpExtender.scans) {
             if (scan instanceof ParamScan) {
                 ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
             }
         }
+
         //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
         //ValueGuesser.guessValue(scanBaseAttack, start, end);
     }

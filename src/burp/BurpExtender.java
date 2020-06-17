@@ -85,6 +85,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new FatGet("fat GET");
         new NormalisedParamScan("normalised param");
         new NormalisedPathScan("normalised path");
+        new RailsUtmScan("rails param cloaking scan");
 
 
         new BulkScanLauncher(scans);

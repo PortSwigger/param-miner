@@ -34,15 +34,7 @@ public class UnkeyedParamScan extends ParamScan {
         // confirm we have input reflection
         Resp resp = request(service, poison);
         if (!Utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
-
-            // todo fix this afterwards
-//            poison = Utilities.replaceFirst(poison, "/", "//");
-//            resp = request(service, poison);
-//            if (!Utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
-//                return null;
-//            }
-//            pathBust = true;
-
+            // todo try path-busting
             return null;
         }
 

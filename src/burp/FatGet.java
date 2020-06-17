@@ -32,8 +32,7 @@ public class FatGet extends ParamScan {
         poison = Utilities.addOrReplaceHeader(poison, "X-HTTP-Method", "POST");
         poison = Utilities.addOrReplaceHeader(poison, "X-Method-Override", "POST");
 
-        String cacheBuster = Utilities.generateCanary();
-        poison = Utilities.appendToQuery(poison, "x="+cacheBuster);
+        poison = Utilities.addCacheBuster(poison, Utilities.generateCanary());
 
         IHttpService service = baseRequestResponse.getHttpService();
 

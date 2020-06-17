@@ -1054,7 +1054,7 @@ class Utilities {
         }
 
         boolean LOG_PERFORMANCE = true;
-        boolean GO_ACCELERATOR = true;
+        boolean GO_ACCELERATOR = false;
         IHttpRequestResponse result = null;
         long start = 0;
 
@@ -1064,6 +1064,7 @@ class Utilities {
                     requestCount.incrementAndGet();
                     start = System.currentTimeMillis();
                 }
+
                 if (GO_ACCELERATOR) {
                     result = fetchWithGo(service, req);
                 }
@@ -1091,7 +1092,7 @@ class Utilities {
             }
         }
 
-        if (result.getResponse() == null) {
+        if (result == null || result.getResponse() == null) {
             Utilities.log("Req failed multiple times, giving up");
         }
 
