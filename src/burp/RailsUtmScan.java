@@ -52,7 +52,7 @@ public class RailsUtmScan extends ParamScan {
             return null;
         }
 
-        report("Rails param cloaking", "Blah: "+canary, resp, poisoned);
+        report("Web Cache Poisoning: Parameter Cloaking", "The application can be manipulated into excluding the "+insertionPoint.getInsertionPointName()+" parameter from the cache key, by disguising it as utm_content. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, poisoned);
 
 
         return null;

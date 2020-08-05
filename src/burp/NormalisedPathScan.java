@@ -31,7 +31,7 @@ public class NormalisedPathScan extends Scan {
             short victimCode = victimResp.getStatus();
 
             if (victimCode == poisonedCode) {
-                report("Normalised cache key: ?", baseCode+":"+victimCode, base, resp, victimResp);
+                report("Web Cache Poisoning: URL-decoded path", "The application appears to URL-decode the path before placing it in the cache key, which may enable DoS attacks and also makes other vulnerabilities more exploitable. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", base, resp, victimResp);
             }
         }
 

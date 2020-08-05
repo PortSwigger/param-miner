@@ -53,7 +53,7 @@ public class UnkeyedParamScan extends ParamScan {
         }
 
         if (Utilities.containsBytes(poisoned.getReq().getResponse(), victimCanary.getBytes())) {
-            report("Internal cache poisoning?", "The second response contains elements of the previous request and the victim request: "+canary + " "+victimCanary, resp, poisoned);
+            report("Internal cache poisoning?", "The second response contains elements of the previous request and the victim request, suggesting it may be vulnerable to internal cache poisoning. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, poisoned);
         }
 
         // identify whether the URL-based cachebuster is necessary
@@ -61,10 +61,10 @@ public class UnkeyedParamScan extends ParamScan {
         Resp poisonedDueToUnkeyedQuery = request(service, victim2);
 
         if (Utilities.containsBytes(poisonedDueToUnkeyedQuery.getReq().getResponse(), canary.getBytes())) {
-            report("Query string unkeyed/whitelist ", "The second response contains a payload from the previous request: "+canary, resp, poisonedDueToUnkeyedQuery);
+            report("Web Cache Poisoning: Query string unkeyed?", "The application does not include the query string in the cache key. This was confirmed by injecting the value '"+canary+"' using the "+insertionPoint.getInsertionPointName()+" parameter, then replaying the request without the injected value, and confirming it still appears in the response. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, poisonedDueToUnkeyedQuery);
         }
         else {
-            report("Query param blacklist ", "The second response contains a payload from previous request: "+canary, resp, poisoned);
+            report("Web Cache Poisoning: Query param blacklist ", "The application excludes certain parameters from the cache key. This was confirmed by injecting the value '"+canary+"' using the "+insertionPoint.getInsertionPointName()+" parameter, then replaying the request without the injected value, and confirming it still appears in the response. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, poisoned);
         }
 
         return null;

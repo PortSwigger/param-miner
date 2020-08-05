@@ -58,7 +58,7 @@ public class FatGet extends ParamScan {
 
             Resp poisonedResp = request(service, getPoison);
             if (Utilities.containsBytes(poisonedResp.getReq().getResponse(), canary.getBytes())) {
-                report("Fat-GET poisoning", canary, resp, poisonedResp);
+                report("Web Cache Poisoning via Fat GET", "The application lets users pass parameters in the body of GET requests, but does not include them in the cache key. This was confirmed by injecting the value "+canary+" using the "+insertionPoint.getInsertionPointName()+" parameter, then replaying the request without the injected value, and confirming it still appears in the response.<br><br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, poisonedResp);
             }
         }
 

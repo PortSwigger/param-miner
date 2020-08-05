@@ -1053,7 +1053,7 @@ class Utilities {
             throw new RuntimeException("Extension unloaded");
         }
 
-        boolean LOG_PERFORMANCE = true;
+        boolean LOG_PERFORMANCE = false;
         boolean GO_ACCELERATOR = false;
         IHttpRequestResponse result = null;
         long start = 0;

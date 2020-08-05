@@ -91,6 +91,7 @@ class ConfigurableSettings {
         put("dynamic keyload", false);
         put("max one per host", false);
         put("max one per host+status", false);
+        put("probe identified params", true);
         put("scan identified params", false);
         put("enable auto-mine", false);
         put("auto-mine headers", false);

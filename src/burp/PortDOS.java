@@ -30,7 +30,7 @@ public class PortDOS extends Scan {
 
             Resp victimResp = request(service, baseReq);
             if (Utilities.containsBytes(victimResp.getReq().getResponse(), canary.getBytes())) {
-                report("Port-DOS", canary, resp, victimResp);
+                report("Web Cache Poisoning: unkeyed port", "The application does not include the port in the host header in the cache key. This may enable a single-request DoS attack. More serious attacks may be possible depending on how much validation is applied to the port. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, victimResp);
             }
         }
 

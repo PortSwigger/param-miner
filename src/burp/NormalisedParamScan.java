@@ -26,7 +26,7 @@ public class NormalisedParamScan extends ParamScan {
 
             Resp victimResp = request(service, victimReq);
             if (Utilities.containsBytes(victimResp.getReq().getResponse(), canary.getBytes())) {
-                report("Normalised cache key", canary, resp, victimResp);
+                report("URL-decoded parameter", "The application appears to URL-decode parameters before placing them in the cache key, which may enable DoS attacks and also makes other vulnerabilities more exploitable. This was confirmed using the "+insertionPoint.getInsertionPointName()+" parameter. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, victimResp);
             }
         }
 

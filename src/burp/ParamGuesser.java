@@ -608,14 +608,6 @@ class ParamGuesser implements Runnable {
     }
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
-        if(!Utilities.globalSettings.getBoolean("scan identified params")) {
-            return;
-        }
-
-        if (!Utilities.isBurpPro()) {
-            Utilities.out("Can't autoscan identified parameter - requires pro edition");
-            return;
-        }
 
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
         byte[] req = scanBaseAttack.getRequest();
@@ -629,14 +621,26 @@ class ParamGuesser implements Runnable {
         ArrayList<int[]> offsets = new ArrayList<>();
         offsets.add(new int[]{start, end});
         IHttpService service = scanBaseAttack.getHttpService();
-        IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
-        for (Scan scan: BurpExtender.scans) {
-            if (scan instanceof ParamScan) {
-                ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+
+        if(Utilities.globalSettings.getBoolean("probe identified params")) {
+            IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
+            for (Scan scan : BurpExtender.scans) {
+                if (scan instanceof ParamScan) {
+                    ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+                }
             }
         }
 
-        //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
+        if(!Utilities.globalSettings.getBoolean("scan identified params")) {
+            return;
+        }
+
+        if (!Utilities.isBurpPro()) {
+            Utilities.out("Can't autoscan identified parameter - requires pro edition");
+            return;
+        }
+
+        Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
         //ValueGuesser.guessValue(scanBaseAttack, start, end);
     }
 

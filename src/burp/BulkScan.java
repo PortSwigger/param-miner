@@ -484,8 +484,6 @@ abstract class Scan implements IScannerCheck {
     }
 
     static void report(String title, String detail, Resp... requests) {
-        BulkScanLauncher.getTaskEngine().findings.incrementAndGet();
-
         IHttpRequestResponse base = requests[0].getReq();
         IHttpService service = base.getHttpService();
 
@@ -493,7 +491,35 @@ abstract class Scan implements IScannerCheck {
         for (int i=0; i<requests.length; i++) {
             reqs[i] = requests[i].getReq();
         }
-        Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(base.getRequest(), service), reqs, title, detail, "High", "Tentative", "."));
+        if (Utilities.isBurpPro()) {
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(base.getRequest(), service), reqs, title, detail, "High", "Tentative", "."));
+        } else {
+            StringBuilder serialisedIssue = new StringBuilder();
+            serialisedIssue.append("Found issue: ");
+            serialisedIssue.append(title);
+            serialisedIssue.append("\n");
+            serialisedIssue.append("Target: ");
+            serialisedIssue.append(service.getProtocol());
+            serialisedIssue.append("://");
+            serialisedIssue.append(service.getHost());
+            serialisedIssue.append("\n");
+            serialisedIssue.append(detail);
+            serialisedIssue.append("\n");
+            serialisedIssue.append("Evidence: \n======================================\n");
+            for (IHttpRequestResponse req: reqs) {
+                serialisedIssue.append(Utilities.helpers.bytesToString(req.getRequest()));
+//                serialisedIssue.append("\n--------------------------------------\n");
+//                if (req.getResponse() == null) {
+//                    serialisedIssue.append("[no response]");
+//                }
+//                else {
+//                    serialisedIssue.append(Utilities.helpers.bytesToString(req.getResponse()));
+//                }
+                serialisedIssue.append("\n======================================\n");
+            }
+
+            Utilities.out(serialisedIssue.toString());
+        }
     }
 
     Resp request(IHttpService service, byte[] req) {
