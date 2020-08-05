@@ -32,5 +32,8 @@ Contributions and feature requests are welcome.
  - First public release
 
 # Installation
-This extension requires Burp Suite Pro 1.7.10 or later. To install it, simply use the BApps tab in Burp.
+This extension requires Burp Suite 1.7.10 or later. To install it, simply use the BApps tab in Burp.
 
+# Build
+Requires Java 1.8, Gradle
+Navigate to param-miner directory and execute `gradle build`
