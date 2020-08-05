@@ -2,8 +2,8 @@ Uuid: 17d2949a985c4b7ca092728dba871943
 ExtensionType: 1
 Name: Param Miner
 RepoName: param-miner
-ScreenVersion: 1.07
-SerialVersion: 4
+ScreenVersion: 1.20
+SerialVersion: 5
 MinPlatformVersion: 0
 ProOnly: False
 Author: James 'albinowax' Kettle, PortSwigger Web Security

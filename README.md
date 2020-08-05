@@ -11,7 +11,11 @@ If you're using Burp Suite Pro, identified parameters will be reported as scanne
 You can also launch guessing attacks on multiple selected requests at the same time - this will use a thread pool so you can safely use it on thousands of requests if you want.
 Alternatively, you can enable auto-mining of all in scope traffic. Please note that this tool is designed to be highly scalable but may require tuning to avoid performance issues.
 
-For further information, please refer to the whitepaper at https://portswigger.net/blog/practical-web-cache-poisoning
+For further information, please refer to the whitepapers:
+
+2020: https://portswigger.net/research/web-cache-entanglement
+
+2018: https://portswigger.net/research/practical-web-cache-poisoning
 
 The code can be found at https://github.com/portswigger/param-miner
 
@@ -19,7 +23,18 @@ If you'd like to rate limit your attack, use the Distribute Damage extension.
 
 Contributions and feature requests are welcome.
 
+**Web Cache Entanglement update**
+
+Here's a video of the new features being used to find a fat GET cache poisoning vulnerability in a demo site using Rack::Cache
+
+[![Param Miner demo video](https://img.youtube.com/vi/TQ42N8fqxw4/0.jpg)](https://www.youtube.com/watch?v=TQ42N8fqxw4)
+
+Another video targeting a real site is coming soon - I'm just waiting on the target to patch.
+
 # Changelog
+**1.20  2020-08-05**
+ - Major update for Web Cache Entanglement
+
 **1.07 2018-12-06**
  - Fix config window size for small screens (thanks @misoxxx)
  
