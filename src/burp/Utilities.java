@@ -1111,7 +1111,9 @@ class Utilities {
             cacheBuster = Utilities.generateCanary();
         }
 
-        req = Utilities.addOrReplaceHeader(req, "Origin", "https://" + cacheBuster + ".com");
+        if (globalSettings.getBoolean("include origin in cachebusters")) {
+            req = Utilities.addOrReplaceHeader(req, "Origin", "https://" + cacheBuster + ".com");
+        }
         req = Utilities.appendToHeader(req, "Accept", ", text/" + cacheBuster);
         req = Utilities.appendToHeader(req, "Accept-Encoding", ", " + cacheBuster);
         req = Utilities.appendToHeader(req, "User-Agent", " " + cacheBuster);

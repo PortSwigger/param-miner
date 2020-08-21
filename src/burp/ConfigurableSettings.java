@@ -77,6 +77,7 @@ class ConfigurableSettings {
         put("Add 'fcbz' cachebuster", false);
         put("Add dynamic cachebuster", false);
         put("Add header cachebuster", false);
+        put("include origin in cachebusters", true);
         put("learn observed words", false);
         put("skip boring words", true);
         put("only report unique params", false);
