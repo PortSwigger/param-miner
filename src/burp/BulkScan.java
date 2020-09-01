@@ -31,10 +31,7 @@ class BulkScanLauncher {
         Utilities.callbacks.registerContextMenuFactory(new OfferBulkScan(scans));
     }
 
-    private static ScanPool buildTaskEngine() {
-        BlockingQueue<Runnable> tasks;
-        tasks = new LinkedBlockingQueue<>();
-
+    static void registerDefaults() {
         Utilities.globalSettings.registerSetting("thread pool size", 8);
         Utilities.globalSettings.registerSetting("use key", true);
         Utilities.globalSettings.registerSetting("key method", true);
@@ -50,7 +47,13 @@ class BulkScanLauncher {
         Utilities.globalSettings.registerSetting("dummy param name", "utm_campaign");
         Utilities.globalSettings.registerSetting("confirmations", 5);
         Utilities.globalSettings.registerSetting("report tentative", true);
+    }
 
+    private static ScanPool buildTaskEngine() {
+        BlockingQueue<Runnable> tasks;
+        tasks = new LinkedBlockingQueue<>();
+
+        registerDefaults();
 
         ScanPool taskEngine = new ScanPool(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {

@@ -744,6 +744,9 @@ class Utilities {
 
     public static byte[] appendToHeader(byte[] request, String header, String value) {
         String baseValue = getHeader(request, header);
+        if ("".equals(baseValue)) {
+            return request;
+        }
         return addOrReplaceHeader(request, header, baseValue+value);
     }
 

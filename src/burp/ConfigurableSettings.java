@@ -8,6 +8,8 @@ import java.awt.*;
 import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 class ConfigMenu implements Runnable, MenuListener, IExtensionStateListener{
     private JMenu menuButton;
@@ -73,6 +75,11 @@ class ConfigurableSettings {
     }
 
     ConfigurableSettings() {
+        settings = new LinkedHashMap<>();
+        setDefaultSettings();
+    }
+
+    public void setDefaultSettings() {
         settings = new LinkedHashMap<>();
         put("Add 'fcbz' cachebuster", false);
         put("Add dynamic cachebuster", false);
@@ -217,9 +224,11 @@ class ConfigurableSettings {
 
     ConfigurableSettings showSettings() {
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(0, 4));
+        panel.setLayout(new GridLayout(0, 6));
+        panel.setSize(800, 800);
 
         HashMap<String, Object> configured = new HashMap<>();
+        JButton buttonResetSettings = new JButton("Reset Settings");
 
         for(String key: settings.keySet()) {
             String type = getType(key);
@@ -238,11 +247,31 @@ class ConfigurableSettings {
                 configured.put(key, box);
             }
             else {
-                JTextField box = new JTextField(getString(key));
+                String value = getString(key);
+                JTextField box = new JTextField(value, value.length());
+                box.setColumns(1);
                 panel.add(box);
                 configured.put(key, box);
             }
         }
+
+        panel.add(new JLabel(""));
+        panel.add(new JLabel(""));
+        panel.add(buttonResetSettings);
+        buttonResetSettings.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Utilities.out("Discarding settings...");
+                for(String key: settings.keySet()) {
+                    Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
+                }
+                setDefaultSettings();
+                BulkScanLauncher.registerDefaults();
+                JComponent comp = (JComponent) e.getSource();
+                Window win = SwingUtilities.getWindowAncestor(comp);
+                win.dispose();
+
+            }
+        } );
 
         int result = JOptionPane.showConfirmDialog(Utilities.getBurpFrame(), panel, "Attack Config", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
         if (result == JOptionPane.OK_OPTION) {

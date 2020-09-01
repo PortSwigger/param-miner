@@ -209,6 +209,7 @@ class ParamAttack {
 
         while (true) {
             Utilities.log("Trying bucket size: "+ bucketSize);
+            long start = System.currentTimeMillis();
             StringBuilder trialPayload = new StringBuilder();
             trialPayload.append(Utilities.randomString(longest));
             for (int i = 0; i < bucketSize; i++) {
@@ -225,6 +226,14 @@ class ParamAttack {
                     break;
                 }
             }
+
+            long end = System.currentTimeMillis();
+            if (end - start > 5000) {
+                bucketSize = bucketSize / 2;
+                Utilities.out("Setting bucketSize to "+bucketSize+" due to slow response");
+                break;
+            }
+
             if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize")) {
                 break;
             }

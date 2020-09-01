@@ -127,6 +127,10 @@ class ParamGuesser implements Runnable {
         Attack altBase = state.getAltBase();
         ParamHolder paramBuckets = state.getParamBuckets();
 
+        if (Utilities.globalSettings.getBoolean("carpet bomb")) {
+            Utilities.out("Warning: carpet bomb mode is on, so no parameters will be detected.");
+        }
+
         if (!state.started) {
             Utilities.out("Initiating "+Utilities.getNameFromType(type)+" bruteforce on "+ targetURL);
             state.started = true;
