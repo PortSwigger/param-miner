@@ -1100,3 +1100,4 @@ host
 command
 __requesturi
 __requestverb
+x-http-status-code-override
