@@ -51,7 +51,8 @@ interface ConfigListener {
 }
 
 class ConfigurableSettings {
-    private LinkedHashMap<String, String> settings;
+    static private LinkedHashMap<String, String> settings = new LinkedHashMap<>();
+    static private LinkedHashMap<String, String> defaultSettings = new LinkedHashMap<>();
     private NumberFormatter onlyInt;
 
     private HashMap<String, ConfigListener> callbacks = new HashMap<>();
@@ -65,6 +66,7 @@ class ConfigurableSettings {
             return;
         }
 
+        defaultSettings.put(key, encode(value));
         String oldValue = Utilities.callbacks.loadExtensionSetting(key);
         if (oldValue != null) {
             putRaw(key, oldValue);
@@ -75,52 +77,46 @@ class ConfigurableSettings {
     }
 
     ConfigurableSettings() {
-        settings = new LinkedHashMap<>();
-        setDefaultSettings();
-    }
-
-    public void setDefaultSettings() {
-        settings = new LinkedHashMap<>();
-        put("Add 'fcbz' cachebuster", false);
-        put("Add dynamic cachebuster", false);
-        put("Add header cachebuster", false);
-        put("include origin in cachebusters", true);
-        put("learn observed words", false);
-        put("skip boring words", true);
-        put("only report unique params", false);
-        put("response", true);
-        put("request", true);
-        put("use basic wordlist", true);
-        put("use bonus wordlist", false);
-        put("use custom wordlist", false);
-        put("custom wordlist path", "/usr/share/dict/words");
-        put("bruteforce", false);
-        put("skip uncacheable", false);
-        put("dynamic keyload", false);
-        put("max one per host", false);
-        put("max one per host+status", false);
-        put("probe identified params", true);
-        put("scan identified params", false);
-        put("enable auto-mine", false);
-        put("auto-mine headers", false);
-        put("auto-mine cookies", false);
-        put("auto-mine params", false);
-        put("auto-nest params", false);
-        put("fuzz detect", false);
-        put("carpet bomb", false);
-        put("try cache poison", true);
-        put("twitchy cache poison", false);
-        put("try method flip", false);
-        put("try -_ bypass", false);
-        put("thread pool size", 8);
-        put("rotation interval", 200);
-        put("rotation increment", 4);
-        put("force bucketsize", -1);
-        put("max bucketsize", 65536);
-        put("max param length", 32);
-        put("lowercase headers", true);
-        put("name in issue", false);
-        put("canary", "zwrtxqva");
+        registerSetting("Add 'fcbz' cachebuster", false);
+        registerSetting("Add dynamic cachebuster", false);
+        registerSetting("Add header cachebuster", false);
+        registerSetting("include origin in cachebusters", true);
+        registerSetting("learn observed words", false);
+        registerSetting("skip boring words", true);
+        registerSetting("only report unique params", false);
+        registerSetting("response", true);
+        registerSetting("request", true);
+        registerSetting("use basic wordlist", true);
+        registerSetting("use bonus wordlist", false);
+        registerSetting("use custom wordlist", false);
+        registerSetting("custom wordlist path", "/usr/share/dict/words");
+        registerSetting("bruteforce", false);
+        registerSetting("skip uncacheable", false);
+        registerSetting("dynamic keyload", false);
+        registerSetting("max one per host", false);
+        registerSetting("max one per host+status", false);
+        registerSetting("probe identified params", true);
+        registerSetting("scan identified params", false);
+        registerSetting("enable auto-mine", false);
+        registerSetting("auto-mine headers", false);
+        registerSetting("auto-mine cookies", false);
+        registerSetting("auto-mine params", false);
+        registerSetting("auto-nest params", false);
+        registerSetting("fuzz detect", false);
+        registerSetting("carpet bomb", false);
+        registerSetting("try cache poison", true);
+        registerSetting("twitchy cache poison", false);
+        registerSetting("try method flip", false);
+        registerSetting("try -_ bypass", false);
+        registerSetting("thread pool size", 8);
+        registerSetting("rotation interval", 200);
+        registerSetting("rotation increment", 4);
+        registerSetting("force bucketsize", -1);
+        registerSetting("max bucketsize", 65536);
+        registerSetting("max param length", 32);
+        registerSetting("lowercase headers", true);
+        registerSetting("name in issue", false);
+        registerSetting("canary", "zwrtxqva");
 
         for(String key: settings.keySet()) {
             //Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
@@ -136,7 +132,12 @@ class ConfigurableSettings {
         onlyInt.setMinimum(-1);
         onlyInt.setMaximum(Integer.MAX_VALUE);
         onlyInt.setAllowsInvalid(false);
+    }
 
+    public void setDefaultSettings() {
+        for (String key: settings.keySet()) {
+            putRaw(key, defaultSettings.get(key));
+        }
     }
 
     private ConfigurableSettings(ConfigurableSettings base) {
@@ -265,7 +266,7 @@ class ConfigurableSettings {
                     Utilities.callbacks.saveExtensionSetting(key, null); // purge saved settings
                 }
                 setDefaultSettings();
-                BulkScanLauncher.registerDefaults();
+                //BulkScanLauncher.registerDefaults();
                 JComponent comp = (JComponent) e.getSource();
                 Window win = SwingUtilities.getWindowAncestor(comp);
                 win.dispose();
