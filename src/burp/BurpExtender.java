@@ -31,6 +31,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
         new Utilities(callbacks);
+        loadWordlists();
         BlockingQueue<Runnable> tasks;
         if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
             tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
@@ -94,6 +95,26 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
+    }
+
+
+    private void loadWordlists() {
+        Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
+        while (s.hasNext()) {
+            Utilities.phpFunctions.add(s.next());
+        }
+        s.close();
+
+        Scanner params = new Scanner(getClass().getResourceAsStream("/params"));
+        while (params.hasNext()) {
+            Utilities.paramNames.add(params.next());
+        }
+        params.close();
+
+        Scanner headers = new Scanner(getClass().getResourceAsStream("/boring_headers"));
+        while (headers.hasNext()) {
+            Utilities.boringHeaders.add(headers.next().toLowerCase());
+        }
     }
 
     public void extensionUnloaded() {

@@ -184,7 +184,6 @@ class ParamAttack {
         }
 
         alreadyReported = getBlacklist(type);
-
         //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
     }
 
@@ -254,13 +253,17 @@ class ParamAttack {
             case IParameter.PARAM_URL:
                 blacklist.add("lang");
                 blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
+                break;
             case IParameter.PARAM_BODY:
                 blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
+                break;
             case Utilities.PARAM_HEADER:
                 if (Utilities.globalSettings.getBoolean("skip boring words")) {
                     blacklist.addAll(Utilities.boringHeaders);
                 }
+                break;
             default:
+                Utilities.out("Unrecognised type: "+type);
                 break;
         }
 
