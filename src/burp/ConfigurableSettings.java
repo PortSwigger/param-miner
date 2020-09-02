@@ -233,7 +233,11 @@ class ConfigurableSettings {
 
         for(String key: settings.keySet()) {
             String type = getType(key);
-            panel.add(new JLabel("\n"+key+": "));
+            JLabel label = new JLabel("\n"+key+": ");
+            if (!settings.get(key).equals(defaultSettings.get(key))) {
+                label.setForeground(Color.magenta);
+            }
+            panel.add(label);
 
             if (type.equals("boolean")) {
                 JCheckBox box = new JCheckBox();
