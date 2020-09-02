@@ -32,6 +32,10 @@ Here's a video of the new features being used to find a fat GET cache poisoning 
 Another video targeting a real site is coming soon - I'm just waiting on the target to patch.
 
 # Changelog
+**1.21  2020-09-02**
+ - Non-default settings are now highlighted, and can be reset to default
+ - Various bugfixes 
+ 
 **1.20  2020-08-05**
  - Major update for Web Cache Entanglement
 
@@ -50,5 +54,8 @@ Another video targeting a real site is coming soon - I'm just waiting on the tar
 This extension requires Burp Suite 1.7.10 or later. To install it, simply use the BApps tab in Burp.
 
 # Build
-Requires Java 1.8, Gradle
-Navigate to param-miner directory and execute `gradle build`
+Requires Java >1.8, Gradle.
+
+Navigate to param-miner directory and execute `gradle build fatjar`.
+
+Load the resulting jar: `build/libs/param-miner-all.jar`
