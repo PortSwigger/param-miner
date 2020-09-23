@@ -23,14 +23,56 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.21";
+    private static final String version = "1.22";
     private ThreadPoolExecutor taskEngine;
-    public static List<Scan> scans = new ArrayList<>();
+
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
-        new Utilities(callbacks);
+        HashMap<String, Object> settings = new HashMap<>();
+        settings.put("Add 'fcbz' cachebuster", false);
+        settings.put("Add dynamic cachebuster", false);
+        settings.put("Add header cachebuster", false);
+        settings.put("include origin in cachebusters", true);
+        settings.put("learn observed words", false);
+        settings.put("skip boring words", true);
+        settings.put("only report unique params", false);
+        settings.put("response", true);
+        settings.put("request", true);
+        settings.put("use basic wordlist", true);
+        settings.put("use bonus wordlist", false);
+        settings.put("use custom wordlist", false);
+        settings.put("custom wordlist path", "/usr/share/dict/words");
+        settings.put("bruteforce", false);
+        settings.put("skip uncacheable", false);
+        settings.put("dynamic keyload", false);
+        settings.put("max one per host", false);
+        settings.put("max one per host+status", false);
+        settings.put("probe identified params", true);
+        settings.put("scan identified params", false);
+        settings.put("enable auto-mine", false);
+        settings.put("auto-mine headers", false);
+        settings.put("auto-mine cookies", false);
+        settings.put("auto-mine params", false);
+        settings.put("auto-nest params", false);
+        settings.put("fuzz detect", false);
+        settings.put("carpet bomb", false);
+        settings.put("try cache poison", true);
+        settings.put("twitchy cache poison", false);
+        settings.put("try method flip", false);
+        settings.put("try -_ bypass", false);
+        settings.put("thread pool size", 8);
+        settings.put("rotation interval", 200);
+        settings.put("rotation increment", 4);
+        settings.put("force bucketsize", -1);
+        settings.put("max bucketsize", 65536);
+        settings.put("max param length", 32);
+        settings.put("lowercase headers", true);
+        settings.put("name in issue", false);
+        settings.put("canary", "zwrtxqva");
+
+        new Utilities(callbacks, settings);
         loadWordlists();
         BlockingQueue<Runnable> tasks;
         if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
@@ -89,7 +131,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new RailsUtmScan("rails param cloaking scan");
 
 
-        new BulkScanLauncher(scans);
+        new BulkScanLauncher(BulkScan.scans);
 
         Utilities.callbacks.registerExtensionStateListener(this);
 
@@ -127,26 +169,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 }
 
 
-class Fuzzable extends CustomScanIssue {
-    private final static String DETAIL =
-            "A unlinked input was identified, based on the following evidence. " +
-            "Response attributes that only stay consistent in one probe-set are italicised, with the variable attribute starred.";
-    private final static String REMEDIATION = "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. Try to determine the root cause of the observed behaviour." +
-            "Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
 
-    Fuzzable(IHttpRequestResponse[] requests, URL url, String title, String detail, boolean reliable, String severity) {
-        super(requests[0].getHttpService(), url, requests, title, DETAIL + detail, severity, calculateConfidence(reliable), REMEDIATION);
-    }
-
-    private static String calculateConfidence(boolean reliable) {
-        String confidence = "Tentative";
-        if (reliable) {
-            confidence = "Firm";
-        }
-        return confidence;
-    }
-
-}
 
 
 class RequestWithOffsets {

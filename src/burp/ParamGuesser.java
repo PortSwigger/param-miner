@@ -628,7 +628,7 @@ class ParamGuesser implements Runnable {
 
         if(Utilities.globalSettings.getBoolean("probe identified params")) {
             IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
-            for (Scan scan : BurpExtender.scans) {
+            for (Scan scan : BulkScan.scans) {
                 if (scan instanceof ParamScan) {
                     ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
                 }

@@ -11,6 +11,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
     compile 'org.jsoup:jsoup:1.8.1'
+    compile files('albinowaxUtils-all.jar')
 }
 
 sourceSets {
