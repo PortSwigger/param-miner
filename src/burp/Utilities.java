@@ -694,7 +694,7 @@ class Utilities {
     }
 
     static String toCanary(String payload) {
-        return "wrtqva" + mangle(payload);
+        return globalSettings.getString("canary") + mangle(payload);
     }
 
     public static int getBodyStart(byte[] response) {
