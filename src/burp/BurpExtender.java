@@ -72,7 +72,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         settings.put("name in issue", false);
         settings.put("canary", "zwrtxqva");
 
-        new Utilities(callbacks, settings);
+        new Utilities(callbacks, settings, name);
         loadWordlists();
         BlockingQueue<Runnable> tasks;
         if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
