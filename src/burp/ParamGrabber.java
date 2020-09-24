@@ -3,7 +3,6 @@ package burp;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.omg.PortableInterceptor.RequestInfo;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +35,7 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
     }
 
     public void processHttpMessage(int toolFlag, boolean messageIsRequest, IHttpRequestResponse messageInfo) {
-        if (messageIsRequest) {
+        if (messageIsRequest && toolFlag != IBurpExtenderCallbacks.TOOL_EXTENDER) {
             addCacheBusters(messageInfo);
         }
     }
@@ -81,18 +80,20 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
             );
         }
 
-        String cacheBusterName = null;
+        byte[] req = messageInfo.getRequest();
+        String cacheBuster = null;
         if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
-            cacheBusterName = Utilities.generateCanary();
+            cacheBuster = Utilities.generateCanary();
         }
         else if (Utilities.globalSettings.getBoolean("Add 'fcbz' cachebuster")) {
-            cacheBusterName = "fcbz";
+            cacheBuster = "fcbz";
         }
 
-        if (cacheBusterName != null) {
-            IParameter cacheBuster = burp.Utilities.helpers.buildParameter(cacheBusterName, "1", IParameter.PARAM_URL);
-            messageInfo.setRequest(Utilities.helpers.addParameter(messageInfo.getRequest(), cacheBuster));
+        if (cacheBuster != null) {
+            req = Utilities.addCacheBuster(req, cacheBuster);
         }
+
+        messageInfo.setRequest(req);
     }
 
     private void launchScan(IHttpRequestResponse messageInfo) {

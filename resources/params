@@ -100,6 +100,11 @@ modify
 rename
 reset
 shell
+utm_source
+utm_medium
+utm_campaign
+utm_term
+utm_content
 toggle
 adm
 cfg

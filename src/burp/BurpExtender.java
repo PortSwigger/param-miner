@@ -23,13 +23,15 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.07";
+    private static final String version = "1.21";
     private ThreadPoolExecutor taskEngine;
+    public static List<Scan> scans = new ArrayList<>();
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
         new Utilities(callbacks);
+        loadWordlists();
         BlockingQueue<Runnable> tasks;
         if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
             tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
@@ -78,10 +80,41 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
+        new PortDOS("port-DoS");
+        //new ValueScan("param-value probe");
+        new UnkeyedParamScan("Unkeyed param");
+        new FatGet("fat GET");
+        new NormalisedParamScan("normalised param");
+        new NormalisedPathScan("normalised path");
+        new RailsUtmScan("rails param cloaking scan");
+
+
+        new BulkScanLauncher(scans);
+
         Utilities.callbacks.registerExtensionStateListener(this);
 
         Utilities.out("Loaded " + name + " v" + version);
         Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
+    }
+
+
+    private void loadWordlists() {
+        Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
+        while (s.hasNext()) {
+            Utilities.phpFunctions.add(s.next());
+        }
+        s.close();
+
+        Scanner params = new Scanner(getClass().getResourceAsStream("/params"));
+        while (params.hasNext()) {
+            Utilities.paramNames.add(params.next());
+        }
+        params.close();
+
+        Scanner headers = new Scanner(getClass().getResourceAsStream("/boring_headers"));
+        while (headers.hasNext()) {
+            Utilities.boringHeaders.add(headers.next().toLowerCase());
+        }
     }
 
     public void extensionUnloaded() {
@@ -113,124 +146,6 @@ class Fuzzable extends CustomScanIssue {
         return confidence;
     }
 
-}
-
-class CustomScanIssue implements IScanIssue {
-    private IHttpService httpService;
-    private URL url;
-    private IHttpRequestResponse[] httpMessages;
-    private String name;
-    private String detail;
-    private String severity;
-    private String confidence;
-    private String remediation;
-
-    CustomScanIssue(
-            IHttpService httpService,
-            URL url,
-            IHttpRequestResponse[] httpMessages,
-            String name,
-            String detail,
-            String severity,
-            String confidence,
-            String remediation) {
-        this.name = name;
-        this.detail = detail;
-        this.severity = severity;
-        this.httpService = httpService;
-        this.url = url;
-        this.httpMessages = httpMessages;
-        this.confidence = confidence;
-        this.remediation = remediation;
-    }
-
-    CustomScanIssue(
-            IHttpService httpService,
-            URL url,
-            IHttpRequestResponse httpMessages,
-            String name,
-            String detail,
-            String severity,
-            String confidence,
-            String remediation) {
-        this.name = name;
-        this.detail = detail;
-        this.severity = severity;
-        this.httpService = httpService;
-        this.url = url;
-        this.httpMessages = new IHttpRequestResponse[1];
-        this.httpMessages[0] = httpMessages;
-
-        this.confidence = confidence;
-        this.remediation = remediation;
-    }
-
-    @Override
-    public URL getUrl() {
-        return url;
-    }
-
-    @Override
-    public String getIssueName() {
-        return name;
-    }
-
-    @Override
-    public int getIssueType() {
-        return 0;
-    }
-
-    @Override
-    public String getSeverity() {
-        return severity;
-    }
-
-    @Override
-    public String getConfidence() {
-        return confidence;
-    }
-
-    @Override
-    public String getIssueBackground() {
-        return null;
-    }
-
-    @Override
-    public String getRemediationBackground() {
-        return null;
-    }
-
-    @Override
-    public String getIssueDetail() {
-        return detail;
-    }
-
-    @Override
-    public String getRemediationDetail() {
-        return remediation;
-    }
-
-    @Override
-    public IHttpRequestResponse[] getHttpMessages() {
-        return httpMessages;
-    }
-
-    @Override
-    public IHttpService getHttpService() {
-        return httpService;
-    }
-
-    public String getHost() {
-        return null;
-    }
-
-    public int getPort() {
-        return 0;
-    }
-
-    public String getProtocol() {
-        return null;
-    }
 }
 
 
@@ -332,13 +247,18 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         }
 
         present = new HashMap<>();
-        List<String> headers = Utilities.helpers.analyzeRequest(request).getHeaders();
+        List<String> headers = Utilities.analyzeRequest(request).getHeaders();
         for (String header: headers) {
             if (header.startsWith("Host: ")) {
                 host = header.split(": ", 2)[1];
             }
             header = header.split(": ", 2)[0];
-            present.put(header.toLowerCase(), header);
+            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
+                present.put(header.toLowerCase(), header);
+            }
+            else {
+                present.put(header, header);
+            }
         }
     }
 
@@ -401,7 +321,12 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             if ("".equals(fullParam[0])) {
                 continue;
             }
-            preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
+            if (type == Utilities.PARAM_HEADER) {
+                preppedParams.add(fullParam[0] + equals + fullParam[1]);
+            }
+            else {
+                preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
+            }
         }
 
         return String.join(join, preppedParams) + trail;

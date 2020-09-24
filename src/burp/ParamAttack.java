@@ -146,19 +146,21 @@ class ParamAttack {
         // fixme this may exceed the max bucket size
         calculateBucketSize(type, longest);
 
-        StringBuilder basePayload = new StringBuilder();
-        for (int i = 1; i < min(8, bucketSize); i++) {
-            basePayload.append("|");
-            basePayload.append(Utilities.randomString(longest));
-            if(i % 4 == 0) {
-                base.addAttack(injector.probeAttack(basePayload.toString()));
+        if (!Utilities.globalSettings.getBoolean("carpet bomb")) {
+            StringBuilder basePayload = new StringBuilder();
+            for (int i = 1; i < min(8, bucketSize); i++) {
+                basePayload.append("|");
+                basePayload.append(Utilities.randomString(longest));
+                if (i % 4 == 0) {
+                    base.addAttack(injector.probeAttack(basePayload.toString()));
+                }
             }
         }
 
         // calculateBucketSize(type, longest); was here
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
-        Utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
+        Utilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
@@ -182,7 +184,6 @@ class ParamAttack {
         }
 
         alreadyReported = getBlacklist(type);
-
         //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
     }
 
@@ -207,6 +208,7 @@ class ParamAttack {
 
         while (true) {
             Utilities.log("Trying bucket size: "+ bucketSize);
+            long start = System.currentTimeMillis();
             StringBuilder trialPayload = new StringBuilder();
             trialPayload.append(Utilities.randomString(longest));
             for (int i = 0; i < bucketSize; i++) {
@@ -223,7 +225,15 @@ class ParamAttack {
                     break;
                 }
             }
-            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize") || (bucketSize >= 256 && type == IParameter.PARAM_JSON)) {
+
+            long end = System.currentTimeMillis();
+            if (end - start > 5000) {
+                bucketSize = bucketSize / 2;
+                Utilities.out("Setting bucketSize to "+bucketSize+" due to slow response");
+                break;
+            }
+
+            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize")) {
                 break;
             }
 
@@ -243,13 +253,17 @@ class ParamAttack {
             case IParameter.PARAM_URL:
                 blacklist.add("lang");
                 blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
+                break;
             case IParameter.PARAM_BODY:
                 blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
+                break;
             case Utilities.PARAM_HEADER:
                 if (Utilities.globalSettings.getBoolean("skip boring words")) {
                     blacklist.addAll(Utilities.boringHeaders);
                 }
+                break;
             default:
+                Utilities.out("Unrecognised type: "+type);
                 break;
         }
 
@@ -367,7 +381,9 @@ class ParamAttack {
 
         params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
 
-        params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
+        if (config.getBoolean("request")) {
+            params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
+        }
 
         // todo move this stuff elsewhere - no need to load it into memory in advance
         params.addAll(paramGrabber.getSavedGET());

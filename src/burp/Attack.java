@@ -27,8 +27,7 @@ class Attack {
 
     private IHttpRequestResponse lastRequest;
 
-    //private String[] keys = new String[]{"\":\"", "wrtqva", "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
-    private String[] keys = new String[]{"wrtqva"};
+    private String[] keys = new String[]{Utilities.globalSettings.getString("canary"), "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
 
     String payload;
     private Probe probe;
