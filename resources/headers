@@ -82,7 +82,7 @@ x-forwarded-proto
 x-forwarded-port
 front-end-https
 x-forwarded-protocol
-x-forwarded-ssl 
+x-forwarded-ssl
 x-url-scheme
 x-cluster-client-ip
 x-forwarded-server~%s.%h
@@ -357,7 +357,7 @@ redirection-use-proxy
 redirect-problem-withoutwww
 redirect-problem-withwww
 ref
-referer 
+referer
 refresh
 remix-hash
 remote-host-wp
