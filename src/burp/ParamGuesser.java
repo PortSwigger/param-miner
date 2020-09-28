@@ -4,6 +4,7 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -56,26 +57,31 @@ class ParamGuesser implements Runnable {
     }
 
     public void run() {
-        if(this.attack == null) {
-            if (req.getResponse() == null) {
-                Utilities.log("Baserequest has no response - fetching...");
-                try {
-                    req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
+        try {
+            if (this.attack == null) {
+                if (req.getResponse() == null) {
+                    Utilities.log("Baserequest has no response - fetching...");
+                    try {
+                        req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
+                    } catch (RuntimeException e) {
+                        Utilities.out("Aborting attack due to failed lookup");
+                        return;
+                    }
+                    if (req == null) {
+                        Utilities.out("Aborting attack due to null response");
+                        return;
+                    }
                 }
-                catch (RuntimeException e) {
-                    Utilities.out("Aborting attack due to failed lookup");
-                    return;
-                }
-                if (req == null) {
-                    Utilities.out("Aborting attack due to null response");
-                    return;
-                }
+                this.attack = new ParamAttack(req, type, paramGrabber, stop, config);
             }
-            this.attack = new ParamAttack(req, type, paramGrabber, stop, config);
-        }
-        ArrayList<Attack> paramGuesses = guessParams(attack);
-        if (!paramGuesses.isEmpty()) {
-            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+            ArrayList<Attack> paramGuesses = guessParams(attack);
+            if (!paramGuesses.isEmpty()) {
+                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+            }
+        } catch (Exception e) {
+            Utilities.out("Attack aborted by exception");
+            Utilities.showError(e);
+            throw e;
         }
 
 //        if(backend) {
@@ -613,39 +619,45 @@ class ParamGuesser implements Runnable {
 
     private void scanParam(ParamInsertionPoint insertionPoint, PayloadInjector injector, String scanBasePayload) {
 
-        IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
-        byte[] req = scanBaseAttack.getRequest();
-        byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
+        try {
+            IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
+            byte[] req = scanBaseAttack.getRequest();
+            byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
 
-        int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
-        int end = start + scanBaseGrep.length;
+            int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
+            int end = start + scanBaseGrep.length;
 
-        // todo test this
-        // todo make separate option for core scan vs param scan
-        ArrayList<int[]> offsets = new ArrayList<>();
-        offsets.add(new int[]{start, end});
-        IHttpService service = scanBaseAttack.getHttpService();
+            // todo test this
+            // todo make separate option for core scan vs param scan
+            ArrayList<int[]> offsets = new ArrayList<>();
+            offsets.add(new int[]{start, end});
+            IHttpService service = scanBaseAttack.getHttpService();
 
-        if(Utilities.globalSettings.getBoolean("probe identified params")) {
-            IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
-            for (Scan scan : BulkScan.scans) {
-                if (scan instanceof ParamScan) {
-                    ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+            if (Utilities.globalSettings.getBoolean("probe identified params")) {
+                IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
+                for (Scan scan : BulkScan.scans) {
+                    if (scan instanceof ParamScan) {
+                        ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+                    }
                 }
             }
-        }
 
-        if(!Utilities.globalSettings.getBoolean("scan identified params")) {
-            return;
-        }
+            if (!Utilities.globalSettings.getBoolean("scan identified params")) {
+                return;
+            }
 
-        if (!Utilities.isBurpPro()) {
-            Utilities.out("Can't autoscan identified parameter - requires pro edition");
-            return;
-        }
+            if (!Utilities.isBurpPro()) {
+                Utilities.out("Can't autoscan identified parameter - requires pro edition");
+                return;
+            }
 
-        Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
-        //ValueGuesser.guessValue(scanBaseAttack, start, end);
+            Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
+            //ValueGuesser.guessValue(scanBaseAttack, start, end);
+
+        } catch (Exception e) {
+            // don't let a broken scan take out the param-miner thread
+            Utilities.showError(e);
+        }
     }
 
     private boolean findPersistent(IHttpRequestResponse baseRequestResponse, Attack paramGuess, String attackID, CircularFifoQueue<String> recentParams, ArrayList<String> currentParams, HashSet<String> alreadyReported) {
