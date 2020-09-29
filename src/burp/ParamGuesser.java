@@ -633,7 +633,7 @@ class ParamGuesser implements Runnable {
             offsets.add(new int[]{start, end});
             IHttpService service = scanBaseAttack.getHttpService();
 
-            if (Utilities.globalSettings.getBoolean("probe identified params")) {
+            if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
                 IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
                 for (Scan scan : BulkScan.scans) {
                     if (scan instanceof ParamScan) {
