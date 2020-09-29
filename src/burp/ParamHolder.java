@@ -2,6 +2,7 @@ package burp;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 
 class ParamHolder {
@@ -79,7 +80,7 @@ class ParamHolder {
     }
 
     private void removeBadEntries(ArrayList<String> params) {
-        params.remove("");
+        params.removeAll(Arrays.asList(""));
 
         if (type == Utilities.PARAM_HEADER) {
             params.removeIf(x -> Character.isDigit(x.charAt(0)));
