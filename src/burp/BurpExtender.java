@@ -23,7 +23,7 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.25";
+    private static final String version = "1.26";
     private ThreadPoolExecutor taskEngine;
 
 
@@ -42,6 +42,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         settings.put("request", true);
         settings.put("use basic wordlist", true);
         settings.put("use bonus wordlist", false);
+        settings.put("use assetnote params", false);
         settings.put("use custom wordlist", false);
         settings.put("custom wordlist path", "/usr/share/dict/words");
         settings.put("bruteforce", false);

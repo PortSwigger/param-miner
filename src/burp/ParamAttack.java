@@ -399,6 +399,10 @@ class ParamAttack {
             bonusParams.addSource(config.getString("custom wordlist path"));
         }
 
+        if (config.getBoolean("use assetnote params")) {
+            bonusParams.addSource("/assetnote-params");
+        }
+
 
         if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             bonusParams.addSource("/headers");
