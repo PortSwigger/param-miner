@@ -154,7 +154,9 @@ class PayloadInjector {
         //IParameter cacheBuster = burp.Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
         //request = burp.Utilities.helpers.addParameter(request, cacheBuster);
         //request = burp.Utilities.appendToQuery(request, Utilities.generateCanary()+"=1");
-        request = Utilities.addCacheBuster(request, Utilities.generateCanary());
+        if (Utilities.globalSettings.getBoolean("enable cachebuster for guessing")) {
+            request = Utilities.addCacheBuster(request, Utilities.generateCanary());
+        }
 
         IHttpRequestResponse requestResponse = burp.Utilities.attemptRequest(service, request);
         return new Attack(requestResponse, null, null, "");
