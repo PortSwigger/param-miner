@@ -26,16 +26,22 @@ class OfferParamGuess implements IContextMenuFactory {
             return options;
         }
 
+        JMenuItem allButton = new JMenuItem("Guess everything!");
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
+        
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
         probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
         options.add(probeButton);
 
         JMenuItem cookieProbeButton = new JMenuItem("Guess cookie parameters");
         cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
         options.add(cookieProbeButton);
 
         JMenuItem headerProbeButton = new JMenuItem("Guess headers");
         headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
         options.add(headerProbeButton);
 
 //        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
@@ -51,6 +57,7 @@ class OfferParamGuess implements IContextMenuFactory {
             if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
                 JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
                 backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
+                allButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
                 options.add(backendProbeButton);
             }
 
@@ -93,11 +100,13 @@ class OfferParamGuess implements IContextMenuFactory {
 
                     JMenuItem postProbeButton = new JMenuItem("Guess " + humanType + " parameter");
                     postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
+                    allButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
                     options.add(postProbeButton);
                 }
             }
         }
 
+        options.add(allButton);
         return options;
     }
 }
