@@ -39,7 +39,6 @@ public class Keysmith {
         }
 
         if(Utilities.isResponse(resp)) {
-
             return getHtmlKeys(Utilities.getBody(resp));
         }
         else {
@@ -69,6 +68,10 @@ public class Keysmith {
         for (String e: param.split("\\[")) {
             parsed.append(":");
             parsed.append(e.replace("]", ""));
+        }
+
+        if (parsed.length() == 0) {
+            return "";
         }
 
         return parsed.toString().substring(1);
