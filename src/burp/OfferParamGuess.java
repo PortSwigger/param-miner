@@ -23,7 +23,17 @@ class OfferParamGuess implements IContextMenuFactory {
         List<JMenuItem> options = new ArrayList<>();
 
         if(reqs == null || reqs.length == 0) {
-            return options;
+            if (invocation.getSelectedIssues().length > 0) {
+                ArrayList<IHttpRequestResponse> newReqs = new ArrayList<>();
+                for(IScanIssue issue: invocation.getSelectedIssues()){
+                    newReqs.add(issue.getHttpMessages()[0]);
+
+                }
+                reqs = newReqs.toArray(new IHttpRequestResponse[0]);
+            }
+            else {
+                return options;
+            }
         }
 
         JMenuItem allButton = new JMenuItem("Guess everything!");
@@ -60,6 +70,13 @@ class OfferParamGuess implements IContextMenuFactory {
                 allButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
                 options.add(backendProbeButton);
             }
+
+//            if (Utilities.containsBytes(resp, "HTTP/1.1".getBytes())) {
+//                JMenuItem tunHeaderProbeButton = new JMenuItem("Guess tunneled headers");
+//                tunHeaderProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                options.add(tunHeaderProbeButton);
+//            }
 
             if (resp != null && resp.length > 0 && resp[0] == 'P') {
                 IRequestInfo info = Utilities.helpers.analyzeRequest(req);

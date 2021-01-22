@@ -387,6 +387,28 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
+
+        byte[] body = Utilities.getBodyBytes(request);
+        if (Utilities.containsBytes(body, "HTTP/1.1\r\n".getBytes())) {
+            Utilities.chopNestedResponses = true;
+            boolean usingCorrectContentLength = true;
+            try {
+                if (body.length != Integer.parseInt(Utilities.getHeader(request, "Content-Length"))) {
+                    usingCorrectContentLength = false;
+                }
+            } catch (Exception e) {
+
+            }
+
+            byte[] newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
+            byte[] finalRequest = Utilities.setBody(request, new String(newBody));
+            if (usingCorrectContentLength) {
+                finalRequest = Utilities.fixContentLength(finalRequest);
+            }
+
+            return finalRequest;
+        }
+
         String replaceKey = "TCZqBcS13SA8QRCpW";
         byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
 
