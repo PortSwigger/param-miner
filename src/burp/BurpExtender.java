@@ -72,6 +72,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         settings.put("lowercase headers", true);
         settings.put("name in issue", false);
         settings.put("canary", "zwrtxqva");
+        settings.put("force canary", "");
 
         new Utilities(callbacks, settings, name);
         loadWordlists();
@@ -287,6 +288,10 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     String calculateValue(String unparsed) {
+        String canary = Utilities.globalSettings.getString("force canary");
+        if (!"".equals(canary)) {
+            return canary;
+        }
         return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
     }
 
