@@ -387,8 +387,9 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
-
+        Iterator<String> dupeCheck= params.iterator();
         byte[] body = Utilities.getBodyBytes(request);
+
         if (Utilities.containsBytes(body, "HTTP/1.1\r\n".getBytes())) {
             Utilities.chopNestedResponses = true;
             boolean usingCorrectContentLength = true;
@@ -398,6 +399,14 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
                 }
             } catch (Exception e) {
 
+            }
+
+            while (dupeCheck.hasNext()) {
+                String param = dupeCheck.next().split("~", 2)[0];
+                byte[] toReplace = ("\n"+param+": ").getBytes();
+                if (Utilities.containsBytes(body, toReplace)) {
+                    body = Utilities.replace(body, toReplace, ("\nold"+param+": ").getBytes());
+                }
             }
 
             byte[] newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
@@ -415,8 +424,6 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
         if (params.isEmpty() || "".equals(merged)) {
             return built;
         }
-
-        Iterator<String> dupeCheck= params.iterator();
 
         while (dupeCheck.hasNext()) {
             String param = dupeCheck.next().split("~", 2)[0];
