@@ -163,7 +163,7 @@ class ParamGuesser implements Runnable {
                 else {
                     if (!config.getBoolean("bruteforce")) {
                         Utilities.out("Completed attack on "+ targetURL);
-                        Utilities.out("Completed " + (taskEngine.getCompletedTaskCount()+1) + "/" +(taskEngine.getTaskCount()+taskEngine.getCompletedTaskCount()));
+                        Utilities.out("Completed " + (taskEngine.getCompletedTaskCount()+1) + "/" +(taskEngine.getTaskCount()));
                         return attacks;
                     }
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
