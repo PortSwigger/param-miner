@@ -76,7 +76,7 @@ class ParamGuesser implements Runnable {
             }
             ArrayList<Attack> paramGuesses = guessParams(attack);
             if (!paramGuesses.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req, "", ""));
             }
         } catch (Exception e) {
             Utilities.out("Attack aborted by exception");
@@ -262,7 +262,7 @@ class ParamGuesser implements Runnable {
                                     if (Utilities.globalSettings.getBoolean("name in issue")) {
                                         title +=  ": " + submission.split("~")[0];
                                     }
-                                    Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
+                                    Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
 
                                     if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), staticCanary)) {
                                         scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
@@ -355,7 +355,7 @@ class ParamGuesser implements Runnable {
             paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
             ArrayList<Attack> confirmed = altInject.fuzz(paramBase, validParam);
             if (!confirmed.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param"));
+                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param", ""));
             }
 
             byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
