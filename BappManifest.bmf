@@ -3,7 +3,7 @@ ExtensionType: 1
 Name: Param Miner
 RepoName: param-miner
 ScreenVersion: 1.27
-SerialVersion: 12
+SerialVersion: 13
 MinPlatformVersion: 0
 ProOnly: False
 Author: James 'albinowax' Kettle, PortSwigger Web Security
