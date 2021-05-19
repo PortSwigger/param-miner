@@ -72,6 +72,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         settings.put("lowercase headers", true);
         settings.put("name in issue", false);
         settings.put("canary", "zwrtxqva");
+        settings.put("enable cachebuster for guessing",true);
 
         new Utilities(callbacks, settings, name);
         loadWordlists();
