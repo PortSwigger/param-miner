@@ -6,6 +6,7 @@ public class HeaderPoison extends Scan {
 
     HeaderPoison(String name) {
         super(name);
+        scanSettings.importSettings(BurpExtender.guessSettings);
     }
 
     @Override

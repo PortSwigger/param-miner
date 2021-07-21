@@ -26,56 +26,62 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String version = "1.28";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
+    static SettingsBox configSettings = new SettingsBox();
+    static SettingsBox guessSettings = new SettingsBox();
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
-        HashMap<String, Object> settings = new HashMap<>();
-        settings.put("Add 'fcbz' cachebuster", false);
-        settings.put("Add dynamic cachebuster", false);
-        settings.put("Add header cachebuster", false);
-        settings.put("include origin in cachebusters", true);
-        settings.put("learn observed words", false);
-        settings.put("skip boring words", true);
-        settings.put("only report unique params", false);
-        settings.put("response", true);
-        settings.put("request", true);
-        settings.put("use basic wordlist", true);
-        settings.put("use bonus wordlist", false);
-        settings.put("use assetnote params", false);
-        settings.put("use custom wordlist", false);
-        settings.put("custom wordlist path", "/usr/share/dict/words");
-        settings.put("bruteforce", false);
-        settings.put("skip uncacheable", false);
-        settings.put("dynamic keyload", false);
-        settings.put("max one per host", false);
-        settings.put("max one per host+status", false);
-        settings.put("probe identified params", true);
-        settings.put("scan identified params", false);
-        settings.put("enable auto-mine", false);
-        settings.put("auto-mine headers", false);
-        settings.put("auto-mine cookies", false);
-        settings.put("auto-mine params", false);
-        settings.put("auto-nest params", false);
-        settings.put("fuzz detect", false);
-        settings.put("carpet bomb", false);
-        settings.put("try cache poison", true);
-        settings.put("twitchy cache poison", false);
-        settings.put("try method flip", false);
-        settings.put("try -_ bypass", false);
-        settings.put("thread pool size", 8);
-        settings.put("rotation interval", 200);
-        settings.put("rotation increment", 4);
-        settings.put("force bucketsize", -1);
-        settings.put("max bucketsize", 65536);
-        settings.put("max param length", 32);
-        settings.put("lowercase headers", true);
-        settings.put("name in issue", false);
-        settings.put("canary", "zwrtxqva");
-        settings.put("force canary", "");
-        settings.put("poison only", false);
+        new Utilities(callbacks, new HashMap<>(), name);
 
-        new Utilities(callbacks, settings, name);
+        // config only (currently param-guess displays everything)
+        configSettings.register("Add 'fcbz' cachebuster", false);
+        configSettings.register("Add dynamic cachebuster", false);
+        configSettings.register("Add header cachebuster", false);
+        configSettings.register("learn observed words", false);
+        configSettings.register("enable auto-mine", false);
+        configSettings.register("auto-mine headers", false);
+        configSettings.register("auto-mine cookies", false);
+        configSettings.register("auto-mine params", false);
+        configSettings.register("auto-nest params", false);
+
+        // param-guess only
+        //guessSettings.importSettings(globalSettings);
+        guessSettings.register("learn observed words", false);
+        guessSettings.register("skip boring words", true);
+        guessSettings.register("only report unique params", false);
+        guessSettings.register("response", true);
+        guessSettings.register("request", true);
+        guessSettings.register("use basic wordlist", true);
+        guessSettings.register("use bonus wordlist", false);
+        guessSettings.register("use assetnote params", false);
+        guessSettings.register("use custom wordlist", false);
+        guessSettings.register("custom wordlist path", "/usr/share/dict/words");
+        guessSettings.register("bruteforce", false);
+        guessSettings.register("skip uncacheable", false);
+        guessSettings.register("dynamic keyload", false);
+        guessSettings.register("max one per host", false);
+        guessSettings.register("max one per host+status", false);
+        guessSettings.register("probe identified params", true);
+        guessSettings.register("scan identified params", false);
+        guessSettings.register("fuzz detect", false);
+        guessSettings.register("carpet bomb", false);
+        guessSettings.register("try cache poison", true);
+        guessSettings.register("twitchy cache poison", false);
+        guessSettings.register("try method flip", false);
+        guessSettings.register("try -_ bypass", false);
+        guessSettings.register("rotation interval", 200);
+        guessSettings.register("rotation increment", 4);
+        guessSettings.register("force bucketsize", -1);
+        guessSettings.register("max bucketsize", 65536);
+        guessSettings.register("max param length", 32);
+        guessSettings.register("lowercase headers", true);
+        guessSettings.register("name in issue", false);
+        guessSettings.register("canary", "zwrtxqva");
+        guessSettings.register("force canary", "");
+        guessSettings.register("poison only", false);
+
+
         loadWordlists();
         BlockingQueue<Runnable> tasks;
         if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
@@ -85,6 +91,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             tasks = new LinkedBlockingQueue<>();
         }
 
+        Utilities.globalSettings.registerSetting("thread pool size", 8);
         taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
             Utilities.out("Updating active thread pool size to "+value);
