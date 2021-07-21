@@ -163,7 +163,9 @@ class ParamGuesser implements Runnable {
                 else {
                     if (!config.getBoolean("bruteforce")) {
                         Utilities.out("Completed attack on "+ targetURL);
-                        Utilities.out("Completed " + (taskEngine.getCompletedTaskCount()+1) + "/" +(taskEngine.getTaskCount()));
+                        if (taskEngine != null) {
+                            Utilities.out("Completed " + (taskEngine.getCompletedTaskCount() + 1) + "/" + (taskEngine.getTaskCount()));
+                        }
                         return attacks;
                     }
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
@@ -254,7 +256,7 @@ class ParamGuesser implements Runnable {
                                     cacheSuccess = cachePoison(injector, submission, failAttack.getFirstRequest());
                                 }
 
-                                if (!Utilities.CACHE_ONLY) {
+                                if (!Utilities.globalSettings.getBoolean("poison only")) {
                                     String title = "Secret input: " + Utilities.getNameFromType(type);
                                     if (!cacheSuccess && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
                                         title = "Secret uncached input: " + Utilities.getNameFromType(type);

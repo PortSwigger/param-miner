@@ -25,7 +25,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
     private static final String version = "1.27";
     private ThreadPoolExecutor taskEngine;
-
+    static ParamGrabber paramGrabber;
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
@@ -73,6 +73,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         settings.put("name in issue", false);
         settings.put("canary", "zwrtxqva");
         settings.put("force canary", "");
+        settings.put("poison only", false);
 
         new Utilities(callbacks, settings, name);
         loadWordlists();
@@ -112,7 +113,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             throw new NoSuchMethodError();
         }
 
-        ParamGrabber paramGrabber = new ParamGrabber(taskEngine);
+        paramGrabber = new ParamGrabber(taskEngine);
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
 
         if(Utilities.isBurpPro()) {
@@ -124,6 +125,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
+        new HeaderPoison("Header poison");
         new PortDOS("port-DoS");
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
@@ -138,7 +140,6 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         Utilities.callbacks.registerExtensionStateListener(this);
 
         Utilities.out("Loaded " + name + " v" + version);
-        Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 
 
