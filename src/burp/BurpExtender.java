@@ -80,6 +80,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("canary", "zwrtxqva");
         guessSettings.register("force canary", "");
         guessSettings.register("poison only", false);
+        guessSettings.register("tunnelling retry count", 20);
+        guessSettings.register("abort on tunnel failure", true);
 
 
         loadWordlists();
@@ -403,9 +405,16 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
         Iterator<String> dupeCheck= params.iterator();
         byte[] body = Utilities.getBodyBytes(request);
 
-        if (Utilities.containsBytes(body, "HTTP/1.1\r\n".getBytes())) {
+        boolean fooReq = false;
+        if (Utilities.containsBytes(body, "FOO BAR AAH\r\n".getBytes())) {
+            fooReq = true;
+        }
+
+        if (fooReq || Utilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
             Utilities.chopNestedResponses = true;
+
             boolean usingCorrectContentLength = true;
+
             try {
                 if (body.length != Integer.parseInt(Utilities.getHeader(request, "Content-Length"))) {
                     usingCorrectContentLength = false;
@@ -422,11 +431,20 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
                 }
             }
 
-            byte[] newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
+            byte[] newBody;
+            if (fooReq) {
+                newBody = Utilities.replaceFirst(body, "FOO BAR AAH\r\n", "GET http://"+Utilities.getHeader(request, "Host")+"/ HTTP/1.1\r\n"+merged+"\r\n");
+            }
+            else {
+                newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
+            }
+
             byte[] finalRequest = Utilities.setBody(request, new String(newBody));
             if (usingCorrectContentLength) {
                 finalRequest = Utilities.fixContentLength(finalRequest);
             }
+
+            finalRequest = Utilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
 
             return finalRequest;
         }
