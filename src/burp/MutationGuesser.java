@@ -2,7 +2,7 @@ package burp;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class MutationGuesser {
@@ -10,12 +10,14 @@ public class MutationGuesser {
     private IHttpRequestResponse req;
     private ParamAttack attack;
     private IHttpService service;
+    public HashMap<String, IHttpRequestResponse[]> evidence;
 
     MutationGuesser(IHttpRequestResponse req, ParamAttack attack, ConfigurableSettings config) {
         this.req = req;
         this.attack = attack;
         this.config = config;
         this.service = this.attack.getBaseRequestResponse().getHttpService();
+        this.evidence = new HashMap<String, IHttpRequestResponse[]>();
     }
 
     // Returns the mutation names used by HeaderMutator
@@ -24,12 +26,12 @@ public class MutationGuesser {
         ArrayList<String> ret = new ArrayList<String>();
 
         // Get the front-end error
-        IHttpRequestResponse baseError = this.requestHeader(baseReq, "Content-Length: z");
-        byte[] frontError = baseError.getResponse();
+        IHttpRequestResponse frontErrReq = this.requestHeader(baseReq, "Content-Length: z");
+        byte[] frontError = frontErrReq.getResponse();
 
         // Check we've managed to generate an error
-        IHttpRequestResponse normal = this.requestHeader(baseReq, "Content-Length: 0");
-        byte[] noErr = normal.getResponse();
+        IHttpRequestResponse noErrReq = this.requestHeader(baseReq, "Content-Length: 0");
+        byte[] noErr = noErrReq.getResponse();
         if (this.requestMatch(frontError, noErr)) {
             Utilities.out("Failed to generate error against host " + this.service.getHost());
             return ret;
@@ -41,8 +43,8 @@ public class MutationGuesser {
         String testHeaderInvalid = "Content-Length: z";
         String testHeaderValid = "Content-Length: 0";
         while(iterator.hasNext()) {
-            String mutaiton = iterator.next();
-            byte[] mutated = mutator.mutate(testHeaderInvalid, mutaiton);
+            String mutation = iterator.next();
+            byte[] mutated = mutator.mutate(testHeaderInvalid, mutation);
             IHttpRequestResponse testReqResp = this.requestHeader(baseReq, mutated);
             byte[] testReq = testReqResp.getResponse();
 
@@ -51,11 +53,17 @@ public class MutationGuesser {
             //  2. We have an error at all (i.e. not the same as the base request
             // In this case, confirm that we get no error (i.e. the base response) with mutation(CL: 0)
             if (!this.requestMatch(frontError, testReq) && !this.requestMatch(noErr, testReq)) {
-                mutated = mutator.mutate(testHeaderValid, mutaiton);
+                mutated = mutator.mutate(testHeaderValid, mutation);
                 IHttpRequestResponse validReqResp = this.requestHeader(baseReq, mutated);
                 byte[] validResp = validReqResp.getResponse();
                 if (this.requestMatch(noErr, validResp)) {
-                    ret.add(mutaiton);
+                    ret.add(mutation);
+                    IHttpRequestResponse[] reqs = new IHttpRequestResponse[4];
+                    reqs[0] = frontErrReq;
+                    reqs[1] = noErrReq;
+                    reqs[2] = testReqResp;
+                    reqs[3] = validReqResp;
+                    this.evidence.put(mutation, reqs);
                 }
             }
         }
@@ -70,8 +78,7 @@ public class MutationGuesser {
 
     private IHttpRequestResponse requestHeader(byte[] baseReq, byte[] header) {
         byte[] req = this.addHeader(baseReq, header);
-        // TODO - add cachebuster back in. Useful to not have for testing though
-        //req = Utilities.addCacheBuster(req, Utilities.generateCanary());
+        req = Utilities.addCacheBuster(req, Utilities.generateCanary());
         return Utilities.attemptRequest(this.service, req);
     }
 

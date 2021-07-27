@@ -7,6 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Array;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -82,6 +84,28 @@ class ParamGuesser implements Runnable {
                 MutationGuesser mutationGuesser = new MutationGuesser(req, this.attack, this.config);
                 ArrayList<String> mutations = mutationGuesser.guessMutations();
                 this.attack.setHeaderMutations(mutations);
+
+                // Report if required
+                if (mutations != null) {
+                    Iterator<String> iterator = mutations.iterator();
+                    while (iterator.hasNext()) {
+                        String mutation = iterator.next();
+                        String urlStr = this.attack.getTargetURL();
+                        Utilities.out("Found mutation against " + urlStr + ": " + mutation);
+                        IHttpRequestResponse[] evidence = mutationGuesser.evidence.get(mutation);
+                        IHttpService service = evidence[0].getHttpService();
+                        Utilities.callbacks.addScanIssue(new CustomScanIssue(
+                                service,
+                                Utilities.helpers.analyzeRequest(service, evidence[0].getRequest()).getUrl(),
+                                evidence,
+                                "Header mutation found",
+                                "Headers can be snuck to a back-end server using the '" + mutation + "' mutation.",
+                                "Information",
+                                "Firm",
+                                "This issue is not exploitable on its own, but interesting headers may be able to be snuck through to backend servers."
+                        ));
+                    }
+                }
             }
 
             ArrayList<Attack> paramGuesses = guessParams(attack);
@@ -158,7 +182,6 @@ class ParamGuesser implements Runnable {
 
 
         while (completedAttacks++ < stop) {
-            Utilities.out("Entering iteration");
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
                 int i = 0;
