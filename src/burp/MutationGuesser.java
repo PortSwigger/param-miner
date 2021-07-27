@@ -22,7 +22,8 @@ public class MutationGuesser {
 
         this.testHeaders = new String[][]{
                 {"Content-Length: 0", "Content-Length: z"},
-                {"Range: bytes=0-", "Range: z"}
+                {"Range: bytes=0-", "Range: z"},
+                {"Content-Type: application/x-www-form-urlencoded", "Content-Type: z"}
         };
     }
 
