@@ -11,6 +11,7 @@ public class MutationGuesser {
     private ParamAttack attack;
     private IHttpService service;
     public HashMap<String, IHttpRequestResponse[]> evidence;
+    private String[][] testHeaders;
 
     MutationGuesser(IHttpRequestResponse req, ParamAttack attack, ConfigurableSettings config) {
         this.req = req;
@@ -18,6 +19,11 @@ public class MutationGuesser {
         this.config = config;
         this.service = this.attack.getBaseRequestResponse().getHttpService();
         this.evidence = new HashMap<String, IHttpRequestResponse[]>();
+
+        this.testHeaders = new String[][]{
+                {"Content-Length: 0", "Content-Length: z"},
+                {"Range: bytes=0-", "Range: z"}
+        };
     }
 
     // Returns the mutation names used by HeaderMutator
@@ -39,31 +45,36 @@ public class MutationGuesser {
 
         // Test all the mutations to find back-end errors
         HeaderMutator mutator = new HeaderMutator();
-        Iterator<String> iterator = mutator.mutations.iterator();
-        String testHeaderInvalid = "Content-Length: z";
-        String testHeaderValid = "Content-Length: 0";
-        while(iterator.hasNext()) {
-            String mutation = iterator.next();
-            byte[] mutated = mutator.mutate(testHeaderInvalid, mutation);
-            IHttpRequestResponse testReqResp = this.requestHeader(baseReq, mutated);
-            byte[] testReq = testReqResp.getResponse();
+        for (int i = 0; i< this.testHeaders.length; i++) {
+            Iterator<String> iterator = mutator.mutations.iterator();
+            String testHeaderValid = this.testHeaders[i][0];
+            String testHeaderInvalid = this.testHeaders[i][1];
+            while (iterator.hasNext()) {
+                String mutation = iterator.next();
+                if (ret.contains(mutation)) {
+                    continue;
+                }
+                byte[] mutated = mutator.mutate(testHeaderInvalid, mutation);
+                IHttpRequestResponse testReqResp = this.requestHeader(baseReq, mutated);
+                byte[] testReq = testReqResp.getResponse();
 
-            // Check that:
-            //  1. We have a different error than the front-end error
-            //  2. We have an error at all (i.e. not the same as the base request
-            // In this case, confirm that we get no error (i.e. the base response) with mutation(CL: 0)
-            if (!this.requestMatch(frontError, testReq) && !this.requestMatch(noErr, testReq)) {
-                mutated = mutator.mutate(testHeaderValid, mutation);
-                IHttpRequestResponse validReqResp = this.requestHeader(baseReq, mutated);
-                byte[] validResp = validReqResp.getResponse();
-                if (this.requestMatch(noErr, validResp)) {
-                    ret.add(mutation);
-                    IHttpRequestResponse[] reqs = new IHttpRequestResponse[4];
-                    reqs[0] = frontErrReq;
-                    reqs[1] = noErrReq;
-                    reqs[2] = testReqResp;
-                    reqs[3] = validReqResp;
-                    this.evidence.put(mutation, reqs);
+                // Check that:
+                //  1. We have a different error than the front-end error
+                //  2. We have an error at all (i.e. not the same as the base request
+                // In this case, confirm that we get no error (i.e. the base response) with mutation(CL: 0)
+                if (!this.requestMatch(frontError, testReq) && !this.requestMatch(noErr, testReq)) {
+                    mutated = mutator.mutate(testHeaderValid, mutation);
+                    IHttpRequestResponse validReqResp = this.requestHeader(baseReq, mutated);
+                    byte[] validResp = validReqResp.getResponse();
+                    if (this.requestMatch(noErr, validResp)) {
+                        ret.add(mutation);
+                        IHttpRequestResponse[] reqs = new IHttpRequestResponse[4];
+                        reqs[0] = frontErrReq;
+                        reqs[1] = noErrReq;
+                        reqs[2] = testReqResp;
+                        reqs[3] = validReqResp;
+                        this.evidence.put(mutation, reqs);
+                    }
                 }
             }
         }
