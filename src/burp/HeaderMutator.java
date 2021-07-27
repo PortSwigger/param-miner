@@ -1,14 +1,10 @@
 package burp;
 
-import org.graalvm.compiler.core.common.util.Util;
-import sun.awt.WindowIDProvider;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Iterator;
 
 public class HeaderMutator {
@@ -18,7 +14,52 @@ public class HeaderMutator {
         this.mutations = new ArrayList<String>();
 
         this.registerMutation("nospace");
-        this.registerMutation("namejunk");
+        this.registerMutation("underscore");
+        this.registerMutation("cr-hyphen");
+
+        this.registerMutation("linePrefixSpace");
+        this.registerMutation("linePrefixTab");
+        this.registerMutation("linePrefixVTab");
+        this.registerMutation("linePrefixNull");
+
+        this.registerMutation("lineAppendixSpace");
+        this.registerMutation("lineAppendixTab");
+        this.registerMutation("lineAppendixLF");
+        this.registerMutation("lineAppendixCR");
+        this.registerMutation("lineAppendixVTab");
+        this.registerMutation("lineAppendixNull");
+
+        this.registerMutation("colonPreNull");
+        this.registerMutation("colonPreSpace");
+        this.registerMutation("colonPreTab");
+        this.registerMutation("colonPreVTab");
+        this.registerMutation("colonPreCR");
+        this.registerMutation("colonPreLF");
+        this.registerMutation("colonPreJunk");
+
+        this.registerMutation("colonPostNull");
+        this.registerMutation("colonPostSpace");
+        this.registerMutation("colonPostTab");
+        this.registerMutation("colonPostVTab");
+        this.registerMutation("colonPostCR");
+        this.registerMutation("colonPostLF");
+        this.registerMutation("colonPostJunk");
+
+        this.registerMutation("singleQuote");
+        this.registerMutation("doubleQuote");
+
+        this.registerMutation("upperCase");
+        this.registerMutation("lowerCase");
+        this.registerMutation("mixedCase");
+
+        this.registerMutation("headerStartLF");
+        this.registerMutation("headerStartDoubleLF");
+        this.registerMutation("headerStartCR");
+        this.registerMutation("headerStartDoubleCR");
+        this.registerMutation("headerEndLF");
+        this.registerMutation("headerEndDoubleLF");
+        this.registerMutation("headerEndCR");
+        this.registerMutation("headerEndDoubleCR");
     }
 
     private void registerMutation(String name) {
@@ -33,8 +74,169 @@ public class HeaderMutator {
                 retStr = header.replaceFirst(": ", ":");
                 break;
 
-            case "namejunk":
+            case "underscore":
+                retStr = header.replaceFirst("-", "_");
+                break;
+
+            case "cr-hyphen":
+                retStr = header.replaceFirst("-", "\r");
+                break;
+
+            case "linePrefixSpace":
+                retStr = " " + header;
+                break;
+
+            case "linePrefixTab":
+                retStr = "\t" + header;
+                break;
+
+            case "linePrefixVTab":
+                retStr = new String(new byte[]{(byte)0x0b}) + header;
+                break;
+
+            case "linePrefixNull":
+                retStr = new String(new byte[]{(byte)0x00}) + header;
+                break;
+
+            case "lineAppendixSpace":
+                retStr = header + " ";
+                break;
+
+            case "lineAppendixTab":
+                retStr = header + "\t";
+                break;
+
+            case "lineAppendixLF":
+                retStr = header + "\n";
+                break;
+
+            case "lineAppendixCR":
+                retStr = header + "\r";
+                break;
+
+            case "lineAppendixVTab":
+                retStr = header + new String(new byte[]{(byte)0x0b});
+                break;
+
+            case "lineAppendixNull":
+                retStr = header + new String(new byte[]{(byte)0x00});
+                break;
+
+            case "colonPreNull":
+                retStr = header.replaceFirst(":", "\0:");
+                break;
+
+            case "colonPreSpace":
+                retStr = header.replaceFirst(":", " :");
+                break;
+
+            case "colonPreTab":
+                retStr = header.replaceFirst(":", "\t:");
+                break;
+
+            case "colonPreVTab":
+                retStr = header.replaceFirst(":", new String(new byte[]{0x0b}) + ":");
+                break;
+
+            case "colonPreCR":
+                retStr = header.replaceFirst(":", "\r:");
+                break;
+
+            case "colonPreLF":
+                retStr = header.replaceFirst(":", "\n:");
+                break;
+
+            case "colonPreJunk":
                 retStr = header.replaceFirst(":", " abcd:");
+                break;
+
+            case "colonPostNull":
+                retStr = header.replaceFirst(":", ":\0");
+                break;
+
+            case "colonPostSpace":
+                retStr = header.replaceFirst(":", ": ");
+                break;
+
+            case "colonPostTab":
+                retStr = header.replaceFirst(":", ":\t");
+                break;
+
+            case "colonPostVTab":
+                retStr = header.replaceFirst(":", ":" + new String(new byte[]{0x0b}));
+                break;
+
+            case "colonPostCR":
+                retStr = header.replaceFirst(":", ":\r");
+                break;
+
+            case "colonPostLF":
+                retStr = header.replaceFirst(":", ":\n");
+                break;
+
+            case "colonPostJunk":
+                retStr = header.replaceFirst(":", ":abcd ");
+                break;
+
+            case "singleQuote":
+                retStr = header.replaceFirst(":\\s*", ": '").replaceFirst("$", "'");
+                break;
+
+            case "doubleQuote":
+                retStr = header.replaceFirst(":\\s*", ": \"").replaceFirst("$", "\"");
+                break;
+
+            case "upperCase":
+                retStr = header.toUpperCase();
+                break;
+
+            case "lowerCase":
+                retStr = header.toLowerCase();
+                break;
+
+            case "mixedCase":
+                retStr = "";
+                for (int i = 0; i < header.length(); i++) {
+                    char c;
+                    if (i%2 == 0) {
+                        c = Character.toLowerCase(header.charAt(i));
+                    } else {
+                        c = Character.toUpperCase(header.charAt(i));
+                    }
+                    retStr = retStr + c;
+                }
+                break;
+
+            case "headerStartLF":
+                retStr = "Foo: Bar\n" + header;
+                break;
+
+            case "headerStartDoubleLF":
+                retStr = "Foo: Bar\n\n" + header;
+                break;
+
+            case "headerStartCR":
+                retStr = "Foo: Bar\r" + header;
+                break;
+
+            case "headerStartDoubleCR":
+                retStr = "Foo: Bar\r\r" + header;
+                break;
+
+            case "headerEndLF":
+                retStr = header + "\nFoo: Bar";
+                break;
+
+            case "headerEndDoubleLF":
+                retStr = header + "\n\nFoo: Bar";
+                break;
+
+            case "headerEndCR":
+                retStr = header + "\rFoo: Bar";
+                break;
+
+            case "headerEndDoubleCR":
+                retStr = header + "\r\rFoo: Bar";
                 break;
 
             default:
