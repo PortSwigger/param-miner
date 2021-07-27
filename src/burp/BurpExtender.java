@@ -35,6 +35,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         settings.put("Add dynamic cachebuster", false);
         settings.put("Add header cachebuster", false);
         settings.put("include origin in cachebusters", true);
+        settings.put("identify smuggle mutations", true);
         settings.put("learn observed words", false);
         settings.put("skip boring words", true);
         settings.put("only report unique params", false);
