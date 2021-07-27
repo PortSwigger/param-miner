@@ -230,7 +230,7 @@ class ParamGuesser implements Runnable {
             if (headerMutations == null) {
                 headerMutations = new ArrayList<String>();
             }
-            if (headerMutations.size() > 0 && headerMutations.get(0) != null) {
+            if (headerMutations.size() == 0 || headerMutations.get(0) != null) {
                 headerMutations.add(0, null);
             }
             Iterator<String> iterator = headerMutations.iterator();
