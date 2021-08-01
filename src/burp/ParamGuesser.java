@@ -2,9 +2,6 @@ package burp;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -590,6 +587,10 @@ class ParamGuesser implements Runnable {
 
 
     private static boolean canSeeCache(byte[] response) {
+        if(response == null){
+            Utilities.out("WARNING: canSeeCache() cannot check headers of null response");
+            return false;
+        }
         String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAY"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {
