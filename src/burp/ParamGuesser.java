@@ -592,6 +592,9 @@ class ParamGuesser implements Runnable {
 
 
     private static boolean canSeeCache(byte[] response) {
+        if (response == null) {
+            return false;
+        }
         String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAY"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {
