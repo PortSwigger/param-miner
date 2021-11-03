@@ -110,7 +110,7 @@ class ParamGuesser implements Runnable {
 
             ArrayList<Attack> paramGuesses = guessParams(attack);
             if (!paramGuesses.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req));
+                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(paramGuesses.toArray((new Attack[paramGuesses.size()])), req, "", ""));
             }
         } catch (Exception e) {
             Utilities.out("Attack aborted by exception");
@@ -197,7 +197,9 @@ class ParamGuesser implements Runnable {
                 } else {
                     if (!config.getBoolean("bruteforce")) {
                         Utilities.out("Completed attack on " + targetURL);
-                        Utilities.out("Completed " + (taskEngine.getCompletedTaskCount() + 1) + "/" + (taskEngine.getTaskCount() + taskEngine.getCompletedTaskCount()));
+                        if (taskEngine != null) {
+                            Utilities.out("Completed " + (taskEngine.getCompletedTaskCount() + 1) + "/" + (taskEngine.getTaskCount()));
+                        }
                         return attacks;
                     }
                     state.seed = Utilities.generate(state.seed, bucketSize, newParams);
@@ -279,7 +281,6 @@ class ParamGuesser implements Runnable {
                                 continue;
                             }
 
-                            // TODO: could add mutations here. Shouldn't matter though so leaving for now.
                             Attack WAFCatcher = new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission)));
                             WAFCatcher.addAttack(new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission))));
                             if (!Utilities.similar(WAFCatcher, confirmParamGuess)) {
@@ -297,8 +298,7 @@ class ParamGuesser implements Runnable {
                                     if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
                                         cacheSuccess = cachePoison(injector, submission, failAttack.getFirstRequest());
                                     }
-
-                                    if (!Utilities.CACHE_ONLY) {
+                                    if (!Utilities.globalSettings.getBoolean("poison only")) {
                                         String title = "Secret input: " + Utilities.getNameFromType(type);
                                         if (!cacheSuccess && canSeeCache(paramGuess.getFirstRequest().getResponse())) {
                                             title = "Secret uncached input: " + Utilities.getNameFromType(type);
@@ -306,8 +306,7 @@ class ParamGuesser implements Runnable {
                                         if (Utilities.globalSettings.getBoolean("name in issue")) {
                                             title += ": " + submission.split("~")[0];
                                         }
-                                        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title));
-
+                                        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
                                         if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(paramGuess.getFirstRequest().getResponse(), staticCanary)) {
                                             scanParam(insertionPoint, injector, submission.split("~", 2)[0]);
                                         }
@@ -326,7 +325,7 @@ class ParamGuesser implements Runnable {
                                 }
                             }
                         }
-                    } else {
+                    } else{
                         Utilities.log(targetURL + " couldn't replicate: " + candidates);
                         base.addAttack(paramGuess);
                     }
@@ -399,7 +398,7 @@ class ParamGuesser implements Runnable {
             paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
             ArrayList<Attack> confirmed = altInject.fuzz(paramBase, validParam);
             if (!confirmed.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param"));
+                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param", ""));
             }
 
             byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
@@ -634,6 +633,9 @@ class ParamGuesser implements Runnable {
 
 
     private static boolean canSeeCache(byte[] response) {
+        if (response == null) {
+            return false;
+        }
         String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAY"};
         for(String header: headers) {
             if(Utilities.getHeaderOffsets(response, header) != null) {

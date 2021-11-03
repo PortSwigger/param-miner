@@ -23,8 +23,20 @@ class OfferParamGuess implements IContextMenuFactory {
         List<JMenuItem> options = new ArrayList<>();
 
         if(reqs == null || reqs.length == 0) {
-            return options;
+            if (invocation.getSelectedIssues().length > 0) {
+                ArrayList<IHttpRequestResponse> newReqs = new ArrayList<>();
+                for(IScanIssue issue: invocation.getSelectedIssues()){
+                    newReqs.add(issue.getHttpMessages()[0]);
+
+                }
+                reqs = newReqs.toArray(new IHttpRequestResponse[0]);
+            }
+            else {
+                return options;
+            }
         }
+
+        JMenu scanMenu = new JMenu("Guess params");
 
         JMenuItem allButton = new JMenuItem("Guess everything!");
         allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
@@ -32,17 +44,17 @@ class OfferParamGuess implements IContextMenuFactory {
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
         probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
         allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
-        options.add(probeButton);
+        scanMenu.add(probeButton);
 
         JMenuItem cookieProbeButton = new JMenuItem("Guess cookie parameters");
         cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
         allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
-        options.add(cookieProbeButton);
+        scanMenu.add(cookieProbeButton);
 
         JMenuItem headerProbeButton = new JMenuItem("Guess headers");
         headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
         allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
-        options.add(headerProbeButton);
+        scanMenu.add(headerProbeButton);
 
 //        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
 //            JMenuItem valueProbeButton = new JMenuItem("Guess value");
@@ -58,8 +70,15 @@ class OfferParamGuess implements IContextMenuFactory {
                 JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
                 backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
                 allButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
-                options.add(backendProbeButton);
+                scanMenu.add(backendProbeButton);
             }
+
+//            if (Utilities.containsBytes(resp, "HTTP/1.1".getBytes())) {
+//                JMenuItem tunHeaderProbeButton = new JMenuItem("Guess tunneled headers");
+//                tunHeaderProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                options.add(tunHeaderProbeButton);
+//            }
 
             if (resp != null && resp.length > 0 && resp[0] == 'P') {
                 IRequestInfo info = Utilities.helpers.analyzeRequest(req);
@@ -101,12 +120,13 @@ class OfferParamGuess implements IContextMenuFactory {
                     JMenuItem postProbeButton = new JMenuItem("Guess " + humanType + " parameter");
                     postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
                     allButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
-                    options.add(postProbeButton);
+                    scanMenu.add(postProbeButton);
                 }
             }
         }
 
-        options.add(allButton);
+        scanMenu.add(allButton);
+        options.add(scanMenu);
         return options;
     }
 }

@@ -23,58 +23,67 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.28";
+    private static final String version = "1.31";
     private ThreadPoolExecutor taskEngine;
-
+    static ParamGrabber paramGrabber;
+    static SettingsBox configSettings = new SettingsBox();
+    static SettingsBox guessSettings = new SettingsBox();
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
-        HashMap<String, Object> settings = new HashMap<>();
-        settings.put("Add 'fcbz' cachebuster", false);
-        settings.put("Add dynamic cachebuster", false);
-        settings.put("Add header cachebuster", false);
-        settings.put("include origin in cachebusters", true);
-        settings.put("identify smuggle mutations", true);
-        settings.put("learn observed words", false);
-        settings.put("skip boring words", true);
-        settings.put("only report unique params", false);
-        settings.put("response", true);
-        settings.put("request", true);
-        settings.put("use basic wordlist", true);
-        settings.put("use bonus wordlist", false);
-        settings.put("use assetnote params", false);
-        settings.put("use custom wordlist", false);
-        settings.put("custom wordlist path", "/usr/share/dict/words");
-        settings.put("bruteforce", false);
-        settings.put("skip uncacheable", false);
-        settings.put("dynamic keyload", false);
-        settings.put("max one per host", false);
-        settings.put("max one per host+status", false);
-        settings.put("probe identified params", true);
-        settings.put("scan identified params", false);
-        settings.put("enable auto-mine", false);
-        settings.put("auto-mine headers", false);
-        settings.put("auto-mine cookies", false);
-        settings.put("auto-mine params", false);
-        settings.put("auto-nest params", false);
-        settings.put("fuzz detect", false);
-        settings.put("carpet bomb", false);
-        settings.put("try cache poison", true);
-        settings.put("twitchy cache poison", false);
-        settings.put("try method flip", false);
-        settings.put("try -_ bypass", false);
-        settings.put("thread pool size", 8);
-        settings.put("rotation interval", 200);
-        settings.put("rotation increment", 4);
-        settings.put("force bucketsize", -1);
-        settings.put("max bucketsize", 65536);
-        settings.put("max param length", 32);
-        settings.put("lowercase headers", true);
-        settings.put("name in issue", false);
-        settings.put("canary", "zwrtxqva");
+        new Utilities(callbacks, new HashMap<>(), name);
 
-        new Utilities(callbacks, settings, name);
+        // config only (currently param-guess displays everything)
+        configSettings.register("Add 'fcbz' cachebuster", false);
+        configSettings.register("Add dynamic cachebuster", false);
+        configSettings.register("Add header cachebuster", false);
+        configSettings.register("learn observed words", false);
+        configSettings.register("enable auto-mine", false);
+        configSettings.register("auto-mine headers", false);
+        configSettings.register("auto-mine cookies", false);
+        configSettings.register("auto-mine params", false);
+        configSettings.register("auto-nest params", false);
+
+        // param-guess only
+        //guessSettings.importSettings(globalSettings);
+        guessSettings.register("learn observed words", false);
+        guessSettings.register("skip boring words", true);
+        guessSettings.register("only report unique params", false);
+        guessSettings.register("response", true);
+        guessSettings.register("request", true);
+        guessSettings.register("use basic wordlist", true);
+        guessSettings.register("use bonus wordlist", false);
+        guessSettings.register("use assetnote params", false);
+        guessSettings.register("use custom wordlist", false);
+        guessSettings.register("custom wordlist path", "/usr/share/dict/words");
+        guessSettings.register("bruteforce", false);
+        guessSettings.register("skip uncacheable", false);
+        guessSettings.register("dynamic keyload", false);
+        guessSettings.register("max one per host", false);
+        guessSettings.register("max one per host+status", false);
+        guessSettings.register("probe identified params", true);
+        guessSettings.register("scan identified params", false);
+        guessSettings.register("fuzz detect", false);
+        guessSettings.register("carpet bomb", false);
+        guessSettings.register("try cache poison", true);
+        guessSettings.register("twitchy cache poison", false);
+        guessSettings.register("try method flip", false);
+        guessSettings.register("identify smuggle mutations", true);
+        guessSettings.register("try -_ bypass", false);
+        guessSettings.register("rotation interval", 200);
+        guessSettings.register("rotation increment", 4);
+        guessSettings.register("force bucketsize", -1);
+        guessSettings.register("max bucketsize", 65536);
+        guessSettings.register("max param length", 32);
+        guessSettings.register("lowercase headers", true);
+        guessSettings.register("name in issue", false);
+        guessSettings.register("canary", "zwrtxqva");
+        guessSettings.register("force canary", "");
+        guessSettings.register("poison only", false);
+        guessSettings.register("tunnelling retry count", 20);
+        guessSettings.register("abort on tunnel failure", true);
+
         loadWordlists();
         BlockingQueue<Runnable> tasks;
         if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
@@ -84,6 +93,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             tasks = new LinkedBlockingQueue<>();
         }
 
+        Utilities.globalSettings.registerSetting("thread pool size", 8);
         taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
         Utilities.globalSettings.registerListener("thread pool size", value -> {
             Utilities.out("Updating active thread pool size to "+value);
@@ -112,7 +122,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
             throw new NoSuchMethodError();
         }
 
-        ParamGrabber paramGrabber = new ParamGrabber(taskEngine);
+        paramGrabber = new ParamGrabber(taskEngine);
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
 
         if(Utilities.isBurpPro()) {
@@ -124,6 +134,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
+        new HeaderPoison("Header poison");
         new PortDOS("port-DoS");
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
@@ -138,7 +149,6 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         Utilities.callbacks.registerExtensionStateListener(this);
 
         Utilities.out("Loaded " + name + " v" + version);
-        Utilities.out("    CACHE_ONLY "+Utilities.CACHE_ONLY);
     }
 
 
@@ -288,6 +298,10 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     String calculateValue(String unparsed) {
+        String canary = Utilities.globalSettings.getString("force canary");
+        if (!"".equals(canary)) {
+            return canary;
+        }
         return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
     }
 
@@ -388,14 +402,59 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
+        Iterator<String> dupeCheck= params.iterator();
+        byte[] body = Utilities.getBodyBytes(request);
+
+        boolean fooReq = false;
+        if (Utilities.containsBytes(body, "FOO BAR AAH\r\n".getBytes())) {
+            fooReq = true;
+        }
+
+        if (fooReq || Utilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
+            Utilities.chopNestedResponses = true;
+
+            boolean usingCorrectContentLength = true;
+
+            try {
+                if (body.length != Integer.parseInt(Utilities.getHeader(request, "Content-Length"))) {
+                    usingCorrectContentLength = false;
+                }
+            } catch (Exception e) {
+
+            }
+
+            while (dupeCheck.hasNext()) {
+                String param = dupeCheck.next().split("~", 2)[0];
+                byte[] toReplace = ("\n"+param+": ").getBytes();
+                if (Utilities.containsBytes(body, toReplace)) {
+                    body = Utilities.replace(body, toReplace, ("\nold"+param+": ").getBytes());
+                }
+            }
+
+            byte[] newBody;
+            if (fooReq) {
+                newBody = Utilities.replaceFirst(body, "FOO BAR AAH\r\n", "GET http://"+Utilities.getHeader(request, "Host")+"/ HTTP/1.1\r\n"+merged+"\r\n");
+            }
+            else {
+                newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
+            }
+
+            byte[] finalRequest = Utilities.setBody(request, new String(newBody));
+            if (usingCorrectContentLength) {
+                finalRequest = Utilities.fixContentLength(finalRequest);
+            }
+
+            finalRequest = Utilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
+
+            return finalRequest;
+        }
+
         String replaceKey = "TCZqBcS13SA8QRCpW";
         byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
 
         if (params.isEmpty() || "".equals(merged)) {
             return built;
         }
-
-        Iterator<String> dupeCheck= params.iterator();
 
         while (dupeCheck.hasNext()) {
             String param = dupeCheck.next().split("~", 2)[0];
