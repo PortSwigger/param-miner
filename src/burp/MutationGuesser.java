@@ -31,25 +31,31 @@ public class MutationGuesser {
     public ArrayList<String> guessMutations() {
         byte[] baseReq = this.removeHeader(this.req.getRequest(), "Content-Length");
         ArrayList<String> ret = new ArrayList<String>();
-
-        // Get the front-end error
-        IHttpRequestResponse frontErrReq = this.requestHeader(baseReq, "Content-Length: z");
-        byte[] frontError = frontErrReq.getResponse();
-
-        // Check we've managed to generate an error
-        IHttpRequestResponse noErrReq = this.requestHeader(baseReq, "Content-Length: 0");
-        byte[] noErr = noErrReq.getResponse();
-        if (this.requestMatch(frontError, noErr)) {
-            Utilities.out("Failed to generate error against host " + this.service.getHost());
-            return ret;
-        }
+        HeaderMutator mutator = new HeaderMutator();
 
         // Test all the mutations to find back-end errors
-        HeaderMutator mutator = new HeaderMutator();
         for (int i = 0; i< this.testHeaders.length; i++) {
             Iterator<String> iterator = mutator.mutations.iterator();
             String testHeaderValid = this.testHeaders[i][0];
             String testHeaderInvalid = this.testHeaders[i][1];
+
+            // Get the front-end error
+            IHttpRequestResponse frontErrReq = this.requestHeader(baseReq, testHeaderInvalid);
+            byte[] frontError = frontErrReq.getResponse();
+
+            // Check we've managed to generate an error
+            IHttpRequestResponse noErrReq = this.requestHeader(baseReq, testHeaderValid);
+            byte[] noErr = noErrReq.getResponse();
+            if (this.requestMatch(frontError, noErr)) {
+                continue;
+            }
+
+            if (frontError.length == 0 || noErr.length == 0) {
+                String host = frontErrReq.getHttpService().getHost();
+                Utilities.out("Failed to fetch request while guessing mutations " + host);
+                continue;
+            }
+
             while (iterator.hasNext()) {
                 String mutation = iterator.next();
                 if (ret.contains(mutation)) {
@@ -102,6 +108,7 @@ public class MutationGuesser {
         int start = offsets[0];
         int end = offsets[2] + 2;
         byte[] ret = new byte[req.length - (end - start)];
+        // TODO: sometimes getting null point exceptions from this line
         System.arraycopy(req, 0, ret, 0, start);
         System.arraycopy(req, end, ret, start, req.length - end);
         return ret;

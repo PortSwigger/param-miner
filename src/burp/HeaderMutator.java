@@ -16,17 +16,13 @@ public class HeaderMutator {
         this.registerMutation("nospace");
         this.registerMutation("underscore");
         this.registerMutation("cr-hyphen");
+        this.registerMutation("letter-hyphen");
 
         this.registerMutation("linePrefixSpace");
         this.registerMutation("linePrefixTab");
         this.registerMutation("linePrefixVTab");
         this.registerMutation("linePrefixNull");
 
-        this.registerMutation("lineAppendixSpace");
-        this.registerMutation("lineAppendixTab");
-        this.registerMutation("lineAppendixLF");
-        this.registerMutation("lineAppendixCR");
-        this.registerMutation("lineAppendixVTab");
         this.registerMutation("lineAppendixNull");
 
         this.registerMutation("colonPreNull");
@@ -82,6 +78,10 @@ public class HeaderMutator {
                 retStr = header.replaceFirst("-", "\r");
                 break;
 
+            case "letter-hyphen":
+                retStr = header.replaceFirst("-", "s");
+                break;
+
             case "linePrefixSpace":
                 retStr = " " + header;
                 break;
@@ -96,26 +96,6 @@ public class HeaderMutator {
 
             case "linePrefixNull":
                 retStr = new String(new byte[]{(byte)0x00}) + header;
-                break;
-
-            case "lineAppendixSpace":
-                retStr = header + " ";
-                break;
-
-            case "lineAppendixTab":
-                retStr = header + "\t";
-                break;
-
-            case "lineAppendixLF":
-                retStr = header + "\n";
-                break;
-
-            case "lineAppendixCR":
-                retStr = header + "\r";
-                break;
-
-            case "lineAppendixVTab":
-                retStr = header + new String(new byte[]{(byte)0x0b});
                 break;
 
             case "lineAppendixNull":

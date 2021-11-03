@@ -230,6 +230,8 @@ class ParamGuesser implements Runnable {
             if (headerMutations == null) {
                 headerMutations = new ArrayList<String>();
             }
+
+            // Ensure that the identity mutation is scanned
             if (headerMutations.size() == 0 || headerMutations.get(0) != null) {
                 headerMutations.add(0, null);
             }
