@@ -5,19 +5,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class MutationGuesser {
+public class HeaderMutationGuesser {
     private ConfigurableSettings config;
     private IHttpRequestResponse req;
-    private ParamAttack attack;
     private IHttpService service;
     public HashMap<String, IHttpRequestResponse[]> evidence;
     private String[][] testHeaders;
 
-    MutationGuesser(IHttpRequestResponse req, ParamAttack attack, ConfigurableSettings config) {
+    HeaderMutationGuesser(IHttpRequestResponse req, ConfigurableSettings config) {
         this.req = req;
-        this.attack = attack;
         this.config = config;
-        this.service = this.attack.getBaseRequestResponse().getHttpService();
+        this.service = req.getHttpService();
         this.evidence = new HashMap<String, IHttpRequestResponse[]>();
 
         this.testHeaders = new String[][]{
@@ -88,6 +86,27 @@ public class MutationGuesser {
 
         // TODO: Maybe re-check mutations to deal with inconsistent servers?
         return ret;
+    }
+
+    public void reportMutations(ArrayList<String> mutations) {
+        Iterator<String> iterator = mutations.iterator();
+        while (iterator.hasNext()) {
+            String mutation = iterator.next();
+            String urlStr = Utilities.getURL(this.req).toString();
+            Utilities.out("Found mutation against " + urlStr + ": " + mutation);
+            IHttpRequestResponse[] evidence = this.evidence.get(mutation);
+            IHttpService service = evidence[0].getHttpService();
+            Utilities.callbacks.addScanIssue(new CustomScanIssue(
+                    service,
+                    Utilities.helpers.analyzeRequest(service, evidence[0].getRequest()).getUrl(),
+                    evidence,
+                    "Header mutation found",
+                    "Headers can be snuck to a back-end server using the '" + mutation + "' mutation.",
+                    "Information",
+                    "Firm",
+                    "This issue is not exploitable on its own, but interesting headers may be able to be snuck through to backend servers."
+            ));
+        }
     }
 
     private IHttpRequestResponse requestHeader(byte[] baseReq, String header) {

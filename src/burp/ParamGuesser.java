@@ -1,14 +1,7 @@
 package burp;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
-import org.graalvm.compiler.core.common.util.Util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Array;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -81,7 +74,7 @@ class ParamGuesser implements Runnable {
 
             // Check for mutations
             if (this.type == Utilities.PARAM_HEADER && config.getBoolean("identify smuggle mutations")) {
-                MutationGuesser mutationGuesser = new MutationGuesser(req, this.attack, this.config);
+                HeaderMutationGuesser mutationGuesser = new HeaderMutationGuesser(req, this.config);
                 ArrayList<String> mutations = mutationGuesser.guessMutations();
                 this.attack.setHeaderMutations(mutations);
 
@@ -89,21 +82,7 @@ class ParamGuesser implements Runnable {
                 if (mutations != null) {
                     Iterator<String> iterator = mutations.iterator();
                     while (iterator.hasNext()) {
-                        String mutation = iterator.next();
-                        String urlStr = this.attack.getTargetURL();
-                        Utilities.out("Found mutation against " + urlStr + ": " + mutation);
-                        IHttpRequestResponse[] evidence = mutationGuesser.evidence.get(mutation);
-                        IHttpService service = evidence[0].getHttpService();
-                        Utilities.callbacks.addScanIssue(new CustomScanIssue(
-                                service,
-                                Utilities.helpers.analyzeRequest(service, evidence[0].getRequest()).getUrl(),
-                                evidence,
-                                "Header mutation found",
-                                "Headers can be snuck to a back-end server using the '" + mutation + "' mutation.",
-                                "Information",
-                                "Firm",
-                                "This issue is not exploitable on its own, but interesting headers may be able to be snuck through to backend servers."
-                        ));
+                        mutationGuesser.reportMutations(mutations);
                     }
                 }
             }
