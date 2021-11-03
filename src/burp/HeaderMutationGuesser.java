@@ -19,9 +19,7 @@ public class HeaderMutationGuesser {
         this.evidence = new HashMap<String, IHttpRequestResponse[]>();
 
         this.testHeaders = new String[][]{
-                {"Content-Length: 0", "Content-Length: z"},
-                {"Range: bytes=0-", "Range: z"},
-                {"Content-Type: application/x-www-form-urlencoded", "Content-Type: z"}
+                {"Content-Length: 0", "Content-Length: z"}
         };
     }
 
