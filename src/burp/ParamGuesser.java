@@ -80,10 +80,7 @@ class ParamGuesser implements Runnable {
 
                 // Report if required
                 if (mutations != null) {
-                    Iterator<String> iterator = mutations.iterator();
-                    while (iterator.hasNext()) {
-                        mutationGuesser.reportMutations(mutations);
-                    }
+                    mutationGuesser.reportMutations(mutations);
                 }
             }
 

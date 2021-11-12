@@ -1,5 +1,7 @@
 package burp;
 
+import org.graalvm.compiler.core.common.util.Util;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
