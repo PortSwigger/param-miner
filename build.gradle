@@ -5,7 +5,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
+    //implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
+    implementation 'net.portswigger.burp.extender:burp-extender-api:2.3'
     implementation 'org.apache.commons:commons-lang3:3.5'
     implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
     implementation 'com.google.code.gson:gson:2.8.1'
