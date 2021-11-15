@@ -9,4 +9,4 @@ ProOnly: False
 Author: James 'albinowax' Kettle, PortSwigger Web Security
 ShortDescription: This extension identifies hidden, unlinked parameters. It's particularly useful for finding web cache poisoning vulnerabilities.
 EntryPoint: build/libs/param-miner-all.jar
-BuildCommand: gradle fatJar
+BuildCommand: ./gradlew build fatJar
