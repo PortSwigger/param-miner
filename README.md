@@ -53,9 +53,10 @@ Another video targeting a real site is coming soon - I'm just waiting on the tar
 # Installation
 This extension requires Burp Suite 1.7.10 or later. To install it, simply use the BApps tab in Burp.
 
-# Build
-Requires Java >1.8, Gradle.
+# Development
 
-Navigate to param-miner directory and execute `gradle build fatjar`.
+Linux: `./gradlew build fatjar`
 
-Load the resulting jar: `build/libs/param-miner-all.jar`
+Windows: `gradlew.bat build fatjar`
+
+Grab the output from `build/libs/param-miner-all.jar`

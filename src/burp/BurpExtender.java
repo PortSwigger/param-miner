@@ -23,7 +23,7 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.31";
+    private static final String version = "1.4a";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -69,7 +69,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("try cache poison", true);
         guessSettings.register("twitchy cache poison", false);
         guessSettings.register("try method flip", false);
-        guessSettings.register("identify smuggle mutations", true);
+        guessSettings.register("identify smuggle mutations", false);
         guessSettings.register("try -_ bypass", false);
         guessSettings.register("rotation interval", 200);
         guessSettings.register("rotation increment", 4);
