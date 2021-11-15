@@ -5,13 +5,13 @@ repositories {
 }
 
 dependencies {
-    compile 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
-    compile 'org.apache.commons:commons-lang3:3.5'
-    compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
-    compile 'com.google.code.gson:gson:2.8.1'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
-    compile 'org.jsoup:jsoup:1.8.1'
-    compile files('albinowaxUtils-all.jar')
+    implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
+    implementation 'org.apache.commons:commons-lang3:3.5'
+    implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
+    implementation 'com.google.code.gson:gson:2.8.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
+    implementation 'org.jsoup:jsoup:1.8.1'
+    implementation files('albinowaxUtils-all.jar')
 }
 
 sourceSets {
@@ -26,9 +26,9 @@ sourceSets {
 }
 
 task fatJar(type: Jar) {
-
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
 
