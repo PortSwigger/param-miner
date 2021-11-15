@@ -31,6 +31,7 @@ class ParamAttack {
     private final ParamInsertionPoint insertionPoint;
     final byte type;
     private ConfigurableSettings config;
+    private ArrayList<String> headerMutations;
 
     int getStop() {
         return stop;
@@ -95,6 +96,10 @@ class ParamAttack {
     IHttpRequestResponse getBaseRequestResponse() {
         return baseRequestResponse;
     }
+
+    ArrayList<String> getHeaderMutations() { return headerMutations; }
+
+    void setHeaderMutations(ArrayList<String> mutations) { this.headerMutations = mutations; }
 
 
     ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop, ConfigurableSettings config) {

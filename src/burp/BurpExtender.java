@@ -69,6 +69,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("try cache poison", true);
         guessSettings.register("twitchy cache poison", false);
         guessSettings.register("try method flip", false);
+        guessSettings.register("identify smuggle mutations", true);
         guessSettings.register("try -_ bypass", false);
         guessSettings.register("rotation interval", 200);
         guessSettings.register("rotation increment", 4);
@@ -82,7 +83,6 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("poison only", false);
         guessSettings.register("tunnelling retry count", 20);
         guessSettings.register("abort on tunnel failure", true);
-
 
         loadWordlists();
         BlockingQueue<Runnable> tasks;
@@ -142,6 +142,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new NormalisedParamScan("normalised param");
         new NormalisedPathScan("normalised path");
         new RailsUtmScan("rails param cloaking scan");
+        new HeaderMutationScan("identify header smuggling mutations");
 
 
         new BulkScanLauncher(BulkScan.scans);
