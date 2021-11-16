@@ -48,7 +48,7 @@ public class HeaderMutationGuesser {
                 continue;
             }
 
-            if (frontError.length == 0 || noErr.length == 0) {
+            if (frontError == null || noErr == null || frontError.length == 0 || noErr.length == 0) {
                 String host = frontErrReq.getHttpService().getHost();
                 Utilities.out("Failed to fetch request while guessing mutations " + host);
                 continue;
@@ -63,6 +63,12 @@ public class HeaderMutationGuesser {
                 IHttpRequestResponse testReqResp = this.requestHeader(baseReq, mutated);
                 byte[] testReq = testReqResp.getResponse();
 
+                if (testReq == null) {
+                    String host = testReqResp.getHttpService().getHost();
+                    Utilities.out("Failed to send request to host " + host + " using mutation " + mutation + " using junk value");
+                    continue;
+                }
+
                 // Check that:
                 //  1. We have a different error than the front-end error
                 //  2. We have an error at all (i.e. not the same as the base request
@@ -71,6 +77,10 @@ public class HeaderMutationGuesser {
                     mutated = mutator.mutate(testHeaderValid, mutation);
                     IHttpRequestResponse validReqResp = this.requestHeader(baseReq, mutated);
                     byte[] validResp = validReqResp.getResponse();
+                    if (validResp == null) {
+                        String host = validReqResp.getHttpService().getHost();
+                        Utilities.out("Failed to send request to host " + host + " using mutation " + mutation + " with valid value");
+                    }
                     if (this.requestMatch(noErr, validResp)) {
                         ret.add(mutation);
                         IHttpRequestResponse[] reqs = new IHttpRequestResponse[4];
@@ -134,6 +144,10 @@ public class HeaderMutationGuesser {
     }
 
     private boolean requestMatch(byte[] resp1, byte[] resp2) {
+        if (resp1 == null || resp2 == null) {
+            return false;
+        }
+
         IResponseInfo info1 = Utilities.helpers.analyzeResponse(resp1);
         IResponseInfo info2 = Utilities.helpers.analyzeResponse(resp2);
         if (info1.getStatusCode() != info2.getStatusCode()) {
