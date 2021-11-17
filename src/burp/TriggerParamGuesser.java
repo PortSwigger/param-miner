@@ -5,6 +5,7 @@ import org.graalvm.compiler.core.common.util.Util;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -24,8 +25,8 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         this.taskEngine = taskEngine;
         this.paramGrabber = paramGrabber;
         this.backend = backend;
-        this.reqs = reqs;
         this.type = type;
+        this.reqs = reqs;
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -50,6 +51,26 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
         ArrayList<IHttpRequestResponse> reqlist = new ArrayList<>(Arrays.asList(reqs));
         Collections.shuffle(reqlist);
+
+        // If guessing smuggling mutations, downgrade HTTP/2 requests to HTTP/1.1
+        if (config.getBoolean("identify smuggle mutations") && this.type == Utilities.PARAM_HEADER) {
+            Iterator iterator = reqlist.iterator();
+            for (int i = 0; i < reqlist.size(); i++) {
+                IHttpRequestResponse req = reqlist.get(i);
+                if (!Utilities.isHTTP2(req.getRequest())) {
+                    continue;
+                }
+                byte[] downgraded = Utilities.convertToHttp1(req.getRequest());
+                String host = req.getHttpService().getHost();
+                int port = req.getHttpService().getPort();
+                String proto = req.getHttpService().getProtocol();
+                IHttpService service = Utilities.helpers.buildHttpService(host, port, proto);
+
+                IHttpRequestResponse newReq = Utilities.attemptRequest(service, downgraded, true);
+                reqlist.set(i, newReq);
+                this.reqs[i] = newReq;
+            }
+        }
 
         int cache_size = thread_count;
         if (config.getBoolean("max one per host")) {

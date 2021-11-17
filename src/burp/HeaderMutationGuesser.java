@@ -2,6 +2,7 @@ package burp;
 
 import org.graalvm.compiler.core.common.util.Util;
 
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,13 +10,18 @@ import java.util.Iterator;
 
 public class HeaderMutationGuesser {
     private ConfigurableSettings config;
-    private IHttpRequestResponse req;
+    private byte[] req;
     private IHttpService service;
     public HashMap<String, IHttpRequestResponse[]> evidence;
     private String[][] testHeaders;
+    private URL url;
 
     HeaderMutationGuesser(IHttpRequestResponse req, ConfigurableSettings config) {
-        this.req = req;
+        this.url = Utilities.getURL(req);
+        this.req = req.getRequest();
+        if (Utilities.isHTTP2(this.req)) {
+            this.req = Utilities.convertToHttp1(this.req);
+        }
         this.config = config;
         this.service = req.getHttpService();
         this.evidence = new HashMap<String, IHttpRequestResponse[]>();
@@ -27,7 +33,7 @@ public class HeaderMutationGuesser {
 
     // Returns the mutation names used by HeaderMutator
     public ArrayList<String> guessMutations() {
-        byte[] baseReq = this.removeHeader(this.req.getRequest(), "Content-Length");
+        byte[] baseReq = this.removeHeader(this.req, "Content-Length");
         ArrayList<String> ret = new ArrayList<String>();
         HeaderMutator mutator = new HeaderMutator();
 
@@ -102,8 +108,7 @@ public class HeaderMutationGuesser {
         Iterator<String> iterator = mutations.iterator();
         while (iterator.hasNext()) {
             String mutation = iterator.next();
-            String urlStr = Utilities.getURL(this.req).toString();
-            Utilities.out("Found mutation against " + urlStr + ": " + mutation);
+            Utilities.out("Found mutation against " + this.url + ": " + mutation);
             IHttpRequestResponse[] evidence = this.evidence.get(mutation);
             IHttpService service = evidence[0].getHttpService();
             Utilities.callbacks.addScanIssue(new CustomScanIssue(
@@ -126,7 +131,7 @@ public class HeaderMutationGuesser {
     private IHttpRequestResponse requestHeader(byte[] baseReq, byte[] header) {
         byte[] req = this.addHeader(baseReq, header);
         req = Utilities.addCacheBuster(req, Utilities.generateCanary());
-        return Utilities.attemptRequest(this.service, req);
+        return Utilities.attemptRequest(this.service, req, true);
     }
 
     private byte[] removeHeader(byte[] req, String headerName) {

@@ -31,6 +31,7 @@ class ParamGuesser implements Runnable {
     private ParamGrabber paramGrabber;
     private ParamAttack attack;
     private ConfigurableSettings config;
+    private boolean forceHttp1;
 
     private byte[] staticCanary;
 
@@ -42,14 +43,16 @@ class ParamGuesser implements Runnable {
         this.stop = stop;
         this.taskEngine = taskEngine;
         this.config = config;
+        this.forceHttp1 = this.config.getBoolean("identify smuggle mutations") && this.type == Utilities.PARAM_HEADER;
         staticCanary = config.getString("canary").getBytes();
     }
 
-    ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine, ConfigurableSettings config) {
+    ParamGuesser(ParamAttack attack, ThreadPoolExecutor taskEngine, ConfigurableSettings config, boolean forceHttp1) {
         this.attack = attack;
         this.req = attack.getBaseRequestResponse();
         this.taskEngine = taskEngine;
         this.config = config;
+        this.forceHttp1 = forceHttp1;
         staticCanary = config.getString("canary").getBytes();
     }
 
@@ -59,7 +62,7 @@ class ParamGuesser implements Runnable {
                 if (req.getResponse() == null) {
                     Utilities.log("Baserequest has no response - fetching...");
                     try {
-                        req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest());
+                        req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest(), this.forceHttp1);
                     } catch (RuntimeException e) {
                         Utilities.out("Aborting attack due to failed lookup");
                         return;
@@ -257,8 +260,8 @@ class ParamGuesser implements Runnable {
                                 continue;
                             }
 
-                            Attack WAFCatcher = new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission)));
-                            WAFCatcher.addAttack(new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission))));
+                            Attack WAFCatcher = new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission), this.forceHttp1));
+                            WAFCatcher.addAttack(new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission), this.forceHttp1)));
                             if (!Utilities.similar(WAFCatcher, confirmParamGuess)) {
                                 Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
                                 validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
@@ -320,7 +323,7 @@ class ParamGuesser implements Runnable {
                         altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase)));
                         injector.probeAttack(submission, mutation);
 
-                        paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase));
+                        paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1));
                         if (!Utilities.similar(altBase, paramGrab)) {
 
                             if (candidates.size() > 1) {
@@ -337,10 +340,10 @@ class ParamGuesser implements Runnable {
                                 evidence[2] = paramGrab.getFirstRequest();
                                 Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '" + candidates + "'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
 
-                                altBase = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase));
-                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase)));
-                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase)));
-                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase)));
+                                altBase = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1));
+                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1)));
+                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1)));
+                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1)));
                             }
                         }
                     }
@@ -350,7 +353,7 @@ class ParamGuesser implements Runnable {
 
 
         state.incrStop();
-        taskEngine.execute(new ParamGuesser(state, taskEngine, config));
+        taskEngine.execute(new ParamGuesser(state, taskEngine, config, this.forceHttp1));
 
         return attacks;
     }
