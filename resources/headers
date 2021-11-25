@@ -80,6 +80,7 @@ x-forwarded-for
 x-forwarded-host~%s.%h
 x-forwarded-proto
 x-forwarded-port
+x-forwarded-prefix
 front-end-https
 x-forwarded-protocol
 x-forwarded-ssl
