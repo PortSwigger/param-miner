@@ -460,6 +460,7 @@ x-bear-ajax-request
 x-bluecoat-via
 x-browser-height
 x-browser-width
+x-cache
 x-cept-encoding
 x-chrome-extension
 x-cisco-bbsm-clientip
