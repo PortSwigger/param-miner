@@ -781,6 +781,10 @@ redirect-proxy
 redirect-temp
 refferer
 requesttoken
+sec-fetch-dest
+sec-fetch-mode
+sec-fetch-site
+sec-fetch-user
 sec-websocket-key
 sp-host
 ssl
