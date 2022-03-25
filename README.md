@@ -51,7 +51,7 @@ Another video targeting a real site is coming soon - I'm just waiting on the tar
  - First public release
 
 # Installation
-This extension requires Burp Suite 1.7.10 or later. To install it, simply use the BApps tab in Burp.
+This extension requires Burp Suite 2021.9 or later. To install it, simply use the BApps tab in Burp.
 
 # Development
 
