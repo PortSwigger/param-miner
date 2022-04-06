@@ -35,7 +35,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new Utilities(callbacks, new HashMap<>(), name);
 
         // config only (currently param-guess displays everything)
-        configSettings.register("Add 'fcbz' cachebuster", false);
+        configSettings.register("Add 'fcbz' cachebuster", false, "blah");
         configSettings.register("Add dynamic cachebuster", false);
         configSettings.register("Add header cachebuster", false);
         configSettings.register("learn observed words", false);
