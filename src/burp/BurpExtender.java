@@ -23,7 +23,7 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.4b";
+    private static final String version = "1.4c";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -41,8 +41,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         configSettings.register("learn observed words", false, "During Burp's passive scanning, record all words seen in the response and use them when guessing parameters. ");
         configSettings.register("enable auto-mine", false, "Automatically launch param guessing attacks on traffic as it passes through the proxy");
         configSettings.register("auto-mine headers", false, "When auto-mining proxied traffic, guess headers");
-        configSettings.register("auto-mine cookies", false, "When auto-mining proxied traffic, guess cookies);
-        configSettings.register("auto-mine params", false, "When auto-mining proxied traffic, guess parameters);
+        configSettings.register("auto-mine cookies", false, "When auto-mining proxied traffic, guess cookies");
+        configSettings.register("auto-mine params", false, "When auto-mining proxied traffic, guess parameters");
         configSettings.register("auto-nest params", false, "When guessing parameters in JSON, attempt to guess deeper in nested structures. Might not work.");
 
         // param-guess only
@@ -62,27 +62,27 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("dynamic keyload", false, "When guessing params, extract words from every observed response. This is very powerful and quite buggy.");
         guessSettings.register("max one per host", false);
         guessSettings.register("max one per host+status", false);
-        guessSettings.register("probe identified params", true);
-        guessSettings.register("scan identified params", false);
-        guessSettings.register("fuzz detect", false);
-        guessSettings.register("carpet bomb", false);
-        guessSettings.register("try cache poison", true);
-        guessSettings.register("twitchy cache poison", false);
-        guessSettings.register("try method flip", false);
-        guessSettings.register("identify smuggle mutations", false);
-        guessSettings.register("try -_ bypass", false);
-        guessSettings.register("rotation interval", 200);
-        guessSettings.register("rotation increment", 4);
-        guessSettings.register("force bucketsize", -1);
-        guessSettings.register("max bucketsize", 65536);
-        guessSettings.register("max param length", 32);
-        guessSettings.register("lowercase headers", true);
-        guessSettings.register("name in issue", false);
-        guessSettings.register("canary", "zwrtxqva");
-        guessSettings.register("force canary", "");
-        guessSettings.register("poison only", false);
-        guessSettings.register("tunnelling retry count", 20);
-        guessSettings.register("abort on tunnel failure", true);
+        guessSettings.register("probe identified params", true, "Attempt to identify what type of input discovered parameters expect.");
+        guessSettings.register("scan identified params", false, "Launch an active scan against every discovered parameter");
+        guessSettings.register("fuzz detect", false, "Detect parameters by specifying a fuzz-string as a value, designed to cause errors");
+        guessSettings.register("carpet bomb", false, "Send parameters as usual, but don't attempt to identify/report valid ones. Useful for OAST techniques.");
+        guessSettings.register("try cache poison", true, "After discovering a parameter, test whether it can be used for cache poisoning");
+        guessSettings.register("twitchy cache poison", false, "Make cache poisoning detection capable of detecting non-reflected input (but more prone to FPs)");
+        guessSettings.register("try method flip", false, "Try flipping GET to POST to fit more parameters in each request");
+        guessSettings.register("identify smuggle mutations", false, "Try using desync-style mutations to bypass header rewriting by front-ends.");
+        guessSettings.register("try -_ bypass", false, "Convert all instances of - to _ in header names, to bypass some front-end rewrites");
+        guessSettings.register("rotation interval", 999, "This doesn't work");
+        guessSettings.register("rotation increment", 4, "This doesn't work");
+        guessSettings.register("force bucketsize", -1, "Specify the number of parameters allowed in a single request. Set this to -1 to let Param Miner automatically determine this value on a per-target basis.");
+        guessSettings.register("max bucketsize", 65536, "Maximum number of parameters Param Miner will consider putting in a single request if the server allows it.");
+        guessSettings.register("max param length", 32, "This is used alongside the bucketsize detection");
+        guessSettings.register("lowercase headers", true, "Send header names in lowercase. Good for efficiency.");
+        guessSettings.register("name in issue", false, "Include the parameter name in the issue title");
+        guessSettings.register("canary", "zwrtxqva", "Fixed prefix used to detect input reflection");
+        guessSettings.register("force canary", "", "Use this to override the canary - useful with carpet bomb mode");
+        guessSettings.register("poison only", false, "Don't report parameters if you can't use them for cache poisoning");
+        guessSettings.register("tunnelling retry count", 20, "When attempting to mine a tunelled request, give up after this many consecutive failures to get a nested response");
+        guessSettings.register("abort on tunnel failure", true, "When attempting to mine a tunelled request, give up if the tunnel retry count is exceeded");
 
         loadWordlists();
         BlockingQueue<Runnable> tasks;
