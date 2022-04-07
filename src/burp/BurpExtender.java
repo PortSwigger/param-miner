@@ -35,31 +35,31 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new Utilities(callbacks, new HashMap<>(), name);
 
         // config only (currently param-guess displays everything)
-        configSettings.register("Add 'fcbz' cachebuster", false, "blah");
-        configSettings.register("Add dynamic cachebuster", false);
-        configSettings.register("Add header cachebuster", false);
-        configSettings.register("learn observed words", false);
-        configSettings.register("enable auto-mine", false);
-        configSettings.register("auto-mine headers", false);
-        configSettings.register("auto-mine cookies", false);
-        configSettings.register("auto-mine params", false);
-        configSettings.register("auto-nest params", false);
+        configSettings.register("Add 'fcbz' cachebuster", false, "Add a static cache-buster to all outbound requests, to avoid manual cache poisoning probes affecting other users");
+        configSettings.register("Add dynamic cachebuster", false, "Add a dynamic cache-buster to all requests, to avoid seeing cached responses");
+        //configSettings.register("Add header cachebuster", false);
+        configSettings.register("learn observed words", false, "During Burp's passive scanning, record all words seen in the response and use them when guessing parameters. ");
+        configSettings.register("enable auto-mine", false, "Automatically launch param guessing attacks on traffic as it passes through the proxy");
+        configSettings.register("auto-mine headers", false, "When auto-mining proxied traffic, guess headers");
+        configSettings.register("auto-mine cookies", false, "When auto-mining proxied traffic, guess cookies);
+        configSettings.register("auto-mine params", false, "When auto-mining proxied traffic, guess parameters);
+        configSettings.register("auto-nest params", false, "When guessing parameters in JSON, attempt to guess deeper in nested structures. Might not work.");
 
         // param-guess only
         //guessSettings.importSettings(globalSettings);
         guessSettings.register("learn observed words", false);
-        guessSettings.register("skip boring words", true);
-        guessSettings.register("only report unique params", false);
-        guessSettings.register("response", true);
-        guessSettings.register("request", true);
-        guessSettings.register("use basic wordlist", true);
-        guessSettings.register("use bonus wordlist", false);
-        guessSettings.register("use assetnote params", false);
-        guessSettings.register("use custom wordlist", false);
-        guessSettings.register("custom wordlist path", "/usr/share/dict/words");
-        guessSettings.register("bruteforce", false);
-        guessSettings.register("skip uncacheable", false);
-        guessSettings.register("dynamic keyload", false);
+        guessSettings.register("skip boring words", true, "When mining headers, don't check for well known and typically not very exciting headers");
+        guessSettings.register("only report unique params", false, "Only report a parameter with a given name once, regardless of how many endpoints are scanned");
+        guessSettings.register("response", true, "Extract words from the target request, and use these to guess params");
+        guessSettings.register("request", true, "Extract words from the target response, and use these to guess params. Highly recommended.");
+        guessSettings.register("use basic wordlist", true, "When guessing params, use the core wordlist");
+        guessSettings.register("use bonus wordlist", false, "When guessing params, also use a generic wordlist");
+        guessSettings.register("use assetnote params", false, "When guessing params, use the assetnote wordlist");
+        guessSettings.register("use custom wordlist", false, "Load a custom wordlist from the configured path");
+        guessSettings.register("custom wordlist path", "/usr/share/dict/words", "Load a custom wordlist from the configured path");
+        guessSettings.register("bruteforce", false, "When all the wordlist have run out, switch to guessing params with a never-ending pure bruteforce attack.");
+        guessSettings.register("skip uncacheable", false, "Refuse to guess params on responses that aren't cacheable?");
+        guessSettings.register("dynamic keyload", false, "When guessing params, extract words from every observed response. This is very powerful and quite buggy.");
         guessSettings.register("max one per host", false);
         guessSettings.register("max one per host+status", false);
         guessSettings.register("probe identified params", true);
