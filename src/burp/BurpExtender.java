@@ -259,7 +259,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         if (!"".equals(canary)) {
             return canary;
         }
-        return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
+        return Utilities.toCanary(unparsed) + attackID + value + Utilities.randomString(5) + Utilities.fuzzSuffix();
     }
 
     @Override
