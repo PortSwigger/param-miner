@@ -23,7 +23,7 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.4f";
+    private static final String version = "1.5";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -83,6 +83,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("poison only", false, "Don't report parameters if you can't use them for cache poisoning");
         guessSettings.register("tunnelling retry count", 20, "When attempting to mine a tunelled request, give up after this many consecutive failures to get a nested response");
         guessSettings.register("abort on tunnel failure", true, "When attempting to mine a tunelled request, give up if the tunnel retry count is exceeded");
+        guessSettings.register("baseline size", 4, "Number of requests sent to build the normal-response fingerprint");
 
         loadWordlists();
         BlockingQueue<Runnable> tasks;
@@ -199,11 +200,14 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     String attackID;
     String defaultPrefix;
     String host;
+
+    String collab;
     HashMap<String, String> present;
 
     ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
         this.attackID = attackID;
+        this.collab = "oastify.com";//Utilities.getSetting("location"); // fixme should use configured server
 
         ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
         HashMap<String, Integer> freq = new HashMap<>();
@@ -329,6 +333,8 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             String[] parts = name.split("~", 2);
             parts[1] = parts[1].replace("%s", calculateValue(name));
             parts[1] = parts[1].replace("%h", host);
+            parts[1] = parts[1].replace("%c", collab);
+            parts[1] = parts[1].replace("%r", Utilities.generateCanary());
             return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
         }
         else {

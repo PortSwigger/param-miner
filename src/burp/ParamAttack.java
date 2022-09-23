@@ -169,11 +169,11 @@ class ParamAttack {
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
-            altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
+            altBase = new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase));
             if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404 && Utilities.globalSettings.getBoolean("try method flip")) {
-                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+                altBase.addAttack(new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase)));
+                altBase.addAttack(new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase)));
+                altBase.addAttack(new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase)));
                 tryMethodFlip = true;
             }
         }
@@ -281,7 +281,8 @@ class ParamAttack {
 
     Attack updateBaseline() {
         this.base = this.injector.probeAttack(Utilities.randomString(6));
-        for(int i=0; i<4; i++) {
+        int baselineSize = Utilities.globalSettings.getInt("baseline size");
+        for(int i=0; i<baselineSize; i++) {
             base.addAttack(this.injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
         }
         if (bucketSize > 1) {
@@ -318,7 +319,7 @@ class ParamAttack {
 
         // add JSON from method-flip response
         if(baseRequestResponse.getRequest()[0] != 'G') {
-            IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
+            IHttpRequestResponse getreq = Scan.request(baseRequestResponse.getHttpService(),
                     Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
             params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
         }

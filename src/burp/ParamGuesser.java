@@ -62,7 +62,7 @@ class ParamGuesser implements Runnable {
                 if (req.getResponse() == null) {
                     Utilities.log("Baserequest has no response - fetching...");
                     try {
-                        req = Utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest(), this.forceHttp1);
+                        req = Scan.request(req.getHttpService(), req.getRequest(), 0, this.forceHttp1);
                     } catch (RuntimeException e) {
                         Utilities.out("Aborting attack due to failed lookup");
                         return;
@@ -260,8 +260,8 @@ class ParamGuesser implements Runnable {
                                 continue;
                             }
 
-                            Attack WAFCatcher = new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission), this.forceHttp1));
-                            WAFCatcher.addAttack(new Attack(Utilities.attemptRequest(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission), this.forceHttp1)));
+                            Attack WAFCatcher = new Attack(Scan.request(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission), 0, this.forceHttp1));
+                            WAFCatcher.addAttack(new Attack(Scan.request(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission), 0, this.forceHttp1)));
                             if (!Utilities.similar(WAFCatcher, confirmParamGuess)) {
                                 Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
                                 validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
@@ -314,16 +314,16 @@ class ParamGuesser implements Runnable {
                     }
 
                 } else if (tryMethodFlip) {
-                    Attack paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase));
+                    Attack paramGrab = new Attack(Scan.request(service, invertedBase));
                     findPersistent(baseRequestResponse, paramGrab, attackID, state.recentParams, null, state.alreadyReported);
 
                     if (!Utilities.similar(altBase, paramGrab)) {
                         Utilities.log("Potential GETbase param: " + candidates);
                         injector.probeAttack(Keysmith.permute(submission), mutation);
-                        altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase)));
+                        altBase.addAttack(new Attack(Scan.request(service, invertedBase)));
                         injector.probeAttack(submission, mutation);
 
-                        paramGrab = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1));
+                        paramGrab = new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1));
                         if (!Utilities.similar(altBase, paramGrab)) {
 
                             if (candidates.size() > 1) {
@@ -340,10 +340,10 @@ class ParamGuesser implements Runnable {
                                 evidence[2] = paramGrab.getFirstRequest();
                                 Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '" + candidates + "'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
 
-                                altBase = new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1));
-                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1)));
-                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1)));
-                                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1)));
+                                altBase = new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1));
+                                altBase.addAttack(new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1)));
+                                altBase.addAttack(new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1)));
+                                altBase.addAttack(new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1)));
                             }
                         }
                     }
@@ -390,7 +390,7 @@ class ParamGuesser implements Runnable {
             else {
                 attackDedication = 5;
                 for (int i=0;i<5;i++) {
-                    IHttpRequestResponse base2 = Utilities.attemptRequest(injector.getService(), testReq);
+                    IHttpRequestResponse base2 = Scan.request(injector.getService(), testReq);
                     if (canSeeCache(base2.getResponse())) {
                         attackDedication = 30;
                         break;
@@ -408,11 +408,11 @@ class ParamGuesser implements Runnable {
             byte[] base404 = Utilities.appendToPath(base.getRequest(), pathCacheBuster);
 
 
-            IHttpRequestResponse get404 = Utilities.attemptRequest(injector.getService(), base404);
+            IHttpRequestResponse get404 = Scan.request(injector.getService(), base404);
             short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 
 
-            IHttpRequestResponse testResp = Utilities.attemptRequest(injector.getService(), testReq);
+            IHttpRequestResponse testResp = Scan.request(injector.getService(), testReq);
 
             boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), staticCanary);
             boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
@@ -425,7 +425,7 @@ class ParamGuesser implements Runnable {
             suffixes.add("");
             if (reflectPoisonMightWork) {
                 for (String suffix : potentialSuffixes) {
-                    testResp = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(testReq, suffix));
+                    testResp = Scan.request(injector.getService(), Utilities.appendToPath(testReq, suffix));
                     if (Utilities.containsBytes(testResp.getResponse(), staticCanary)) {
                         if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
                             suffixes.add(suffix);
@@ -492,12 +492,12 @@ class ParamGuesser implements Runnable {
         byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
         setPoison200Req = Utilities.appendToPath(setPoison200Req, canary);
         for(int j=0; j<attackDedication; j++) {
-            Utilities.attemptRequest(injector.getService(), setPoison200Req);
+            Scan.request(injector.getService(), setPoison200Req);
         }
 
         byte[] getPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes("z"+param+"z"));
 
-        IHttpRequestResponse getPoisoned = Utilities.attemptRequest(injector.getService(), Utilities.appendToPath(getPoisonReq, canary));
+        IHttpRequestResponse getPoisoned = Scan.request(injector.getService(), Utilities.appendToPath(getPoisonReq, canary));
 
         IResponseVariations baseline = Utilities.helpers.analyzeResponseVariations();
         IResponseVariations poisoned = Utilities.helpers.analyzeResponseVariations(getPoisoned.getResponse());
@@ -508,7 +508,7 @@ class ParamGuesser implements Runnable {
             diffed.clear();
             diff = false;
             byte[] fakePoisonReq =  Utilities.appendToPath(getPoisonReq, Utilities.generateCanary()+".jpg");
-            resp = Utilities.attemptRequest(injector.getService(), fakePoisonReq);
+            resp = Scan.request(injector.getService(), fakePoisonReq);
             baseline.updateWith(resp.getResponse());
             for (String attribute: baseline.getInvariantAttributes()) {
                 if (baseline.getAttributeValue(attribute, 0) != poisoned.getAttributeValue(attribute, 0)) {
@@ -541,11 +541,11 @@ class ParamGuesser implements Runnable {
         getPoison200Req = Utilities.appendToPath(getPoison200Req, canary);
 
         for(int j=0; j<attackDedication; j++) {
-            Utilities.attemptRequest(injector.getService(), setPoison200Req);
+            Scan.request(injector.getService(), setPoison200Req);
         }
 
         for(int j=0; j<attackDedication; j+=3) {
-            IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), getPoison200Req);
+            IHttpRequestResponse getPoison200 = Scan.request(injector.getService(), getPoison200Req);
             short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
             if (getPoison200Code != get404Code) {
                 Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Status-code cache poisoning " + j, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
@@ -563,11 +563,11 @@ class ParamGuesser implements Runnable {
 //        setPoison200Req = Utilities.appendToPath(setPoison200Req, pathCacheBuster);
 //
 //        for(int j=attackDedication-i; j<attackDedication; j++) {
-//            Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
+//            Scan.request(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
 //        }
 //
 //        for(int j=attackDedication-i; j<attackDedication; j+=3) {
-//            IHttpRequestResponse getPoison200 = Utilities.attemptRequest(injector.getService(), Utilities.helpers.addParameter(base404, cacheBuster));
+//            IHttpRequestResponse getPoison200 = Scan.request(injector.getService(), Utilities.helpers.addParameter(base404, cacheBuster));
 //            short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
 //
 //            if (getPoison200Code != get404Code) {
@@ -586,18 +586,18 @@ class ParamGuesser implements Runnable {
         String cacheBuster = Utilities.generateCanary();
         setPoisonReq = Utilities.addCacheBuster(setPoisonReq, cacheBuster);
         for (int j = attackDedication - i; j < attackDedication; j++) {
-            Utilities.attemptRequest(service, setPoisonReq);
+            Scan.request(service, setPoisonReq);
         }
 
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
-            IHttpRequestResponse getPoison = Utilities.attemptRequest(service, Utilities.appendToPath(Utilities.addCacheBuster(base.getRequest(), cacheBuster), pathSuffix));
+            IHttpRequestResponse getPoison = Scan.request(service, Utilities.appendToPath(Utilities.addCacheBuster(base.getRequest(), cacheBuster), pathSuffix));
             if (Utilities.containsBytes(getPoison.getResponse(), staticCanary)) {
                 Utilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
                 byte[] headerSplitReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
                 cacheBuster = Utilities.generateCanary();
-                byte[] headerSplitResp = Utilities.attemptRequest(service, Utilities.addCacheBuster(headerSplitReq, cacheBuster)).getResponse();
+                byte[] headerSplitResp = Scan.request(service, Utilities.addCacheBuster(headerSplitReq, cacheBuster)).getResponse();
                 if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
                     title = "Severe cache poisoning";
                 }

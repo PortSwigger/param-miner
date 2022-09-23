@@ -118,7 +118,7 @@ class ValueGuesser implements Runnable, ActionListener {
 
                 if (!launchedScan) {
                     // scan this insertion point with our new base value
-                    // Utilities.doActiveScan(Utilities.attemptRequest(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+                    // Utilities.doActiveScan(Scan.request(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
 
                     // scan the entire request with our new base value
                     title = "Alternative code path: "+potentialValue;

@@ -129,7 +129,7 @@ public class HeaderMutationGuesser {
     private IHttpRequestResponse requestHeader(byte[] baseReq, byte[] header) {
         byte[] req = this.addHeader(baseReq, header);
         req = Utilities.addCacheBuster(req, Utilities.generateCanary());
-        return Utilities.attemptRequest(this.service, req, true);
+        return Scan.request(this.service, req, 0, true);
     }
 
     private byte[] removeHeader(byte[] req, String headerName) {

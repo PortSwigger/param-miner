@@ -65,7 +65,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 String proto = req.getHttpService().getProtocol();
                 IHttpService service = Utilities.helpers.buildHttpService(host, port, proto);
 
-                IHttpRequestResponse newReq = Utilities.attemptRequest(service, downgraded, true);
+                IHttpRequestResponse newReq = Scan.request(service, downgraded, 0, true);
                 reqlist.set(i, newReq);
                 this.reqs[i] = newReq;
             }
