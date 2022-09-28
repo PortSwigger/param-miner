@@ -207,7 +207,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
         this.attackID = attackID;
-        this.collab = "oastify.com";//Utilities.getSetting("location"); // fixme should use configured server
+        this.collab = "psres.net";//Utilities.getSetting("location"); // fixme should use configured server
 
         ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
         HashMap<String, Integer> freq = new HashMap<>();
@@ -338,6 +338,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
         }
         else {
+            return new String[]{name, } // todo collab goes here
             return new String[]{name, calculateValue(name)};
         }
     }

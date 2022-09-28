@@ -133,6 +133,7 @@ class ParamAttack {
         final String payload = ""; // formerly "<a`'\\\"${{\\\\"
 
 
+        // todo create collab context here and pass in?
         insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
 
         injector = new PayloadInjector(baseRequestResponse, insertionPoint);
