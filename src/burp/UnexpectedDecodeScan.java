@@ -10,9 +10,9 @@ public class UnexpectedDecodeScan extends ParamScan
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
-        if (insertionPoint.getInsertionPointType() != IScannerInsertionPoint.INS_HEADER) {
-            return null;
-        }
+//        if (insertionPoint.getInsertionPointType() != IScannerInsertionPoint.INS_HEADER) {
+//            return null;
+//        }
         String left = Utilities.generateCanary();
         String right = Utilities.generateCanary();
         Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest((left+"%61"+right).getBytes()));

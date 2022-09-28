@@ -352,6 +352,27 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         }
         return built;
     }
+
+    public RawInsertionPoint getValueInsertionPoint(String param) {
+        String canary = Utilities.generateCanary();
+        param = param.split("~", 2)[0]+"~"+canary;
+
+        byte[] dummyReq = buildRequest(param.getBytes());
+
+        String payload = getValue(param)[1];
+        Utilities.out("Param: "+param);
+        Utilities.out("Payload: "+canary);
+        Utilities.out(new String(dummyReq));
+        byte[] scanBaseGrep = Utilities.helpers.stringToBytes(canary);
+
+        int start = Utilities.helpers.indexOf(dummyReq, scanBaseGrep, true, 0, dummyReq.length);
+        int end = start + scanBaseGrep.length;
+
+        ArrayList<int[]> offsets = new ArrayList<>();
+        offsets.add(new int[]{start, end});
+
+        return new RawInsertionPoint(dummyReq, payload, start, end);
+    }
 }
 
 class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
@@ -546,7 +567,6 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         }
     }
 }
-
 
 
 

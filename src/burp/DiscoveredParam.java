@@ -44,7 +44,7 @@ public class DiscoveredParam {
             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
             if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
                 try {
-                    scanParam(injector, name.split("~", 2)[0]);
+                    scanParam(injector, name);
                 } catch(RuntimeException e) {
                     Utilities.out("Error while scanning param: "+e.getMessage());
                 }
@@ -57,21 +57,11 @@ public class DiscoveredParam {
 
         try {
             IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
-            ParamInsertionPoint insertionPoint = (ParamInsertionPoint) injector.getInsertionPoint();
-            byte[] req = scanBaseAttack.getRequest();
-            byte[] scanBaseGrep = Utilities.helpers.stringToBytes(insertionPoint.calculateValue(scanBasePayload));
-
-            int start = Utilities.helpers.indexOf(req, scanBaseGrep, true, 0, req.length);
-            int end = start + scanBaseGrep.length;
-
-            // todo test this
-            // todo make separate option for core scan vs param scan
-            ArrayList<int[]> offsets = new ArrayList<>();
-            offsets.add(new int[]{start, end});
+            ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
+            IScannerInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(scanBasePayload);
             IHttpService service = scanBaseAttack.getHttpService();
-            IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req, scanBasePayload, start, end);
 
-
+            new UnexpectedDecodeScan("decode").doScan(scanBaseAttack, valueInsertionPoint);
 
             if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
                 for (Scan scan : BulkScan.scans) {
@@ -90,7 +80,7 @@ public class DiscoveredParam {
                 return;
             }
 
-            Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
+            //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
             //ValueGuesser.guessValue(scanBaseAttack, start, end);
 
         } catch (Exception e) {
