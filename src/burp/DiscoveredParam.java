@@ -43,7 +43,11 @@ public class DiscoveredParam {
             }
             Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
             if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
-                scanParam(injector, name.split("~", 2)[0]);
+                try {
+                    scanParam(injector, name.split("~", 2)[0]);
+                } catch(RuntimeException e) {
+                    Utilities.out("Error while scanning param: "+e.getMessage());
+                }
             }
 
         }
