@@ -28,7 +28,7 @@ class ParamAttack {
     private String targetURL;
     private Attack altBase;
     private boolean tryMethodFlip;
-    private final ParamInsertionPoint insertionPoint;
+
     final byte type;
     private ConfigurableSettings config;
     private ArrayList<String> headerMutations;
@@ -53,10 +53,6 @@ class ParamAttack {
 
     String getTargetURL() {
         return targetURL;
-    }
-
-    ParamInsertionPoint getInsertionPoint() {
-        return insertionPoint;
     }
 
     byte[] getInvertedBase() {
@@ -134,7 +130,7 @@ class ParamAttack {
 
 
         // todo create collab context here and pass in?
-        insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
+        ParamInsertionPoint insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
 
         injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 
