@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 
 public class DiscoveredParam {
-    boolean canSeeCache = false;
     ArrayList<Attack> evidence;
     Attack failAttack;
     Attack workedAttack;
@@ -13,7 +12,14 @@ public class DiscoveredParam {
     String name;
     byte[] staticCanary;
     IHttpRequestResponse baseRequestResponse;
+    byte type;
 
+    boolean canSeeCache = false;
+    boolean cachePoisoned = false;
+
+    boolean urlDecodes = false;
+    boolean eatsSlash = false;
+    boolean pingback = false;
 
     public DiscoveredParam(ArrayList<Attack> evidence, PayloadInjector injector, String name, Attack failAttack, Attack workedAttack, IHttpRequestResponse baseRequestResponse) {
         this.evidence = evidence;
@@ -23,73 +29,82 @@ public class DiscoveredParam {
         this.workedAttack = workedAttack;
         this.staticCanary = Utilities.globalSettings.getString("canary").getBytes();
         this.baseRequestResponse = baseRequestResponse;
+        this.type = injector.getInsertionPoint().getInsertionPointType();
     }
 
-    // todo split into explore() and nice simple report()
 
-    public void report() {
-        boolean cacheSuccess = false;
-        byte type = injector.getInsertionPoint().getInsertionPointType();
-
-        if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
-            cacheSuccess = cachePoison(injector, name, failAttack.getFirstRequest());
-        }
-
-        if (!Utilities.globalSettings.getBoolean("poison only")) {
-            String title = "Secret input: " + Utilities.getNameFromType(type);
-            if (!cacheSuccess && canSeeCache(workedAttack.getFirstRequest().getResponse())) {
-                title = "Secret uncached input: " + Utilities.getNameFromType(type);
-            }
-            if (Utilities.globalSettings.getBoolean("name in issue")) {
-                title += ": " + name.split("~")[0];
-            }
-            Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
-            if (type != Utilities.PARAM_HEADER || Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
-                try {
-                    scanParam(injector, name);
-                } catch(RuntimeException e) {
-                    Utilities.out("Error while scanning param: "+e.getMessage());
-                }
-            }
-
-        }
-    }
-
-    private static void scanParam(PayloadInjector injector, String scanBasePayload) {
-
+    public void exploreAndReport() {
         try {
-            IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
-            ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
-            IScannerInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(scanBasePayload);
-
-            new UnexpectedDecodeScan("decode").doScan(scanBaseAttack, valueInsertionPoint);
-            new PingbackScan("pingback").doScan(scanBaseAttack, valueInsertionPoint);
-
-            if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
-                for (Scan scan : BulkScan.scans) {
-                    if (scan instanceof ParamScan) {
-                        ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
-                    }
-                }
-            }
-
-            if (!Utilities.globalSettings.getBoolean("scan identified params")) {
-                return;
-            }
-
-            if (!Utilities.isBurpPro()) {
-                Utilities.out("Can't autoscan identified parameter - requires pro edition");
-                return;
-            }
-
-            IHttpService service = scanBaseAttack.getHttpService();
-            //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
-            //ValueGuesser.guessValue(scanBaseAttack, start, end);
-
+            explore();
         } catch (Exception e) {
-            // don't let a broken scan take out the param-miner thread
+            // don't let a broken exploration prevent an issue being reported
             Utilities.showError(e);
         }
+        report();
+    }
+
+    public void explore() {
+        if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
+            cachePoisoned = cachePoison(injector, name, failAttack.getFirstRequest());
+        }
+
+        canSeeCache = canSeeCache(workedAttack.getFirstRequest().getResponse());
+        IHttpRequestResponse scanBaseAttack = injector.probeAttack(name).getFirstRequest();
+        ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
+        IScannerInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(name);
+
+        if (type == Utilities.PARAM_HEADER) {
+            urlDecodes = ValueProbes.urlDecodes(scanBaseAttack, valueInsertionPoint);
+        }
+        pingback = ValueProbes.triggersPingback(scanBaseAttack, valueInsertionPoint);
+
+        if (type == Utilities.PARAM_HEADER && !Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
+            return;
+        }
+
+        if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
+            for (Scan scan : BulkScan.scans) {
+                if (scan instanceof ParamScan) {
+                    ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+                }
+            }
+        }
+
+        if (!Utilities.globalSettings.getBoolean("scan identified params")) {
+            return;
+        }
+
+        if (!Utilities.isBurpPro()) {
+            Utilities.out("Can't autoscan identified parameter - requires pro edition");
+            return;
+        }
+
+        IHttpService service = scanBaseAttack.getHttpService();
+        //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
+        //ValueGuesser.guessValue(scanBaseAttack, start, end);
+
+    }
+
+    public void report() {
+        if (Utilities.globalSettings.getBoolean("poison only")) {
+            return;
+        }
+
+        String typeName = Utilities.getNameFromType(type);
+        String title = "Secret input: " + typeName;
+        if (!cachePoisoned && canSeeCache) {
+            title = "Secret uncached input: " + typeName;
+        }
+
+        if (Utilities.globalSettings.getBoolean("name in issue")) {
+            title += ": " + name.split("~")[0];
+        }
+
+        if (pingback) {
+            title += " [pingback]";
+        }
+
+        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
     }
 
 
