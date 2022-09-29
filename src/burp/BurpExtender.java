@@ -360,9 +360,6 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         byte[] dummyReq = buildRequest(param.getBytes());
 
         String payload = getValue(param)[1];
-        Utilities.out("Param: "+param);
-        Utilities.out("Payload: "+canary);
-        Utilities.out(new String(dummyReq));
         byte[] scanBaseGrep = Utilities.helpers.stringToBytes(canary);
 
         int start = Utilities.helpers.indexOf(dummyReq, scanBaseGrep, true, 0, dummyReq.length);

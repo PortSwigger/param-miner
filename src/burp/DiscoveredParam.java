@@ -56,7 +56,10 @@ public class DiscoveredParam {
         if (type == Utilities.PARAM_HEADER) {
             urlDecodes = ValueProbes.urlDecodes(scanBaseAttack, valueInsertionPoint);
         }
+        ValueProbes.eatsBackslash(scanBaseAttack, valueInsertionPoint);
         pingback = ValueProbes.triggersPingback(scanBaseAttack, valueInsertionPoint);
+        ValueProbes.utf8(scanBaseAttack, valueInsertionPoint);
+        ValueProbes.utf82(scanBaseAttack, valueInsertionPoint);
 
         if (type == Utilities.PARAM_HEADER && !Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
             return;

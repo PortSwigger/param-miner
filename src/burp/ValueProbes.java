@@ -18,11 +18,27 @@ public class ValueProbes
 //        if (insertionPoint.getInsertionPointType() != IScannerInsertionPoint.INS_HEADER) {
 //            return null;
 //        }
+        return transformation(baseRequestResponse, insertionPoint, "%61", "a");
+    }
+
+    static boolean eatsBackslash(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+        return transformation(baseRequestResponse, insertionPoint, "\\\\", "\\");
+    }
+
+    static boolean utf8(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+        return transformation(baseRequestResponse, insertionPoint, "\u2424", "\n");
+    }
+
+    static boolean utf82(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+        return transformation(baseRequestResponse, insertionPoint, "\u2424", "\u0024");
+    }
+
+    private static boolean transformation(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String send, String expect) {
         String left = Utilities.generateCanary();
         String right = Utilities.generateCanary();
-        Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest((left+"%61"+right).getBytes()));
-        if (Utilities.contains(resp, left+"a"+right)) {
-            Scan.report("Header URL-decode", "", resp);
+        Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest((left+send+right).getBytes()));
+        if (Utilities.contains(resp, left+expect+right)) {
+            Scan.report("Transformation: "+send+"---"+expect, "", resp);
             return true;
         }
         return false;
