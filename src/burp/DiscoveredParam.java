@@ -25,6 +25,8 @@ public class DiscoveredParam {
         this.baseRequestResponse = baseRequestResponse;
     }
 
+    // todo split into explore() and nice simple report()
+
     public void report() {
         boolean cacheSuccess = false;
         byte type = injector.getInsertionPoint().getInsertionPointType();
@@ -59,9 +61,9 @@ public class DiscoveredParam {
             IHttpRequestResponse scanBaseAttack = injector.probeAttack(scanBasePayload).getFirstRequest();
             ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
             IScannerInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(scanBasePayload);
-            IHttpService service = scanBaseAttack.getHttpService();
 
             new UnexpectedDecodeScan("decode").doScan(scanBaseAttack, valueInsertionPoint);
+            new PingbackScan("pingback").doScan(scanBaseAttack, valueInsertionPoint);
 
             if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
                 for (Scan scan : BulkScan.scans) {
@@ -80,6 +82,7 @@ public class DiscoveredParam {
                 return;
             }
 
+            IHttpService service = scanBaseAttack.getHttpService();
             //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
             //ValueGuesser.guessValue(scanBaseAttack, start, end);
 
