@@ -1,5 +1,6 @@
 package burp;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ValueProbes
@@ -12,6 +13,27 @@ public class ValueProbes
            return true;
        }
        return false;
+   }
+
+   static boolean dynamicOnly(PayloadInjector headerInjector, String name) {
+       String realName = name.split("~")[0];
+
+       Attack softBase = new Attack();
+       softBase.addAttack(headerInjector.buildAttack(realName+"~%r", false));
+       softBase.addAttack(headerInjector.buildAttack(realName+"~%r", false));
+       softBase.addAttack(headerInjector.buildAttack(realName+"~%r", false));
+
+       // ensure the static input is already cached
+       headerInjector.buildAttack(realName+"~static", false);
+       headerInjector.buildAttack(realName+"~static", false);
+
+       Probe validParam = new Probe("Found unlinked param: " + realName, 4, realName+"~static");
+       validParam.setEscapeStrings(realName+"~%r");
+       validParam.setRandomAnchor(false);
+       validParam.setPrefix(Probe.REPLACE);
+       ArrayList<Attack> confirmed = headerInjector.fuzz(softBase, validParam);
+
+       return !confirmed.isEmpty();
    }
 
     static boolean urlDecodes(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {

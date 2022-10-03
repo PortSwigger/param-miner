@@ -20,6 +20,7 @@ public class DiscoveredParam {
     boolean urlDecodes = false;
     boolean eatsSlash = false;
     boolean pingback = false;
+    boolean dynamicOnly = false;
 
     public DiscoveredParam(ArrayList<Attack> evidence, PayloadInjector injector, String name, Attack failAttack, Attack workedAttack, IHttpRequestResponse baseRequestResponse) {
         this.evidence = evidence;
@@ -56,8 +57,10 @@ public class DiscoveredParam {
         if (type == Utilities.PARAM_HEADER) {
             urlDecodes = ValueProbes.urlDecodes(scanBaseAttack, valueInsertionPoint);
         }
+
         ValueProbes.eatsBackslash(scanBaseAttack, valueInsertionPoint);
         pingback = ValueProbes.triggersPingback(scanBaseAttack, valueInsertionPoint);
+        dynamicOnly = ValueProbes.dynamicOnly(injector, name);
         ValueProbes.utf8(scanBaseAttack, valueInsertionPoint);
         ValueProbes.utf82(scanBaseAttack, valueInsertionPoint);
 
@@ -105,6 +108,10 @@ public class DiscoveredParam {
 
         if (pingback) {
             title += " [pingback]";
+        }
+
+        if (dynamicOnly) {
+            title += " [dynamic-only]";
         }
 
         Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));

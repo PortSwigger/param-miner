@@ -3,22 +3,14 @@ package burp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
-
-import static burp.Keysmith.getHtmlKeys;
-import static burp.Keysmith.getWords;
-
-
 
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
@@ -135,7 +127,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         SwingUtilities.invokeLater(new ConfigMenu());
 
-        new HeaderPoison("Header poison");
+        new HeaderGuessScan("Guess headers");
         new PortDOS("port-DoS");
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
@@ -207,7 +199,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
         this.attackID = attackID;
-        this.collab = "psres.net";//Utilities.getSetting("location"); // fixme should use configured server
+        this.collab = "oastify.com";//Utilities.getSetting("location"); // fixme should use configured server
 
         ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
         HashMap<String, Integer> freq = new HashMap<>();

@@ -2,9 +2,9 @@ package burp;
 
 import java.util.List;
 
-public class HeaderPoison extends Scan {
+public class HeaderGuessScan extends Scan {
 
-    HeaderPoison(String name) {
+    HeaderGuessScan(String name) {
         super(name);
         scanSettings.importSettings(BurpExtender.guessSettings);
     }

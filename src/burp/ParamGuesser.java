@@ -270,6 +270,8 @@ class ParamGuesser implements Runnable {
                                 if (!confirmed.isEmpty()) {
                                     state.alreadyReported.add(submission);
                                     Utilities.reportedParams.add(submission);
+                                    state.alreadyReported.add(submission.split("~", 2)[0]);
+                                    Utilities.reportedParams.add(submission.split("~", 2)[0]);
                                     Utilities.out("Identified parameter on " + targetURL + ": " + submission);
 
                                     DiscoveredParam discoveredParam = new DiscoveredParam(confirmed, injector, submission, failAttack, paramGuess, baseRequestResponse);
