@@ -131,7 +131,6 @@ class ParamGuesser implements Runnable {
         final PayloadInjector injector = state.getInjector();
         final String attackID = state.getAttackID();
         final String targetURL = state.getTargetURL();
-        final boolean tryMethodFlip = state.shouldTryMethodFlip();
         final HashMap<String, String> requestParams = state.getRequestParams();
         final WordProvider bonusParams = state.getBonusParams();
         final byte type = state.type;
@@ -142,8 +141,6 @@ class ParamGuesser implements Runnable {
         int start = 0; // todo could manually set this
         int stop = state.getStop();
         Attack base = state.getBase();
-        byte[] invertedBase = state.getInvertedBase();
-        Attack altBase = state.getAltBase();
         ParamHolder paramBuckets = state.getParamBuckets();
 
         if (Utilities.globalSettings.getBoolean("carpet bomb")) {
@@ -215,6 +212,7 @@ class ParamGuesser implements Runnable {
             if (headerMutations.size() == 0 || headerMutations.get(0) != null) {
                 headerMutations.add(0, null);
             }
+
             Iterator<String> iterator = headerMutations.iterator();
             while (iterator.hasNext()) {
                 String mutation = iterator.next();
@@ -235,103 +233,87 @@ class ParamGuesser implements Runnable {
                     localBase = base;
                 }
 
-                if (!Utilities.globalSettings.getBoolean("carpet bomb") && !Utilities.similar(localBase, paramGuess)) {
-                    Attack confirmParamGuess = injector.probeAttack(submission, mutation);
+                if (Utilities.globalSettings.getBoolean("carpet bomb")) {
+                    continue;
+                }
 
-                    Attack failAttack = injector.probeAttack(Keysmith.permute(submission), mutation);
+                if (Utilities.similar(localBase, paramGuess)) {
+                    continue;
+                }
 
-                    // this to prevent error messages obscuring persistent inputs
-                    findPersistent(baseRequestResponse, failAttack, attackID, state.recentParams, null, state.alreadyReported);
-                    localBase.addAttack(failAttack);
+                Attack confirmParamGuess = injector.probeAttack(submission, mutation);
 
-                    if (!Utilities.similar(localBase, confirmParamGuess)) {
-                        if (candidates.size() > 1) {
-                            Utilities.log("Splitting " + submission);
-                            ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
-                            Utilities.log("Got " + String.join("|", left));
-                            ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2, candidates.size()));
-                            Utilities.log("Got " + String.join("|", right));
-                            paramBuckets.push(left);
-                            paramBuckets.push(right);
-                        } else {
-                            if (state.alreadyReported.contains(submission)) {
-                                Utilities.out("Ignoring reporting of submission " + submission + " using mutation " + mutation + " as already reported.");
-                                continue;
-                            }
+                Attack failAttack = injector.probeAttack(Keysmith.permute(submission), mutation);
 
-                            Attack WAFCatcher = new Attack(Scan.request(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission), 0, this.forceHttp1));
-                            WAFCatcher.addAttack(new Attack(Scan.request(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission), 0, this.forceHttp1)));
-                            if (!Utilities.similar(WAFCatcher, confirmParamGuess)) {
-                                Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
-                                validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
-                                validParam.setRandomAnchor(false);
-                                validParam.setPrefix(Probe.REPLACE);
-                                ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam, mutation);
-                                if (!confirmed.isEmpty()) {
-                                    state.alreadyReported.add(submission);
-                                    Utilities.reportedParams.add(submission);
-                                    state.alreadyReported.add(submission.split("~", 2)[0]);
-                                    Utilities.reportedParams.add(submission.split("~", 2)[0]);
-                                    Utilities.out("Identified parameter on " + targetURL + ": " + submission);
+                // this to prevent error messages obscuring persistent inputs
+                findPersistent(baseRequestResponse, failAttack, attackID, state.recentParams, null, state.alreadyReported);
+                localBase.addAttack(failAttack);
 
-                                    DiscoveredParam discoveredParam = new DiscoveredParam(confirmed, injector, submission, failAttack, paramGuess, baseRequestResponse);
-                                    discoveredParam.exploreAndReport();
-                                    base = state.updateBaseline();
+                if (Utilities.similar(localBase, confirmParamGuess)) {
+                    Utilities.log(targetURL + " couldn't replicate: " + candidates);
+                    base.addAttack(paramGuess);
+                    continue;
+                }
 
-                                    //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
+                if (candidates.size() > 1) {
+                    Utilities.log("Splitting " + submission);
+                    ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
+                    Utilities.log("Got " + String.join("|", left));
+                    ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2, candidates.size()));
+                    Utilities.log("Got " + String.join("|", right));
+                    paramBuckets.push(left);
+                    paramBuckets.push(right);
+                    continue;
+                }
 
-                                    if (config.getBoolean("dynamic keyload")) {
-                                        ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
-                                        addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
-                                    }
-                                } else {
-                                    Utilities.out(targetURL + " questionable parameter: " + candidates);
-                                }
-                            }
-                        }
-                    } else{
-                        Utilities.log(targetURL + " couldn't replicate: " + candidates);
-                        base.addAttack(paramGuess);
+                if (state.alreadyReported.contains(submission)) {
+                    Utilities.out("Ignoring reporting of submission " + submission + " using mutation " + mutation + " as already reported.");
+                    continue;
+                }
+
+                Attack WAFCatcher = new Attack(Scan.request(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-header", submission), 0, this.forceHttp1));
+                WAFCatcher.addAttack(new Attack(Scan.request(service, Utilities.addOrReplaceHeader(baseRequestResponse.getRequest(), "junk-head", submission), 0, this.forceHttp1)));
+                if (Utilities.similar(WAFCatcher, confirmParamGuess)) {
+                    continue;
+                }
+
+                if (Utilities.wafParams.contains(submission) && !"eval".equals(submission)) {
+                    Probe wafCheck = new Probe("Confirm", 4, submission);
+                    wafCheck.setEscapeStrings("eval");
+                    wafCheck.setRandomAnchor(false);
+                    wafCheck.setPrefix(Probe.REPLACE);
+                    if (injector.fuzz(localBase, wafCheck, mutation).isEmpty()) {
+                        Utilities.out("Filtering WAF param: "+submission);
+                        continue;
                     }
+                }
 
-                    if (config.getBoolean("dynamic keyload")) {
-                        addNewKeys(Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams), state, bucketSize, paramBuckets, candidates, paramGuess);
-                    }
+                Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
+                validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
+                validParam.setRandomAnchor(false);
+                validParam.setPrefix(Probe.REPLACE);
+                ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam, mutation);
 
-                } else if (tryMethodFlip) {
-                    Attack paramGrab = new Attack(Scan.request(service, invertedBase));
-                    findPersistent(baseRequestResponse, paramGrab, attackID, state.recentParams, null, state.alreadyReported);
+                if (confirmed.isEmpty()) {
+                    Utilities.out(targetURL + " questionable parameter: " + candidates);
+                    continue;
+                }
 
-                    if (!Utilities.similar(altBase, paramGrab)) {
-                        Utilities.log("Potential GETbase param: " + candidates);
-                        injector.probeAttack(Keysmith.permute(submission), mutation);
-                        altBase.addAttack(new Attack(Scan.request(service, invertedBase)));
-                        injector.probeAttack(submission, mutation);
+                state.alreadyReported.add(submission);
+                Utilities.reportedParams.add(submission);
+                state.alreadyReported.add(submission.split("~", 2)[0]);
+                Utilities.reportedParams.add(submission.split("~", 2)[0]);
+                Utilities.out("Identified parameter on " + targetURL + ": " + submission);
 
-                        paramGrab = new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1));
-                        if (!Utilities.similar(altBase, paramGrab)) {
+                DiscoveredParam discoveredParam = new DiscoveredParam(confirmed, injector, submission, failAttack, paramGuess, baseRequestResponse);
+                discoveredParam.exploreAndReport();
+                base = state.updateBaseline();
+                //Utilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());
 
-                            if (candidates.size() > 1) {
-                                Utilities.log("Splitting " + submission);
-                                ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
-                                ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
-                                paramBuckets.push(left);
-                                paramBuckets.push(right);
-                            } else {
-                                Utilities.out("Confirmed GETbase param: " + candidates);
-                                IHttpRequestResponse[] evidence = new IHttpRequestResponse[3];
-                                evidence[0] = altBase.getFirstRequest();
-                                evidence[1] = paramGuess.getFirstRequest();
-                                evidence[2] = paramGrab.getFirstRequest();
-                                Utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '" + candidates + "'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
-
-                                altBase = new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1));
-                                altBase.addAttack(new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1)));
-                                altBase.addAttack(new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1)));
-                                altBase.addAttack(new Attack(Scan.request(service, invertedBase, 0, this.forceHttp1)));
-                            }
-                        }
-                    }
+                if (config.getBoolean("dynamic keyload")) {
+                    ArrayList<String> newWords = new ArrayList<>(Keysmith.getWords(Utilities.helpers.bytesToString(paramGuess.getFirstRequest().getResponse())));
+                    addNewKeys(newWords, state, bucketSize, paramBuckets, candidates, paramGuess);
+                    addNewKeys(Keysmith.getAllKeys(paramGuess.getFirstRequest().getResponse(), requestParams), state, bucketSize, paramBuckets, candidates, paramGuess);
                 }
             }
         }

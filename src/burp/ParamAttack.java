@@ -27,7 +27,6 @@ class ParamAttack {
     private Attack base;
     private String targetURL;
     private Attack altBase;
-    private boolean tryMethodFlip;
 
     final byte type;
     private ConfigurableSettings config;
@@ -53,20 +52,6 @@ class ParamAttack {
 
     String getTargetURL() {
         return targetURL;
-    }
-
-    byte[] getInvertedBase() {
-        return invertedBase;
-    }
-
-    private byte[] invertedBase;
-
-    Attack getAltBase() {
-        return altBase;
-    }
-
-    boolean shouldTryMethodFlip() {
-        return tryMethodFlip;
     }
 
     Attack getBase() {
@@ -139,9 +124,6 @@ class ParamAttack {
         //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
         //HashMap<String, Attack> baselines = new HashMap<>();
         //baselines.put(ref, new Attack(baseRequestResponse));
-        invertedBase = null;
-        altBase = null;
-        tryMethodFlip = false;
 
         int longest = config.getInt("max param length");
 
@@ -163,17 +145,6 @@ class ParamAttack {
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
         Utilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
-
-        if(baseRequestResponse.getRequest()[0] != 'G') {
-            invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
-            altBase = new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase));
-            if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404 && Utilities.globalSettings.getBoolean("try method flip")) {
-                altBase.addAttack(new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase)));
-                altBase.addAttack(new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase)));
-                altBase.addAttack(new Attack(Scan.request(baseRequestResponse.getHttpService(), invertedBase)));
-                tryMethodFlip = true;
-            }
-        }
 
         // put the params into buckets
         paramBuckets = new ParamHolder(type, bucketSize);

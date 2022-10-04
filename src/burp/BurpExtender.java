@@ -60,7 +60,6 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("carpet bomb", false, "Send parameters as usual, but don't attempt to identify/report valid ones. Useful for OAST techniques.");
         guessSettings.register("try cache poison", true, "After discovering a parameter, test whether it can be used for cache poisoning");
         guessSettings.register("twitchy cache poison", false, "Make cache poisoning detection capable of detecting non-reflected input (but more prone to FPs)");
-        guessSettings.register("try method flip", false, "Try flipping GET to POST to fit more parameters in each request");
         guessSettings.register("identify smuggle mutations", false, "Try using desync-style mutations to bypass header rewriting by front-ends.");
         guessSettings.register("try -_ bypass", false, "Convert all instances of - to _ in header names, to bypass some front-end rewrites");
         guessSettings.register("rotation interval", 999, "This doesn't work");
@@ -145,24 +144,19 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         Utilities.out("Loaded " + name + " v" + version);
     }
 
-
-    private void loadWordlists() {
-        Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
+    private void loadWordlist(String name, Collection<String> fillme) {
+        Scanner s = new Scanner(getClass().getResourceAsStream(name));
         while (s.hasNext()) {
-            Utilities.phpFunctions.add(s.next());
+            fillme.add(s.next());
         }
         s.close();
+    }
 
-        Scanner params = new Scanner(getClass().getResourceAsStream("/params"));
-        while (params.hasNext()) {
-            Utilities.paramNames.add(params.next());
-        }
-        params.close();
-
-        Scanner headers = new Scanner(getClass().getResourceAsStream("/boring_headers"));
-        while (headers.hasNext()) {
-            Utilities.boringHeaders.add(headers.next().toLowerCase());
-        }
+    private void loadWordlists() {
+        loadWordlist("/functions", Utilities.phpFunctions);
+        loadWordlist("/params", Utilities.paramNames);
+        loadWordlist("/boring_headers", Utilities.boringHeaders);
+        loadWordlist("/wafparams", Utilities.wafParams);
     }
 
     public void extensionUnloaded() {
