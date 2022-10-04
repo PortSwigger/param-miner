@@ -252,6 +252,8 @@ class ParamGuesser implements Runnable {
                 if (Utilities.similar(localBase, confirmParamGuess)) {
                     Utilities.log(targetURL + " couldn't replicate: " + candidates);
                     base.addAttack(paramGuess);
+//                    base.addAttack(confirmParamGuess);
+//                    base.addAttack(failAttack);
                     continue;
                 }
 
@@ -296,6 +298,7 @@ class ParamGuesser implements Runnable {
 
                 if (confirmed.isEmpty()) {
                     Utilities.out(targetURL + " questionable parameter: " + candidates);
+                    //base.addAttack(confirmParamGuess);
                     continue;
                 }
 

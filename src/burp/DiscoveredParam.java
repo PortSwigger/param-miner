@@ -2,6 +2,7 @@ package burp;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class DiscoveredParam {
@@ -52,7 +53,7 @@ public class DiscoveredParam {
         canSeeCache = canSeeCache(workedAttack.getFirstRequest().getResponse());
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(name).getFirstRequest();
         ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
-        IScannerInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(name);
+        RawInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(name);
 
         if (type == Utilities.PARAM_HEADER) {
             urlDecodes = ValueProbes.urlDecodes(scanBaseAttack, valueInsertionPoint);
@@ -86,7 +87,7 @@ public class DiscoveredParam {
         }
 
         IHttpService service = scanBaseAttack.getHttpService();
-        //Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), req, offsets);
+        Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), valueInsertionPoint.req, Collections.singletonList(new int[]{valueInsertionPoint.start, valueInsertionPoint.end}));
         //ValueGuesser.guessValue(scanBaseAttack, start, end);
 
     }
@@ -94,6 +95,13 @@ public class DiscoveredParam {
     public void report() {
         if (Utilities.globalSettings.getBoolean("poison only")) {
             return;
+        }
+
+        if (Utilities.TIME_ONLY) {
+            ObservedTimes times = (ObservedTimes) evidence.get(0).getLastPrint().get("times");
+            if (times.times.size() < 20) {
+                return;
+            }
         }
 
         String typeName = Utilities.getNameFromType(type);

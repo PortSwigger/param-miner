@@ -127,6 +127,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         SwingUtilities.invokeLater(new ConfigMenu());
 
         new HeaderGuessScan("Guess headers");
+        new URLGuessScan("Guess query params");
+        new CookieGuessScan("Guess cookies");
         new PortDOS("port-DoS");
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
