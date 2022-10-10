@@ -46,6 +46,13 @@ public class DiscoveredParam {
     }
 
     public void explore() {
+        if (Utilities.TIME_ONLY) {
+            ObservedTimes times = (ObservedTimes) evidence.get(0).getLastPrint().get("times");
+            if (times.times.size() < 20) {
+                return;
+            }
+        }
+
         if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
             cachePoisoned = cachePoison(injector, name, failAttack.getFirstRequest());
         }
@@ -65,9 +72,9 @@ public class DiscoveredParam {
         ValueProbes.utf8(scanBaseAttack, valueInsertionPoint);
         ValueProbes.utf82(scanBaseAttack, valueInsertionPoint);
 
-        if (type == Utilities.PARAM_HEADER && !Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
-            return;
-        }
+//        if (type == Utilities.PARAM_HEADER && !Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
+//            return;
+//        }
 
         if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
             for (Scan scan : BulkScan.scans) {

@@ -137,9 +137,7 @@ class ParamGuesser implements Runnable {
         ArrayList<String> headerMutations = state.getHeaderMutations();
 
         ArrayList<Attack> attacks = new ArrayList<>();
-        int completedAttacks = 0;
-        int start = 0; // todo could manually set this
-        int stop = state.getStop();
+
         Attack base = state.getBase();
         ParamHolder paramBuckets = state.getParamBuckets();
 
@@ -156,7 +154,7 @@ class ParamGuesser implements Runnable {
         }
 
 
-        while (completedAttacks++ < stop) {
+        while (true) {
             if (paramBuckets.size() == 0) {
                 ArrayList<String> newParams = new ArrayList<>();
                 int i = 0;
@@ -188,10 +186,6 @@ class ParamGuesser implements Runnable {
                 candidates = paramBuckets.pop();
                 Iterator<String> iterator = candidates.iterator();
             } catch (NoSuchElementException e) {
-                continue;
-            }
-
-            if (completedAttacks < start) {
                 continue;
             }
 
@@ -320,12 +314,6 @@ class ParamGuesser implements Runnable {
                 }
             }
         }
-
-
-        state.incrStop();
-        taskEngine.execute(new ParamGuesser(state, taskEngine, config, this.forceHttp1));
-
-        return attacks;
     }
 
     private void addNewKeys(ArrayList<String> keys, ParamAttack state, int bucketSize, ParamHolder paramBuckets, ArrayList<String> candidates, Attack paramGuess) {
