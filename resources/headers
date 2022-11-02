@@ -1139,5 +1139,4 @@ http_sm_universalid
 http_sm_user
 http_sm_userdn
 http_sm_usermsg
-x-custom-ip-authorization
 x-remote-ip
