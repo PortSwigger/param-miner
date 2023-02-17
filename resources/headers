@@ -669,6 +669,7 @@ viad
 x
 x-access-token
 x-amz-date
+x-amz-server-side-encryption
 x-auth-key
 x-auth-user
 x-confirm-delete
