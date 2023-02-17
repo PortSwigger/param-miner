@@ -23,7 +23,7 @@ import static burp.Keysmith.getWords;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     private static final String name = "Param Miner";
-    private static final String version = "1.4d";
+    private static final String version = "1.4f";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
