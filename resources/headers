@@ -14,6 +14,7 @@ access-control-request-method
 age
 allow
 authorization
+authenticate
 cache-control
 connection
 contact
@@ -171,6 +172,7 @@ proxy-request-fulluri
 request
 server-varsabantecart
 accept-application
+accept-auth
 accept-encodxng
 accept-version
 action
@@ -342,6 +344,7 @@ proxy-socks5-hostname
 proxy-url
 pull
 querystring
+realip
 real-ip
 real-method
 reason
@@ -583,6 +586,7 @@ x-twilio-signature
 x-uniquewcid
 x-up-calling-line-id
 x-up-devcap-screendepth
+x-upload-content-type
 x-upload-maxresolution
 x-upload-name
 x-upload-size
@@ -598,6 +602,7 @@ x-wap-proxy-cookie
 x-wap-session-id
 x-wap-tod
 x-wap-tod-coded
+x-wopi-override
 x-wikimedia-debug
 x-wp-pjax-prefetch
 x-ws-api-key
@@ -1140,3 +1145,5 @@ http_sm_user
 http_sm_userdn
 http_sm_usermsg
 x-remote-ip
+traceparent
+tracestate
