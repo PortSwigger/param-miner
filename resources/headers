@@ -361,7 +361,6 @@ redirection-use-proxy
 redirect-problem-withoutwww
 redirect-problem-withwww
 ref
-referer
 refresh
 remix-hash
 remote-host-wp
@@ -957,7 +956,6 @@ bar
 proxy
 timeout
 referrer
-x-forwarded-ssl
 x-jphone-uid
 x-file-size
 accepted
