@@ -42,8 +42,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("learn observed words", false);
         guessSettings.register("skip boring words", true, "When mining headers, don't check for well known and typically not very exciting headers");
         guessSettings.register("only report unique params", false, "Only report a parameter with a given name once, regardless of how many endpoints are scanned");
-        guessSettings.register("response", true, "Extract words from the target request, and use these to guess params");
-        guessSettings.register("request", true, "Extract words from the target response, and use these to guess params. Highly recommended.");
+        guessSettings.register("response-headers", true, "Extract words from the target response headers, and use these to guess params");
+        guessSettings.register("response-body", true, "Extract words from the target response body, and use these to guess params");
+        guessSettings.register("request", true, "Extract words from the target request, and use these to guess params. Highly recommended.");
         guessSettings.register("use basic wordlist", true, "When guessing params, use the core wordlist");
         guessSettings.register("use bonus wordlist", false, "When guessing params, also use a generic wordlist");
         guessSettings.register("use assetnote params", false, "When guessing params, use the assetnote wordlist");
@@ -78,17 +79,17 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         loadWordlists();
         BlockingQueue<Runnable> tasks;
-        if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
+        if (BulkUtilities.globalSettings.getBoolean("enable auto-mine")) {
             tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
         }
         else {
             tasks = new LinkedBlockingQueue<>();
         }
 
-        Utilities.globalSettings.registerSetting("thread pool size", 8);
-        taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
-        Utilities.globalSettings.registerListener("thread pool size", value -> {
-            Utilities.out("Updating active thread pool size to "+value);
+        BulkUtilities.globalSettings.registerSetting("thread pool size", 8);
+        taskEngine = new ThreadPoolExecutor(BulkUtilities.globalSettings.getInt("thread pool size"), BulkUtilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
+        BulkUtilities.globalSettings.registerListener("thread pool size", value -> {
+            BulkUtilities.out("Updating active thread pool size to "+value);
             try {
                 taskEngine.setCorePoolSize(Integer.parseInt(value));
                 taskEngine.setMaximumPoolSize(Integer.parseInt(value));
@@ -103,21 +104,21 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         try {
             StringUtils.isNumeric("1");
         } catch (java.lang.NoClassDefFoundError e) {
-            Utilities.out("Failed to import the Apache Commons Lang library. You can get it from http://commons.apache.org/proper/commons-lang/");
+            BulkUtilities.out("Failed to import the Apache Commons Lang library. You can get it from http://commons.apache.org/proper/commons-lang/");
             throw new NoClassDefFoundError();
         }
 
         try {
             callbacks.getHelpers().analyzeResponseVariations();
         } catch (java.lang.NoSuchMethodError e) {
-            Utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
+            BulkUtilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
             throw new NoSuchMethodError();
         }
 
         paramGrabber = new ParamGrabber(taskEngine);
         callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
 
-        if(Utilities.isBurpPro()) {
+        if(BulkUtilities.isBurpPro()) {
             callbacks.registerScannerCheck(new GrabScan(paramGrabber));
         }
 
@@ -141,9 +142,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         new BulkScanLauncher(BulkScan.scans);
 
-        Utilities.callbacks.registerExtensionStateListener(this);
+        BulkUtilities.callbacks.registerExtensionStateListener(this);
 
-        Utilities.out("Loaded " + name + " v" + version);
+        BulkUtilities.out("Loaded " + name + " v" + version);
     }
 
     private void loadWordlist(String name, Collection<String> fillme) {
@@ -155,15 +156,15 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     }
 
     private void loadWordlists() {
-        loadWordlist("/functions", Utilities.phpFunctions);
-        loadWordlist("/params", Utilities.paramNames);
-        loadWordlist("/boring_headers", Utilities.boringHeaders);
-        loadWordlist("/wafparams", Utilities.wafParams);
+        loadWordlist("/functions", BulkUtilities.phpFunctions);
+        loadWordlist("/params", BulkUtilities.paramNames);
+        loadWordlist("/boring_headers", BulkUtilities.boringHeaders);
+        loadWordlist("/wafparams", BulkUtilities.wafParams);
     }
 
     public void extensionUnloaded() {
-        Utilities.log("Aborting all attacks");
-        Utilities.unloaded.set(true);
+        BulkUtilities.log("Aborting all attacks");
+        BulkUtilities.unloaded.set(true);
         taskEngine.getQueue().clear();
         taskEngine.shutdown();
     }
@@ -195,7 +196,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
         super(request, name, value, type);
         this.attackID = attackID;
-        this.collab = "oastify.com";//Utilities.getSetting("location"); // fixme should use configured server
+        this.collab = "oastify.com";//BulkUtilities.getSetting("location"); // fixme should use configured server
 
         ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
         HashMap<String, Integer> freq = new HashMap<>();
@@ -208,7 +209,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
 
         String maxKey = null;
 
-        if (Utilities.globalSettings.getBoolean("auto-nest params")) {
+        if (BulkUtilities.globalSettings.getBoolean("auto-nest params")) {
             int max = 0;
             for (Map.Entry<String, Integer> entry : freq.entrySet()) {
                 if (entry.getValue() > max) {
@@ -220,20 +221,20 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         defaultPrefix = maxKey;
 
         if (maxKey != null) {
-            Utilities.out("Selected default key: "+maxKey);
+            BulkUtilities.out("Selected default key: "+maxKey);
         }
         else {
-            Utilities.log("No default key available");
+            BulkUtilities.log("No default key available");
         }
 
         present = new HashMap<>();
-        List<String> headers = Utilities.analyzeRequest(request).getHeaders();
+        List<String> headers = BulkUtilities.analyzeRequest(request).getHeaders();
         for (String header: headers) {
             if (header.startsWith("Host: ")) {
                 host = header.split(": ", 2)[1];
             }
             header = header.split(": ", 2)[0];
-            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
+            if (BulkUtilities.globalSettings.getBoolean("lowercase headers")) {
                 present.put(header.toLowerCase(), header);
             }
             else {
@@ -243,16 +244,16 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     String calculateValue(String unparsed) {
-        String canary = Utilities.globalSettings.getString("force canary");
+        String canary = BulkUtilities.globalSettings.getString("force canary");
         if (!"".equals(canary)) {
             return canary;
         }
-        return Utilities.toCanary(unparsed) + attackID + value + Utilities.randomString(5) + Utilities.fuzzSuffix();
+        return BulkUtilities.toCanary(unparsed) + attackID + value + BulkUtilities.randomString(5) + BulkUtilities.fuzzSuffix();
     }
 
     @Override
     public byte[] buildRequest(byte[] payload) {
-        String bulk = Utilities.helpers.bytesToString(payload);
+        String bulk = BulkUtilities.helpers.bytesToString(payload);
         String[] params = bulk.split("[|]");
         ArrayList<String> preppedParams = new ArrayList<>();
         for(String key: params) {
@@ -262,7 +263,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             preppedParams.add(Keysmith.unparseParam(key));
         }
 
-        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY || type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER) {
+        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY || type == IParameter.PARAM_COOKIE || type == BulkUtilities.PARAM_HEADER) {
             return buildBulkRequest(preppedParams);
         }
 
@@ -272,9 +273,9 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
         String replaceKey = "TCZqBcS13SA8QRCpW";
-        IParameter newParam = Utilities.helpers.buildParameter(replaceKey, "", type);
-        byte[] built = Utilities.helpers.updateParameter(request, newParam);
-        return Utilities.fixContentLength(Utilities.replace(built, Utilities.helpers.stringToBytes(replaceKey+"="), Utilities.helpers.stringToBytes(merged)));
+        IParameter newParam = BulkUtilities.helpers.buildParameter(replaceKey, "", type);
+        byte[] built = BulkUtilities.helpers.updateParameter(request, newParam);
+        return BulkUtilities.fixContentLength(BulkUtilities.replace(built, BulkUtilities.helpers.stringToBytes(replaceKey+"="), BulkUtilities.helpers.stringToBytes(merged)));
     }
 
     String prepBulkParams(ArrayList<String> params) {
@@ -288,7 +289,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             join = "; ";
             trail = ";";
         }
-        else if (type == Utilities.PARAM_HEADER) {
+        else if (type == BulkUtilities.PARAM_HEADER) {
             equals = ": ";
             join ="\r\n";
             trail = ""; // \r\n
@@ -305,11 +306,11 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             if ("".equals(fullParam[0])) {
                 continue;
             }
-            if (type == Utilities.PARAM_HEADER) {
+            if (type == BulkUtilities.PARAM_HEADER) {
                 preppedParams.add(fullParam[0] + equals + fullParam[1]);
             }
             else {
-                preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
+                preppedParams.add(BulkUtilities.encodeParam(fullParam[0]) + equals + BulkUtilities.encodeParam(fullParam[1]));
             }
         }
 
@@ -322,8 +323,8 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
             parts[1] = parts[1].replace("%s", calculateValue(name));
             parts[1] = parts[1].replace("%h", host);
             parts[1] = parts[1].replace("%c", collab);
-            parts[1] = parts[1].replace("%r", Utilities.generateCanary());
-            return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
+            parts[1] = parts[1].replace("%r", BulkUtilities.generateCanary());
+            return new String[]{parts[0], String.valueOf(BulkUtilities.invert(parts[1]))};
         }
         else {
             //return new String[]{name, } // todo collab goes here
@@ -335,22 +336,22 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         byte[] built = request;
         for (String name: params) {
             String[] param = getValue(name);
-            IParameter newParam = Utilities.helpers.buildParameter(param[0], Utilities.encodeParam(param[1]), type);
-            built = Utilities.helpers.updateParameter(built, newParam);
+            IParameter newParam = BulkUtilities.helpers.buildParameter(param[0], BulkUtilities.encodeParam(param[1]), type);
+            built = BulkUtilities.helpers.updateParameter(built, newParam);
         }
         return built;
     }
 
     public RawInsertionPoint getValueInsertionPoint(String param) {
-        String canary = Utilities.generateCanary();
+        String canary = BulkUtilities.generateCanary();
         param = param.split("~", 2)[0]+"~"+canary;
 
         byte[] dummyReq = buildRequest(param.getBytes());
 
         String payload = getValue(param)[1];
-        byte[] scanBaseGrep = Utilities.helpers.stringToBytes(canary);
+        byte[] scanBaseGrep = BulkUtilities.helpers.stringToBytes(canary);
 
-        int start = Utilities.helpers.indexOf(dummyReq, scanBaseGrep, true, 0, dummyReq.length);
+        int start = BulkUtilities.helpers.indexOf(dummyReq, scanBaseGrep, true, 0, dummyReq.length);
         int end = start + scanBaseGrep.length;
 
         ArrayList<int[]> offsets = new ArrayList<>();
@@ -369,20 +370,20 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
         Iterator<String> dupeCheck= params.iterator();
-        byte[] body = Utilities.getBodyBytes(request);
+        byte[] body = BulkUtilities.getBodyBytes(request);
 
         boolean fooReq = false;
-        if (Utilities.containsBytes(body, "FOO BAR AAH\r\n".getBytes())) {
+        if (BulkUtilities.containsBytes(body, "FOO BAR AAH\r\n".getBytes())) {
             fooReq = true;
         }
 
-        if (fooReq || Utilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
-            Utilities.chopNestedResponses = true;
+        if (fooReq || BulkUtilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
+            BulkUtilities.chopNestedResponses = true;
 
             boolean usingCorrectContentLength = true;
 
             try {
-                if (body.length != Integer.parseInt(Utilities.getHeader(request, "Content-Length"))) {
+                if (body.length != Integer.parseInt(BulkUtilities.getHeader(request, "Content-Length"))) {
                     usingCorrectContentLength = false;
                 }
             } catch (Exception e) {
@@ -392,31 +393,31 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
             while (dupeCheck.hasNext()) {
                 String param = dupeCheck.next().split("~", 2)[0];
                 byte[] toReplace = ("\n"+param+": ").getBytes();
-                if (Utilities.containsBytes(body, toReplace)) {
-                    body = Utilities.replace(body, toReplace, ("\nold"+param+": ").getBytes());
+                if (BulkUtilities.containsBytes(body, toReplace)) {
+                    body = BulkUtilities.replace(body, toReplace, ("\nold"+param+": ").getBytes());
                 }
             }
 
             byte[] newBody;
             if (fooReq) {
-                newBody = Utilities.replaceFirst(body, "FOO BAR AAH\r\n", "GET http://"+Utilities.getHeader(request, "Host")+"/ HTTP/1.1\r\n"+merged+"\r\n");
+                newBody = BulkUtilities.replaceFirst(body, "FOO BAR AAH\r\n", "GET http://"+BulkUtilities.getHeader(request, "Host")+"/ HTTP/1.1\r\n"+merged+"\r\n");
             }
             else {
-                newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
+                newBody = BulkUtilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
             }
 
-            byte[] finalRequest = Utilities.setBody(request, new String(newBody));
+            byte[] finalRequest = BulkUtilities.setBody(request, new String(newBody));
             if (usingCorrectContentLength) {
-                finalRequest = Utilities.fixContentLength(finalRequest);
+                finalRequest = BulkUtilities.fixContentLength(finalRequest);
             }
 
-            finalRequest = Utilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
+            finalRequest = BulkUtilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
 
             return finalRequest;
         }
 
         String replaceKey = "TCZqBcS13SA8QRCpW";
-        byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
+        byte[] built = BulkUtilities.addOrReplaceHeader(request, replaceKey, "foo");
 
         if (params.isEmpty() || "".equals(merged)) {
             return built;
@@ -426,11 +427,11 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
             String param = dupeCheck.next().split("~", 2)[0];
             if (present.containsKey(param)) {
                 String toReplace = present.get(param)+": ";
-                built = Utilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
+                built = BulkUtilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
             }
         }
 
-        return Utilities.setHeader(built, replaceKey, "x\r\n"+merged);
+        return BulkUtilities.setHeader(built, replaceKey, "x\r\n"+merged);
     }
 }
 
@@ -442,12 +443,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     JsonElement root;
 
     public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
-        super(request, name, value, type); // Utilities.encodeJSON(value)
-        int start = Utilities.getBodyStart(request);
+        super(request, name, value, type); // BulkUtilities.encodeJSON(value)
+        int start = BulkUtilities.getBodyStart(request);
         this.attackID = attackID;
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
-        baseInput = Utilities.helpers.bytesToString(body);
+        baseInput = BulkUtilities.helpers.bytesToString(body);
         root = new JsonParser().parse(baseInput);
     }
 
@@ -455,8 +456,8 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         if (i+1 == keys.size()) {
             return paramValue;
         }
-        else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
-            return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
+        else if (BulkUtilities.parseArrayIndex(keys.get(i+1)) != -1) {
+            return new ArrayList(BulkUtilities.parseArrayIndex(keys.get(i+1)));
         }
         else {
             return new HashMap();
@@ -464,14 +465,14 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     }
 
     String calculateValue(String unparsed) {
-        return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
+        return BulkUtilities.toCanary(unparsed) + attackID + value + BulkUtilities.fuzzSuffix();
     }
 
 
     @Override
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
-        String[] params = Utilities.helpers.bytesToString(payload).split("[|]");
+        String[] params = BulkUtilities.helpers.bytesToString(payload).split("[|]");
         String lastBuild = baseInput;
 
         try {
@@ -481,14 +482,14 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 if (unparsed.contains("~")) {
                     String[] parts = unparsed.split("~", 2);
                     unparsed = parts[0];
-                    paramValue = Utilities.invert(parts[1]);
+                    paramValue = BulkUtilities.invert(parts[1]);
                 } else {
                     paramValue = calculateValue(unparsed);
                 }
 
                 ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
 
-                boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
+                boolean isArray = BulkUtilities.parseArrayIndex(keys.get(0)) != -1;
                 Object base;
                 if (isArray) {
                     try {
@@ -513,12 +514,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                         String key = keys.get(i);
                         boolean setValue = i + 1 == keys.size();
 
-                        int index = Utilities.parseArrayIndex(key);
+                        int index = BulkUtilities.parseArrayIndex(key);
                         if (index != -1) {
                             ArrayList injectionPoint = (ArrayList) next;
                             if (injectionPoint.size() < index + 1) {
                                 for (int k = injectionPoint.size(); k < index; k++) {
-                                    injectionPoint.add(Utilities.generateCanary());
+                                    injectionPoint.add(BulkUtilities.generateCanary());
                                 }
                                 injectionPoint.add(makeNode(keys, i, paramValue));
                             } else if (injectionPoint.get(index) == null || setValue) {
@@ -533,7 +534,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                             next = injectionPoint.get(key);
                         }
                     } catch(ClassCastException e) {
-                        //Utilities.out("Cast error"); // todo figure out a sensible action to stop this form occuring
+                        //BulkUtilities.out("Cast error"); // todo figure out a sensible action to stop this form occuring
                     }
                 }
 
@@ -542,12 +543,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
-            outputStream.write(Utilities.helpers.stringToBytes(lastBuild));
-            return Utilities.fixContentLength(outputStream.toByteArray());
+            outputStream.write(BulkUtilities.helpers.stringToBytes(lastBuild));
+            return BulkUtilities.fixContentLength(outputStream.toByteArray());
         } catch (Exception e) {
-            Utilities.out("Error with " + String.join(":", params));
-            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-            return buildRequest(Utilities.helpers.stringToBytes("error_" + String.join(":", params).replace(":", "_")));
+            BulkUtilities.out("Error with " + String.join(":", params));
+            e.printStackTrace(new PrintStream(BulkUtilities.callbacks.getStdout()));
+            return buildRequest(BulkUtilities.helpers.stringToBytes("error_" + String.join(":", params).replace(":", "_")));
             // throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
         }
     }

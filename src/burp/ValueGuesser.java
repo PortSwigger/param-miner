@@ -19,7 +19,7 @@ class ValueGuesser implements Runnable, ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ConfigurableSettings config = Utilities.globalSettings.showSettings();
+        ConfigurableSettings config = BulkUtilities.globalSettings.showSettings();
         if (config != null) {
             (new Thread(this)).start();
         }
@@ -36,10 +36,10 @@ class ValueGuesser implements Runnable, ActionListener {
         IHttpService service = req.getHttpService();
         String domain = service.getHost();
 
-        Attack randBase = valueInjector.probeAttack(Utilities.generateCanary());
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
+        Attack randBase = valueInjector.probeAttack(BulkUtilities.generateCanary());
+        randBase.addAttack(valueInjector.probeAttack(BulkUtilities.generateCanary()));
+        randBase.addAttack(valueInjector.probeAttack(BulkUtilities.generateCanary()));
+        randBase.addAttack(valueInjector.probeAttack(BulkUtilities.generateCanary()));
 
         String baseValue = valueInsertionPoint.getBaseValue();
         ArrayList<String> potentialValues = new ArrayList<>();
@@ -86,11 +86,11 @@ class ValueGuesser implements Runnable, ActionListener {
             Attack potentialBase = null;
             for(;count<5;count++) {
                 potentialBase = valueInjector.probeAttack(potentialValue);
-                if (Utilities.similar(randBase, potentialBase)) {
+                if (BulkUtilities.similar(randBase, potentialBase)) {
                     break;
                 }
-                randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-                if (Utilities.similar(randBase, potentialBase)) {
+                randBase.addAttack(valueInjector.probeAttack(BulkUtilities.generateCanary()));
+                if (BulkUtilities.similar(randBase, potentialBase)) {
                     break;
                 }
 
@@ -105,7 +105,7 @@ class ValueGuesser implements Runnable, ActionListener {
 
 
                 baseValue = potentialValue;
-                Utilities.out("Alternative code path triggered by value '"+baseValue+"'");
+                BulkUtilities.out("Alternative code path triggered by value '"+baseValue+"'");
                 IHttpRequestResponse altBase = valueInjector.buildRequest(potentialValue, false);//potentialBase.getFirstRequest();
                 attacks.add(new Resp(altBase));
 
@@ -118,11 +118,11 @@ class ValueGuesser implements Runnable, ActionListener {
 
                 if (!launchedScan) {
                     // scan this insertion point with our new base value
-                    // Utilities.doActiveScan(Scan.request(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+                    // BulkUtilities.doActiveScan(Scan.request(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
 
                     // scan the entire request with our new base value
                     title = "Alternative code path: "+potentialValue;
-                    Utilities.callbacks.doActiveScan(domain, service.getPort(), Utilities.isHTTPS(service), altBase.getRequest());
+                    BulkUtilities.callbacks.doActiveScan(domain, service.getPort(), BulkUtilities.isHTTPS(service), altBase.getRequest());
                     launchedScan = true;
                 }
             }

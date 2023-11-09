@@ -31,11 +31,11 @@ class ParamHolder {
     void addParams(ArrayList<String> params, boolean topup) {
         removeBadEntries(params);
 
-        if(type == Utilities.PARAM_HEADER) {
+        if(type == BulkUtilities.PARAM_HEADER) {
             int max = params.size();
             for (int i=0; i<max; i++) {
                 String param = params.get(i);
-                if (param.contains("-") && Utilities.globalSettings.getBoolean("try -_ bypass")) {
+                if (param.contains("-") && BulkUtilities.globalSettings.getBoolean("try -_ bypass")) {
                     params.add(param.replace("-", "_"));
                 }
             }
@@ -82,9 +82,9 @@ class ParamHolder {
     private void removeBadEntries(ArrayList<String> params) {
         params.removeAll(Arrays.asList(""));
 
-        if (type == Utilities.PARAM_HEADER) {
+        if (type == BulkUtilities.PARAM_HEADER) {
             params.removeIf(x -> Character.isDigit(x.charAt(0)));
-            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
+            if (BulkUtilities.globalSettings.getBoolean("lowercase headers")) {
                 params.replaceAll(String::toLowerCase);
             }
         }

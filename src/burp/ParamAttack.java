@@ -103,7 +103,7 @@ class ParamAttack {
         }
 
         // prevents attack cross-talk with stored input detection
-        attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis()).substring(0,2);
+        attackID = BulkUtilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis()).substring(0,2);
 
         requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
@@ -121,7 +121,7 @@ class ParamAttack {
 
         updateBaseline();
 
-        //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
+        //String ref = BulkUtilities.getHeader(baseRequestResponse.getRequest(), "Referer");
         //HashMap<String, Attack> baselines = new HashMap<>();
         //baselines.put(ref, new Attack(baseRequestResponse));
 
@@ -130,11 +130,11 @@ class ParamAttack {
         // fixme this may exceed the max bucket size
         calculateBucketSize(type, longest);
 
-        if (!Utilities.globalSettings.getBoolean("carpet bomb")) {
+        if (!BulkUtilities.globalSettings.getBoolean("carpet bomb")) {
             StringBuilder basePayload = new StringBuilder();
             for (int i = 1; i < min(8, bucketSize); i++) {
                 basePayload.append("|");
-                basePayload.append(Utilities.randomString(longest));
+                basePayload.append(BulkUtilities.randomString(longest));
                 if (i % 4 == 0) {
                     base.addAttack(injector.probeAttack(basePayload.toString()));
                 }
@@ -144,7 +144,7 @@ class ParamAttack {
         // calculateBucketSize(type, longest); was here
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
-        Utilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
+        BulkUtilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
 
         // put the params into buckets
         paramBuckets = new ParamHolder(type, bucketSize);
@@ -157,7 +157,7 @@ class ParamAttack {
         }
 
         alreadyReported = getBlacklist(type);
-        //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
+        //BulkUtilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
     }
 
     private void calculateBucketSize(byte type, int longest) {
@@ -170,7 +170,7 @@ class ParamAttack {
             case IParameter.PARAM_BODY:
                 bucketSize = 128;
                 break;
-            case Utilities.PARAM_HEADER:
+            case BulkUtilities.PARAM_HEADER:
                 bucketSize = 8;
             case IParameter.PARAM_URL:
                 bucketSize = 16;
@@ -180,20 +180,20 @@ class ParamAttack {
         }
 
         while (true) {
-            Utilities.log("Trying bucket size: "+ bucketSize);
+            BulkUtilities.log("Trying bucket size: "+ bucketSize);
             long start = System.currentTimeMillis();
             StringBuilder trialPayload = new StringBuilder();
-            trialPayload.append(Utilities.randomString(longest));
+            trialPayload.append(BulkUtilities.randomString(longest));
             for (int i = 0; i < bucketSize; i++) {
                 trialPayload.append("|");
-                trialPayload.append(Utilities.randomString(longest));
+                trialPayload.append(BulkUtilities.randomString(longest));
             }
 
             Attack trial = injector.probeAttack(trialPayload.toString());
-            if (!Utilities.similar(base, trial)) {
+            if (!BulkUtilities.similar(base, trial)) {
                 trial.addAttack(injector.probeAttack(trialPayload.toString()));
                 trial.addAttack(injector.probeAttack(trialPayload.toString()));
-                if (!Utilities.similar(base, trial)) {
+                if (!BulkUtilities.similar(base, trial)) {
                     bucketSize = bucketSize / 2;
                     break;
                 }
@@ -202,11 +202,11 @@ class ParamAttack {
             long end = System.currentTimeMillis();
             if (end - start > 5000) {
                 bucketSize = bucketSize / 2;
-                Utilities.out("Setting bucketSize to "+bucketSize+" due to slow response");
+                BulkUtilities.out("Setting bucketSize to "+bucketSize+" due to slow response");
                 break;
             }
 
-            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize")) {
+            if (bucketSize >= BulkUtilities.globalSettings.getInt("max bucketsize")) {
                 break;
             }
 
@@ -230,31 +230,31 @@ class ParamAttack {
             case IParameter.PARAM_BODY:
                 blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
                 break;
-            case Utilities.PARAM_HEADER:
-                if (Utilities.globalSettings.getBoolean("skip boring words")) {
-                    blacklist.addAll(Utilities.boringHeaders);
+            case BulkUtilities.PARAM_HEADER:
+                if (BulkUtilities.globalSettings.getBoolean("skip boring words")) {
+                    blacklist.addAll(BulkUtilities.boringHeaders);
                 }
                 break;
             default:
-                Utilities.out("Unrecognised type: "+type);
+                BulkUtilities.out("Unrecognised type: "+type);
                 break;
         }
 
-        if (Utilities.globalSettings.getBoolean("only report unique params")) {
-            blacklist.addAll(Utilities.reportedParams);
+        if (BulkUtilities.globalSettings.getBoolean("only report unique params")) {
+            blacklist.addAll(BulkUtilities.reportedParams);
         }
 
         return blacklist;
     }
 
     Attack updateBaseline() {
-        this.base = this.injector.probeAttack(Utilities.randomString(6));
-        int baselineSize = Utilities.globalSettings.getInt("baseline size");
+        this.base = this.injector.probeAttack(BulkUtilities.randomString(6));
+        int baselineSize = BulkUtilities.globalSettings.getInt("baseline size");
         for(int i=0; i<baselineSize; i++) {
-            base.addAttack(this.injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
+            base.addAttack(this.injector.probeAttack(BulkUtilities.randomString((i+1)*(i+1))));
         }
         if (bucketSize > 1) {
-            base.addAttack(this.injector.probeAttack(Utilities.randomString(6) + "|" + Utilities.randomString(12)));
+            base.addAttack(this.injector.probeAttack(BulkUtilities.randomString(6) + "|" + BulkUtilities.randomString(12)));
         }
         return base;
     }
@@ -264,7 +264,7 @@ class ParamAttack {
         switch(type) {
             case IParameter.PARAM_JSON:
                 return new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
-            case Utilities.PARAM_HEADER:
+            case BulkUtilities.PARAM_HEADER:
                 return new HeaderNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
             default:
                 return new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
@@ -278,7 +278,7 @@ class ParamAttack {
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
             String[] parsed = Keysmith.parseKey(entry);
-            Utilities.log("Request param: " +parsed[1]);
+            BulkUtilities.log("Request param: " +parsed[1]);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
@@ -288,7 +288,7 @@ class ParamAttack {
         // add JSON from method-flip response
         if(baseRequestResponse.getRequest()[0] != 'G') {
             IHttpRequestResponse getreq = Scan.request(baseRequestResponse.getHttpService(),
-                    Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
+                    BulkUtilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
             params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
         }
 
@@ -307,7 +307,7 @@ class ParamAttack {
             }
 
             JsonParser parser = new JsonParser();
-            JsonElement json = parser.parse(Utilities.getBody(resp.getResponse()));
+            JsonElement json = parser.parse(BulkUtilities.getBody(resp.getResponse()));
             HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(json, requestParams));
             int matches = 0;
             for (String requestKey: keys) {
@@ -319,11 +319,11 @@ class ParamAttack {
             // if there are no matches, don't bother with prefixes
             // todo use root (or non-leaf) objects only
             if(matches < 1) {
-                //Utilities.out("No matches, discarding prefix");
+                //BulkUtilities.out("No matches, discarding prefix");
                 HashSet<String> filteredKeys = new HashSet<>();
                 for(String key: keys) {
                     String lastKey = Keysmith.parseKey(key)[1];
-                    if (Utilities.parseArrayIndex(lastKey) < 3) {
+                    if (BulkUtilities.parseArrayIndex(lastKey) < 3) {
                         filteredKeys.add(Keysmith.parseKey(key)[1]);
                     }
                 }
@@ -339,33 +339,18 @@ class ParamAttack {
             }
         }
 
-
         final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
         sorted.addAll(responses.keySet());
         for(Integer key: sorted) {
-            Utilities.log("Loading keys with "+key+" matches");
+            BulkUtilities.log("Loading keys with "+key+" matches");
             ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
             sortedByLength.sort(new LengthCompare());
             params.addAll(sortedByLength);
         }
 
         if (params.size() > 0) {
-            Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
+            BulkUtilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
         }
-
-        params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
-
-        if (config.getBoolean("request")) {
-            params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
-        }
-
-        // todo move this stuff elsewhere - no need to load it into memory in advance
-        params.addAll(paramGrabber.getSavedGET());
-
-        params.addAll(paramGrabber.getSavedWords());
-
-        // de-dupe without losing the ordering
-        params = new ArrayList<>(new LinkedHashSet<>(params));
 
         bonusParams = new WordProvider();
 
@@ -378,29 +363,48 @@ class ParamAttack {
         }
 
 
-        if (type == Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
+        if (type == BulkUtilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             bonusParams.addSource("/headers");
         }
 
-        if (config.getBoolean("response")) {
-            if (type == Utilities.PARAM_HEADER) {
+        if (config.getBoolean("request") || config.getBoolean("response-headers") || config.getBoolean("response-body") ) {
+
+            if (config.getBoolean("response-headers")) {
+                params.addAll(Keysmith.getWords(Utilities.getHeaders(baseRequestResponse.getResponse())));
+            }
+
+            if (config.getBoolean("response-body")) {
+                params.addAll(Keysmith.getWords(Utilities.getBody(baseRequestResponse.getResponse())));
+            }
+
+            if (config.getBoolean("request")) {
+                params.addAll(Keysmith.getWords(BulkUtilities.helpers.bytesToString(baseRequestResponse.getRequest())));
+            }
+
+            params.addAll(paramGrabber.getSavedGET());
+            params.addAll(paramGrabber.getSavedWords());
+
+            if (type == BulkUtilities.PARAM_HEADER) {
                 params.replaceAll(x -> x.toLowerCase().replaceAll("[^a-z0-9_-]", ""));
                 params.replaceAll(x -> x.replaceFirst("^[_-]+", ""));
                 params.remove("");
             }
+
+            // de-dupe without losing the ordering
+            params = new ArrayList<>(new LinkedHashSet<>(params));
 
             params.replaceAll(x -> x.substring(0, min(x.length(), config.getInt("max param length"))));
 
             bonusParams.addSource(String.join("\n", params));
         }
 
-        if (type != Utilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
+        if (type != BulkUtilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
             bonusParams.addSource("/params");
         }
 
         if (config.getBoolean("use bonus wordlist")) {
             bonusParams.addSource("/functions");
-            if (type != Utilities.PARAM_HEADER) {
+            if (type != BulkUtilities.PARAM_HEADER) {
                 bonusParams.addSource("/headers");
             }
             else {

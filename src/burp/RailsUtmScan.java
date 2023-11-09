@@ -25,16 +25,16 @@ public class RailsUtmScan extends ParamScan {
 
         // set value to canary
         String canary = "akzldka";
-        String cacheBuster = Utilities.generateCanary();
+        String cacheBuster = BulkUtilities.generateCanary();
 
 
         byte[] poison = insertionPoint.buildRequest((insertionPoint.getBaseValue()+"&utm_content=x;"+insertionPoint.getInsertionPointName()+"="+canary).getBytes());
 
-        poison = Utilities.addCacheBuster(poison, cacheBuster);
+        poison = BulkUtilities.addCacheBuster(poison, cacheBuster);
 
         // confirm we have input reflection
         Resp resp = request(service, poison);
-        if (!Utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
+        if (!BulkUtilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
             // todo try path-busting
             return null;
         }
@@ -46,9 +46,9 @@ public class RailsUtmScan extends ParamScan {
 
         // see if the poison stuck
         byte[] victim = insertionPoint.buildRequest(insertionPoint.getBaseValue().getBytes());
-        victim = Utilities.addCacheBuster(victim, cacheBuster);
+        victim = BulkUtilities.addCacheBuster(victim, cacheBuster);
         Resp poisoned = request(service, victim);
-        if (!Utilities.containsBytes(poisoned.getReq().getResponse(), canary.getBytes())) {
+        if (!BulkUtilities.containsBytes(poisoned.getReq().getResponse(), canary.getBytes())) {
             return null;
         }
 

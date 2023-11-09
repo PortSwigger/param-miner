@@ -29,17 +29,17 @@ public class Keysmith {
     }
 
     static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
-        if (!"".equals(Utilities.getBody(resp))) {
+        if (!"".equals(BulkUtilities.getBody(resp))) {
             try {
-                return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
+                return getJsonKeys(new JsonParser().parse(BulkUtilities.getBody(resp)), witnessedParams);
             }
             catch (JsonParseException e) {
 
             }
         }
 
-        if(Utilities.isResponse(resp)) {
-            return getHtmlKeys(Utilities.getBody(resp));
+        if(BulkUtilities.isResponse(resp)) {
+            return getHtmlKeys(BulkUtilities.getBody(resp));
         }
         else {
             return getParamKeys(resp, new HashSet<>());
@@ -50,13 +50,13 @@ public class Keysmith {
     static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types) {
         ArrayList<String> keys = new ArrayList<>();
 
-        List<IParameter> currentParams = Utilities.helpers.analyzeRequest(resp).getParameters();
+        List<IParameter> currentParams = BulkUtilities.helpers.analyzeRequest(resp).getParameters();
 
         for (IParameter param : currentParams) {
             String parsedParam = parseParam(param.getName().replace(':', ';'));
             if(types.isEmpty() || types.contains(param.getType())) {
                 keys.add(parsedParam);
-                Utilities.log(parsedParam);
+                BulkUtilities.log(parsedParam);
             }
         }
         return keys;
@@ -114,18 +114,18 @@ public class Keysmith {
                 for (String chunk: chunks) {
                     String[] keyvalue = chunk.split("=", 2);
                     String key = keyvalue[0];
-                    if (keyvalue.length > 1 && Utilities.invertable(keyvalue[1])) {
+                    if (keyvalue.length > 1 && BulkUtilities.invertable(keyvalue[1])) {
                         key = key + "~" + keyvalue[1];
                     }
                     params.add(key);
-                    //Utilities.out("HTML PARAM: "+chunk.split("=", 2)[0]);
+                    //BulkUtilities.out("HTML PARAM: "+chunk.split("=", 2)[0]);
                 }
             }
         }
         Elements inputs = doc.select("input[name]");
         for(Element input: inputs) {
             String key= input.attr("name");
-            if (Utilities.invertable(input.attr("value"))) {
+            if (BulkUtilities.invertable(input.attr("value"))) {
                 key = key + "~" + input.attr("value");
             }
             params.add(key);
@@ -150,7 +150,7 @@ public class Keysmith {
         if (json.isJsonObject()) {
             for (Map.Entry<String,JsonElement> entry: json.getAsJsonObject().entrySet()) {
                 if (witnessedParams.containsKey(entry.getKey())) {
-                    //Utilities.out("Recognised '"+entry.getKey()+", replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
+                    //BulkUtilities.out("Recognised '"+entry.getKey()+", replacing prefix '"+prefix+"' with '"+ witnessedParams.get(entry.getKey())+"'");
                     if(witnessedParams.get(entry.getKey()).equals("")) {
                         prefix = null;
                     }
@@ -192,7 +192,7 @@ public class Keysmith {
                 try {
                     if (!json.getAsJsonPrimitive().isJsonNull()) {
                         String val = json.getAsString();
-                        if (Utilities.invertable(val)) {
+                        if (BulkUtilities.invertable(val)) {
                             prefix = prefix + "~" + val;
                         }
                     }
@@ -230,7 +230,7 @@ public class Keysmith {
     static String getKey(String param) {
         String[] keys = param.split(":");
         for (int i=keys.length-1; i>=0; i--) {
-            if (Utilities.parseArrayIndex(keys[i]) == -1) {
+            if (BulkUtilities.parseArrayIndex(keys[i]) == -1) {
                 return keys[i];
             }
         }
@@ -247,7 +247,7 @@ public class Keysmith {
         for (String eachparam: params) {
             if (allowValueChange && eachparam.contains("~") && !eachparam.contains("%")) {
                 String[] param = eachparam.split("~", 2);
-                out.add(param[0] + "~" + Utilities.invert(param[1]));
+                out.add(param[0] + "~" + BulkUtilities.invert(param[1]));
             } else {
                 String[] keys = eachparam.split(":");
                 String[] param = null;
@@ -256,8 +256,8 @@ public class Keysmith {
                     keys = param[0].split(":");
                 }
                 for (int i = keys.length - 1; i >= 0; i--) {
-                    if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                        keys[i] += Utilities.randomString(6);
+                    if (BulkUtilities.parseArrayIndex(keys[i]) == -1) {
+                        keys[i] += BulkUtilities.randomString(6);
                         break;
                     }
                 }

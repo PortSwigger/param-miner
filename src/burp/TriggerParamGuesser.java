@@ -29,7 +29,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ConfigurableSettings config = Utilities.globalSettings.showSettings();
+        ConfigurableSettings config = BulkUtilities.globalSettings.showSettings();
         if (config != null) {
             this.config = config;
             //Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine, config);
@@ -39,7 +39,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
     public void run() {
         int queueSize = taskEngine.getQueue().size();
-        Utilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
+        BulkUtilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
         queueSize += reqs.length;
         int thread_count = taskEngine.getCorePoolSize();
 
@@ -52,18 +52,18 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         Collections.shuffle(reqlist);
 
         // If guessing smuggling mutations, downgrade HTTP/2 requests to HTTP/1.1
-        if (config.getBoolean("identify smuggle mutations") && this.type == Utilities.PARAM_HEADER) {
+        if (config.getBoolean("identify smuggle mutations") && this.type == BulkUtilities.PARAM_HEADER) {
             Iterator iterator = reqlist.iterator();
             for (int i = 0; i < reqlist.size(); i++) {
                 IHttpRequestResponse req = reqlist.get(i);
-                if (!Utilities.isHTTP2(req.getRequest())) {
+                if (!BulkUtilities.isHTTP2(req.getRequest())) {
                     continue;
                 }
-                byte[] downgraded = Utilities.convertToHttp1(req.getRequest());
+                byte[] downgraded = BulkUtilities.convertToHttp1(req.getRequest());
                 String host = req.getHttpService().getHost();
                 int port = req.getHttpService().getPort();
                 String proto = req.getHttpService().getProtocol();
-                IHttpService service = Utilities.helpers.buildHttpService(host, port, proto);
+                IHttpService service = BulkUtilities.helpers.buildHttpService(host, port, proto);
 
                 IHttpRequestResponse newReq = Scan.request(service, downgraded, 0, true);
                 reqlist.set(i, newReq);
@@ -84,7 +84,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
         boolean canSkip = false;
         byte[] noCache = "no-cache".getBytes();
-        if (config.getBoolean("skip uncacheable") && (type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER)) {
+        if (config.getBoolean("skip uncacheable") && (type == IParameter.PARAM_COOKIE || type == BulkUtilities.PARAM_HEADER)) {
             canSkip = true;
         }
 
@@ -93,7 +93,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         int queued = 0;
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
-            Utilities.log("Loop "+i++);
+            BulkUtilities.log("Loop "+i++);
             Iterator<IHttpRequestResponse> left = reqlist.iterator();
             while (left.hasNext()) {
                 IHttpRequestResponse req = left.next();
@@ -101,11 +101,11 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 String host = req.getHttpService().getHost();
                 String key = req.getHttpService().getProtocol()+host;
                 if (req.getResponse() != null) {
-                    if (canSkip && Utilities.containsBytes(req.getResponse(), noCache)) {
+                    if (canSkip && BulkUtilities.containsBytes(req.getResponse(), noCache)) {
                         continue;
                     }
 
-                    IResponseInfo info = Utilities.helpers.analyzeResponse(req.getResponse());
+                    IResponseInfo info = BulkUtilities.helpers.analyzeResponse(req.getResponse());
                     key = key + info.getStatusCode() + info.getInferredMimeType();
                 }
 
@@ -118,9 +118,9 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     cache.add(host);
                     keyCache.add(key);
                     left.remove();
-                    Utilities.log("Adding request on "+host+" to queue");
+                    BulkUtilities.log("Adding request on "+host+" to queue");
                     queued++;
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop, config));
+                    taskEngine.execute(new ParamGuesser(BulkUtilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop, config));
                 } else {
                     remainingHosts.add(host);
                 }
@@ -134,7 +134,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
                     queued++;
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop, config));
+                    taskEngine.execute(new ParamGuesser(BulkUtilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop, config));
                 }
                 break;
             }
@@ -143,7 +143,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             }
         }
 
-        Utilities.out("Queued " + queued + " attacks");
+        BulkUtilities.out("Queued " + queued + " attacks");
 
     }
 }

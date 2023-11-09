@@ -18,7 +18,7 @@ public class GrabScan implements IScannerCheck {
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
-        if (Utilities.globalSettings.getBoolean("learn observed words")) {
+        if (BulkUtilities.globalSettings.getBoolean("learn observed words")) {
             paramGrabber.saveParams(baseRequestResponse);
         }
         return new ArrayList<>();

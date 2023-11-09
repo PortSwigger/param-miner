@@ -11,8 +11,8 @@ public class HeaderMutationScan extends Scan {
 
     @Override
     List<IScanIssue> doScan(IHttpRequestResponse req) {
-        //new ParamGuesser(req, false, Utilities.PARAM_HEADER, BurpExtender.paramGrabber, null, 2147483647, Utilities.globalSettings).run();
-        HeaderMutationGuesser guesser = new HeaderMutationGuesser(req, Utilities.globalSettings);
+        //new ParamGuesser(req, false, BulkUtilities.PARAM_HEADER, BurpExtender.paramGrabber, null, 2147483647, BulkUtilities.globalSettings).run();
+        HeaderMutationGuesser guesser = new HeaderMutationGuesser(req, BulkUtilities.globalSettings);
         ArrayList<String> mutations = guesser.guessMutations();
         guesser.reportMutations(mutations);
         return null;

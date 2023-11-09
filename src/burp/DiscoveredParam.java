@@ -22,6 +22,7 @@ public class DiscoveredParam {
     boolean eatsSlash = false;
     boolean pingback = false;
     boolean dynamicOnly = false;
+    boolean magicIP = false;
 
     public DiscoveredParam(ArrayList<Attack> evidence, PayloadInjector injector, String name, Attack failAttack, Attack workedAttack, IHttpRequestResponse baseRequestResponse) {
         this.evidence = evidence;
@@ -29,7 +30,7 @@ public class DiscoveredParam {
         this.name = name;
         this.failAttack = failAttack;
         this.workedAttack = workedAttack;
-        this.staticCanary = Utilities.globalSettings.getString("canary").getBytes();
+        this.staticCanary = BulkUtilities.globalSettings.getString("canary").getBytes();
         this.baseRequestResponse = baseRequestResponse;
         this.type = injector.getInsertionPoint().getInsertionPointType();
     }
@@ -40,20 +41,20 @@ public class DiscoveredParam {
             explore();
         } catch (Exception e) {
             // don't let a broken exploration prevent an issue being reported
-            Utilities.showError(e);
+            BulkUtilities.showError(e);
         }
         report();
     }
 
     public void explore() {
-        if (Utilities.TIME_ONLY) {
+        if (BulkUtilities.TIME_ONLY) {
             ObservedTimes times = (ObservedTimes) evidence.get(0).getLastPrint().get("times");
             if (times.times.size() < 20) {
                 return;
             }
         }
 
-        if (type == Utilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
+        if (type == BulkUtilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
             cachePoisoned = cachePoison(injector, name, failAttack.getFirstRequest());
         }
 
@@ -62,21 +63,23 @@ public class DiscoveredParam {
         ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
         RawInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(name);
 
-        if (type == Utilities.PARAM_HEADER) {
+        if (type == BulkUtilities.PARAM_HEADER) {
             urlDecodes = ValueProbes.urlDecodes(scanBaseAttack, valueInsertionPoint);
         }
 
         ValueProbes.eatsBackslash(scanBaseAttack, valueInsertionPoint);
         pingback = ValueProbes.triggersPingback(scanBaseAttack, valueInsertionPoint);
         dynamicOnly = ValueProbes.dynamicOnly(injector, name);
+        magicIP = ValueProbes.magicIP(injector, name);
+
         ValueProbes.utf8(scanBaseAttack, valueInsertionPoint);
         ValueProbes.utf82(scanBaseAttack, valueInsertionPoint);
 
-//        if (type == Utilities.PARAM_HEADER && !Utilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
+//        if (type == BulkUtilities.PARAM_HEADER && !BulkUtilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
 //            return;
 //        }
 
-        if (Utilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != Utilities.PARAM_HEADER) {
+        if (BulkUtilities.globalSettings.getBoolean("probe identified params") && insertionPoint.type != BulkUtilities.PARAM_HEADER) {
             for (Scan scan : BulkScan.scans) {
                 if (scan instanceof ParamScan) {
                     ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
@@ -84,40 +87,40 @@ public class DiscoveredParam {
             }
         }
 
-        if (!Utilities.globalSettings.getBoolean("scan identified params")) {
+        if (!BulkUtilities.globalSettings.getBoolean("scan identified params")) {
             return;
         }
 
-        if (!Utilities.isBurpPro()) {
-            Utilities.out("Can't autoscan identified parameter - requires pro edition");
+        if (!BulkUtilities.isBurpPro()) {
+            BulkUtilities.out("Can't autoscan identified parameter - requires pro edition");
             return;
         }
 
         IHttpService service = scanBaseAttack.getHttpService();
-        Utilities.callbacks.doActiveScan(service.getHost(), service.getPort(), Utilities.isHTTPS(service), valueInsertionPoint.req, Collections.singletonList(new int[]{valueInsertionPoint.start, valueInsertionPoint.end}));
+        BulkUtilities.callbacks.doActiveScan(service.getHost(), service.getPort(), BulkUtilities.isHTTPS(service), valueInsertionPoint.req, Collections.singletonList(new int[]{valueInsertionPoint.start, valueInsertionPoint.end}));
         //ValueGuesser.guessValue(scanBaseAttack, start, end);
 
     }
 
     public void report() {
-        if (Utilities.globalSettings.getBoolean("poison only")) {
+        if (BulkUtilities.globalSettings.getBoolean("poison only")) {
             return;
         }
 
-        if (Utilities.TIME_ONLY) {
+        if (BulkUtilities.TIME_ONLY) {
             ObservedTimes times = (ObservedTimes) evidence.get(0).getLastPrint().get("times");
             if (times.times.size() < 20) {
                 return;
             }
         }
 
-        String typeName = Utilities.getNameFromType(type);
+        String typeName = BulkUtilities.getNameFromType(type);
         String title = "Secret input: " + typeName;
         if (!cachePoisoned && canSeeCache) {
             title = "Secret uncached input: " + typeName;
         }
 
-        if (Utilities.globalSettings.getBoolean("name in issue")) {
+        if (BulkUtilities.globalSettings.getBoolean("name in issue")) {
             title += ": " + name.split("~")[0];
         }
 
@@ -129,12 +132,16 @@ public class DiscoveredParam {
             title += " [dynamic-only]";
         }
 
-        Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
+        if (magicIP) {
+            title += " [magic-ip]";
+        }
+
+        BulkUtilities.callbacks.addScanIssue(BulkUtilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
     }
 
 
     private static boolean cachePoison(PayloadInjector injector, String param, IHttpRequestResponse baseResponse) {
-        if (!Utilities.globalSettings.getBoolean("try cache poison")) {
+        if (!BulkUtilities.globalSettings.getBoolean("try cache poison")) {
             return false;
         }
 
@@ -146,15 +153,15 @@ public class DiscoveredParam {
             validParam.setRandomAnchor(false);
             validParam.setPrefix(Probe.REPLACE);
             Attack paramBase = new Attack();
-            paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
-            paramBase.addAttack(altInject.probeAttack(Utilities.generateCanary()));
+            paramBase.addAttack(altInject.probeAttack(BulkUtilities.generateCanary()));
+            paramBase.addAttack(altInject.probeAttack(BulkUtilities.generateCanary()));
             ArrayList<Attack> confirmed = altInject.fuzz(paramBase, validParam);
             if (!confirmed.isEmpty()) {
-                Utilities.callbacks.addScanIssue(Utilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param", ""));
+                BulkUtilities.callbacks.addScanIssue(BulkUtilities.reportReflectionIssue(confirmed.toArray(new Attack[2]), base, "Potentially swappable param", ""));
             }
 
-            byte[] testReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
-            testReq = Utilities.addCacheBuster(testReq, Utilities.generateCanary());
+            byte[] testReq = injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(param));
+            testReq = BulkUtilities.addCacheBuster(testReq, BulkUtilities.generateCanary());
 
             int attackDedication;
             if (canSeeCache(base.getResponse())) {
@@ -171,22 +178,22 @@ public class DiscoveredParam {
                 }
             }
 
-            String pathCacheBuster = Utilities.generateCanary() + ".jpg";
+            String pathCacheBuster = BulkUtilities.generateCanary() + ".jpg";
 
-            //String path = Utilities.getPathFromRequest(base.getRequest());
-            //byte[] base404 = Utilities.replaceFirst(base.getRequest(), path.getBytes(), (path+pathCacheBuster).getBytes());
-            byte[] base404 = Utilities.appendToPath(base.getRequest(), pathCacheBuster);
+            //String path = BulkUtilities.getPathFromRequest(base.getRequest());
+            //byte[] base404 = BulkUtilities.replaceFirst(base.getRequest(), path.getBytes(), (path+pathCacheBuster).getBytes());
+            byte[] base404 = BulkUtilities.appendToPath(base.getRequest(), pathCacheBuster);
 
 
             IHttpRequestResponse get404 = Scan.request(injector.getService(), base404);
-            short get404Code = Utilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
+            short get404Code = BulkUtilities.helpers.analyzeResponse(get404.getResponse()).getStatusCode();
 
 
             IHttpRequestResponse testResp = Scan.request(injector.getService(), testReq);
 
-            byte[] staticCanary = Utilities.globalSettings.getString("canary").getBytes();
-            boolean reflectPoisonMightWork = Utilities.containsBytes(testResp.getResponse(), staticCanary);
-            boolean statusPoisonMightWork = Utilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
+            byte[] staticCanary = BulkUtilities.globalSettings.getString("canary").getBytes();
+            boolean reflectPoisonMightWork = BulkUtilities.containsBytes(testResp.getResponse(), staticCanary);
+            boolean statusPoisonMightWork = BulkUtilities.helpers.analyzeResponse(baseResponse.getResponse()).getStatusCode() != BulkUtilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode();
 
 
             ArrayList<String> suffixes = new ArrayList<>();
@@ -196,9 +203,9 @@ public class DiscoveredParam {
             suffixes.add("");
             if (reflectPoisonMightWork) {
                 for (String suffix : potentialSuffixes) {
-                    testResp = Scan.request(injector.getService(), Utilities.appendToPath(testReq, suffix));
-                    if (Utilities.containsBytes(testResp.getResponse(), staticCanary)) {
-                        if (Utilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
+                    testResp = Scan.request(injector.getService(), BulkUtilities.appendToPath(testReq, suffix));
+                    if (BulkUtilities.containsBytes(testResp.getResponse(), staticCanary)) {
+                        if (BulkUtilities.helpers.analyzeResponse(testResp.getResponse()).getStatusCode() == 200) {
                             suffixes.add(suffix);
                         } else {
                             suffixesWhich404.add(suffix);
@@ -216,7 +223,7 @@ public class DiscoveredParam {
                 }
             }
 
-            Utilities.log("Dedicated: "+attackDedication);
+            BulkUtilities.log("Dedicated: "+attackDedication);
             for (int i = 1; i < attackDedication; i++) {
 
                 if (reflectPoisonMightWork) {
@@ -231,17 +238,17 @@ public class DiscoveredParam {
                         return true;
                 }
 
-                if (!reflectPoisonMightWork && !statusPoisonMightWork && Utilities.globalSettings.getBoolean("twitchy cache poison")) {
+                if (!reflectPoisonMightWork && !statusPoisonMightWork && BulkUtilities.globalSettings.getBoolean("twitchy cache poison")) {
                     if (tryDiffCache(injector, param, attackDedication)) {
                         return true;
                     }
                 }
             }
 
-            Utilities.log("Failed cache poisoning check");
+            BulkUtilities.log("Failed cache poisoning check");
         }
         catch (java.lang.Exception e) {
-            Utilities.err(e.getMessage()+"\n\n"+e.getStackTrace()[0]);
+            BulkUtilities.err(e.getMessage()+"\n\n"+e.getStackTrace()[0]);
         }
         return false;
     }
@@ -259,26 +266,26 @@ public class DiscoveredParam {
     }
 
     private static boolean tryDiffCache(PayloadInjector injector, String param, int attackDedication) {
-        String canary = Utilities.generateCanary()+".jpg";
-        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param));
-        setPoison200Req = Utilities.appendToPath(setPoison200Req, canary);
+        String canary = BulkUtilities.generateCanary()+".jpg";
+        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(param));
+        setPoison200Req = BulkUtilities.appendToPath(setPoison200Req, canary);
         for(int j=0; j<attackDedication; j++) {
             Scan.request(injector.getService(), setPoison200Req);
         }
 
-        byte[] getPoisonReq = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes("z"+param+"z"));
+        byte[] getPoisonReq = injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes("z"+param+"z"));
 
-        IHttpRequestResponse getPoisoned = Scan.request(injector.getService(), Utilities.appendToPath(getPoisonReq, canary));
+        IHttpRequestResponse getPoisoned = Scan.request(injector.getService(), BulkUtilities.appendToPath(getPoisonReq, canary));
 
-        IResponseVariations baseline = Utilities.helpers.analyzeResponseVariations();
-        IResponseVariations poisoned = Utilities.helpers.analyzeResponseVariations(getPoisoned.getResponse());
+        IResponseVariations baseline = BulkUtilities.helpers.analyzeResponseVariations();
+        IResponseVariations poisoned = BulkUtilities.helpers.analyzeResponseVariations(getPoisoned.getResponse());
         IHttpRequestResponse resp = null;
         boolean diff = false;
         HashSet<String> diffed = new HashSet<>();
         for(int i=0; i<10; i++) {
             diffed.clear();
             diff = false;
-            byte[] fakePoisonReq =  Utilities.appendToPath(getPoisonReq, Utilities.generateCanary()+".jpg");
+            byte[] fakePoisonReq =  BulkUtilities.appendToPath(getPoisonReq, BulkUtilities.generateCanary()+".jpg");
             resp = Scan.request(injector.getService(), fakePoisonReq);
             baseline.updateWith(resp.getResponse());
             for (String attribute: baseline.getInvariantAttributes()) {
@@ -296,7 +303,7 @@ public class DiscoveredParam {
             IHttpRequestResponse[] attachedRequests = new IHttpRequestResponse[2];
             attachedRequests[0] = resp;
             attachedRequests[1] = getPoisoned;
-            Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), attachedRequests, "Attribute-diff cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
+            BulkUtilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), BulkUtilities.getURL(getPoisoned), attachedRequests, "Attribute-diff cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
             return true;
         }
 
@@ -304,12 +311,12 @@ public class DiscoveredParam {
     }
 
     private static boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, short get404Code) {
-        String canary = Utilities.generateCanary()+".jpg";
-        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload(param)));
-        setPoison200Req = Utilities.appendToPath(setPoison200Req, canary);
+        String canary = BulkUtilities.generateCanary()+".jpg";
+        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(addStatusPayload(param)));
+        setPoison200Req = BulkUtilities.appendToPath(setPoison200Req, canary);
 
-        byte[] getPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload("xyz"+param+"z")));
-        getPoison200Req = Utilities.appendToPath(getPoison200Req, canary);
+        byte[] getPoison200Req = injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(addStatusPayload("xyz"+param+"z")));
+        getPoison200Req = BulkUtilities.appendToPath(getPoison200Req, canary);
 
         for(int j=0; j<attackDedication; j++) {
             Scan.request(injector.getService(), setPoison200Req);
@@ -317,9 +324,9 @@ public class DiscoveredParam {
 
         for(int j=0; j<attackDedication; j+=3) {
             IHttpRequestResponse getPoison200 = Scan.request(injector.getService(), getPoison200Req);
-            short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
+            short getPoison200Code = BulkUtilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
             if (getPoison200Code != get404Code) {
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Status-code cache poisoning " + j, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
+                BulkUtilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), BulkUtilities.getURL(getPoison200), getPoison200, "Status-code cache poisoning " + j, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
             }
             return true;
         }
@@ -328,22 +335,22 @@ public class DiscoveredParam {
     }
 
 //    private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, String pathCacheBuster, byte[] base404, short get404Code, int i) {
-//        IParameter cacheBuster = Utilities.helpers.buildParameter(Utilities.generateCanary(), "1", IParameter.PARAM_URL);
+//        IParameter cacheBuster = BulkUtilities.helpers.buildParameter(BulkUtilities.generateCanary(), "1", IParameter.PARAM_URL);
 //
-//        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(addStatusPayload(param)));
-//        setPoison200Req = Utilities.appendToPath(setPoison200Req, pathCacheBuster);
+//        byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(addStatusPayload(param)));
+//        setPoison200Req = BulkUtilities.appendToPath(setPoison200Req, pathCacheBuster);
 //
 //        for(int j=attackDedication-i; j<attackDedication; j++) {
-//            Scan.request(injector.getService(), Utilities.helpers.addParameter(setPoison200Req, cacheBuster));
+//            Scan.request(injector.getService(), BulkUtilities.helpers.addParameter(setPoison200Req, cacheBuster));
 //        }
 //
 //        for(int j=attackDedication-i; j<attackDedication; j+=3) {
-//            IHttpRequestResponse getPoison200 = Scan.request(injector.getService(), Utilities.helpers.addParameter(base404, cacheBuster));
-//            short getPoison200Code = Utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
+//            IHttpRequestResponse getPoison200 = Scan.request(injector.getService(), BulkUtilities.helpers.addParameter(base404, cacheBuster));
+//            short getPoison200Code = BulkUtilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
 //
 //            if (getPoison200Code != get404Code) {
-//                Utilities.log("Successful cache poisoning check");
-//                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), Utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning "+i, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
+//                BulkUtilities.log("Successful cache poisoning check");
+//                BulkUtilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), BulkUtilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning "+i, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
 //                return true;
 //            }
 //        }
@@ -352,30 +359,30 @@ public class DiscoveredParam {
 
     private static boolean tryReflectCache(PayloadInjector injector, String param, IHttpRequestResponse base, int attackDedication, int i, String pathSuffix) {
         IHttpService service = injector.getService();
-        byte[] setPoisonReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param)), pathSuffix);
+        byte[] setPoisonReq = BulkUtilities.appendToPath(injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(param)), pathSuffix);
 
-        String cacheBuster = Utilities.generateCanary();
-        setPoisonReq = Utilities.addCacheBuster(setPoisonReq, cacheBuster);
+        String cacheBuster = BulkUtilities.generateCanary();
+        setPoisonReq = BulkUtilities.addCacheBuster(setPoisonReq, cacheBuster);
         for (int j = attackDedication - i; j < attackDedication; j++) {
             Scan.request(service, setPoisonReq);
         }
 
-        byte[] staticCanary = Utilities.globalSettings.getString("canary").getBytes();
+        byte[] staticCanary = BulkUtilities.globalSettings.getString("canary").getBytes();
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
-            IHttpRequestResponse getPoison = Scan.request(service, Utilities.appendToPath(Utilities.addCacheBuster(base.getRequest(), cacheBuster), pathSuffix));
-            if (Utilities.containsBytes(getPoison.getResponse(), staticCanary)) {
-                Utilities.log("Successful cache poisoning check");
+            IHttpRequestResponse getPoison = Scan.request(service, BulkUtilities.appendToPath(BulkUtilities.addCacheBuster(base.getRequest(), cacheBuster), pathSuffix));
+            if (BulkUtilities.containsBytes(getPoison.getResponse(), staticCanary)) {
+                BulkUtilities.log("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
-                byte[] headerSplitReq = Utilities.appendToPath(injector.getInsertionPoint().buildRequest(Utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
-                cacheBuster = Utilities.generateCanary();
-                byte[] headerSplitResp = Scan.request(service, Utilities.addCacheBuster(headerSplitReq, cacheBuster)).getResponse();
-                if (Utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
+                byte[] headerSplitReq = BulkUtilities.appendToPath(injector.getInsertionPoint().buildRequest(BulkUtilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
+                cacheBuster = BulkUtilities.generateCanary();
+                byte[] headerSplitResp = Scan.request(service, BulkUtilities.addCacheBuster(headerSplitReq, cacheBuster)).getResponse();
+                if (BulkUtilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, BulkUtilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
                     title = "Severe cache poisoning";
                 }
 
                 title = title + " "+i;
-                Utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison), getPoison, title, "Cache poisoning: '" + param + "'. Disregard the request and look for "+new String(staticCanary)+" in the response", "High", "Firm", "Investigate"));
+                BulkUtilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), BulkUtilities.getURL(getPoison), getPoison, title, "Cache poisoning: '" + param + "'. Disregard the request and look for "+new String(staticCanary)+" in the response", "High", "Firm", "Investigate"));
                 return true;
             }
         }
@@ -389,7 +396,7 @@ public class DiscoveredParam {
         }
         String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAY"};
         for(String header: headers) {
-            if(Utilities.getHeaderOffsets(response, header) != null) {
+            if(BulkUtilities.getHeaderOffsets(response, header) != null) {
                 return true;
             }
         }

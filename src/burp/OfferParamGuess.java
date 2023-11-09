@@ -51,8 +51,8 @@ class OfferParamGuess implements IContextMenuFactory {
         scanMenu.add(cookieProbeButton);
 
         JMenuItem headerProbeButton = new JMenuItem("Guess headers");
-        headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
-        allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
+        headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, BulkUtilities.PARAM_HEADER, paramGrabber, taskEngine));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, BulkUtilities.PARAM_HEADER, paramGrabber, taskEngine));
         scanMenu.add(headerProbeButton);
 
 //        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
@@ -65,22 +65,22 @@ class OfferParamGuess implements IContextMenuFactory {
         if (reqs.length == 1 && reqs[0] != null) {
             IHttpRequestResponse req = reqs[0];
             byte[] resp = req.getRequest();
-            if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
+            if (BulkUtilities.countMatches(resp, BulkUtilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
                 JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
                 backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
                 allButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
                 scanMenu.add(backendProbeButton);
             }
 
-//            if (Utilities.containsBytes(resp, "HTTP/1.1".getBytes())) {
+//            if (BulkUtilities.containsBytes(resp, "HTTP/1.1".getBytes())) {
 //                JMenuItem tunHeaderProbeButton = new JMenuItem("Guess tunneled headers");
-//                tunHeaderProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
-//                allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                tunHeaderProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, BulkUtilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                allButton.addActionListener(new TriggerParamGuesser(reqs, false, BulkUtilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
 //                options.add(tunHeaderProbeButton);
 //            }
 
             if (resp != null && resp.length > 0 && resp[0] == 'P') {
-                IRequestInfo info = Utilities.helpers.analyzeRequest(req);
+                IRequestInfo info = BulkUtilities.helpers.analyzeRequest(req);
                 List<IParameter> params = info.getParameters();
 
                 HashSet<Byte> paramTypes = new HashSet<>();

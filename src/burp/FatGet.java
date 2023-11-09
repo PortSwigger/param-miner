@@ -15,31 +15,31 @@ public class FatGet extends ParamScan {
         }
 
         // set value to canary
-        String canary = Utilities.generateCanary();
+        String canary = BulkUtilities.generateCanary();
 
         String fullValue = insertionPoint.getBaseValue()+canary;
         byte[] poison = insertionPoint.buildRequest(fullValue.getBytes());
 
         // convert to POST
-        poison = Utilities.helpers.toggleRequestMethod(poison);
+        poison = BulkUtilities.helpers.toggleRequestMethod(poison);
 
-        poison = Utilities.fixContentLength(Utilities.replaceFirst(poison, canary.getBytes(), (canary).getBytes()));
+        poison = BulkUtilities.fixContentLength(BulkUtilities.replaceFirst(poison, canary.getBytes(), (canary).getBytes()));
 
         // convert method back to GET
-        poison = Utilities.setMethod(poison, "GET");
+        poison = BulkUtilities.setMethod(poison, "GET");
 
-        poison = Utilities.addOrReplaceHeader(poison, "X-HTTP-Method-Override", "POST");
-        poison = Utilities.addOrReplaceHeader(poison, "X-HTTP-Method", "POST");
-        poison = Utilities.addOrReplaceHeader(poison, "X-Method-Override", "POST");
+        poison = BulkUtilities.addOrReplaceHeader(poison, "X-HTTP-Method-Override", "POST");
+        poison = BulkUtilities.addOrReplaceHeader(poison, "X-HTTP-Method", "POST");
+        poison = BulkUtilities.addOrReplaceHeader(poison, "X-Method-Override", "POST");
 
-        poison = Utilities.addCacheBuster(poison, Utilities.generateCanary());
+        poison = BulkUtilities.addCacheBuster(poison, BulkUtilities.generateCanary());
 
         IHttpService service = baseRequestResponse.getHttpService();
 
         Resp resp = request(service, poison);
         byte[] response = resp.getReq().getResponse();
 
-        if (Utilities.containsBytes(response, canary.getBytes())) {
+        if (BulkUtilities.containsBytes(response, canary.getBytes())) {
 
             recordCandidateFound();
 
@@ -51,13 +51,13 @@ public class FatGet extends ParamScan {
             //String toReplace = insertionPoint.getInsertionPointName()+"="+fullValue;
             String toReplace = canary;
 
-            byte[] getPoison = Utilities.fixContentLength(Utilities.replaceFirst(poison, toReplace.getBytes(), "".getBytes()));
+            byte[] getPoison = BulkUtilities.fixContentLength(BulkUtilities.replaceFirst(poison, toReplace.getBytes(), "".getBytes()));
 //            byte[] getPoison = baseRequestResponse.getRequest();
-//            getPoison = Utilities.appendToQuery(getPoison, "x="+cacheBuster);
+//            getPoison = BulkUtilities.appendToQuery(getPoison, "x="+cacheBuster);
 
 
             Resp poisonedResp = request(service, getPoison);
-            if (Utilities.containsBytes(poisonedResp.getReq().getResponse(), canary.getBytes())) {
+            if (BulkUtilities.containsBytes(poisonedResp.getReq().getResponse(), canary.getBytes())) {
                 report("Web Cache Poisoning via Fat GET", "The application lets users pass parameters in the body of GET requests, but does not include them in the cache key. This was confirmed by injecting the value "+canary+" using the "+insertionPoint.getInsertionPointName()+" parameter, then replaying the request without the injected value, and confirming it still appears in the response.<br><br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, poisonedResp);
             }
         }

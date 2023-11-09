@@ -36,6 +36,20 @@ public class ValueProbes
        return !confirmed.isEmpty();
    }
 
+    static boolean magicIP(PayloadInjector headerInjector, String name) {
+        String realName = name.split("~")[0];
+        Attack softBase = new Attack();
+        softBase.addAttack(headerInjector.buildAttack(realName+"~52.12.1.1", false));
+        softBase.addAttack(headerInjector.buildAttack(realName+"~52.12.1.2", false));
+        Probe magicValue = new Probe("Magic param value: 127.0.0.1", 4, realName+"~127.0.0.1");
+        magicValue.setEscapeStrings(realName+"~%52.12.1.3");
+        magicValue.setRandomAnchor(false);
+        magicValue.setPrefix(Probe.REPLACE);
+        ArrayList<Attack> confirmed = headerInjector.fuzz(softBase, magicValue);
+        //BulkUtilities.callbacks.addScanIssue(BulkUtilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, "Magic IP", "Unlinked parameter identified."));
+        return !confirmed.isEmpty();
+    }
+
     static boolean urlDecodes(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
 //        if (insertionPoint.getInsertionPointType() != IScannerInsertionPoint.INS_HEADER) {
 //            return null;
@@ -56,10 +70,10 @@ public class ValueProbes
     }
 
     private static boolean transformation(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, String send, String expect) {
-        String left = Utilities.generateCanary();
-        String right = Utilities.generateCanary();
+        String left = BulkUtilities.generateCanary();
+        String right = BulkUtilities.generateCanary();
         Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest((left+send+right).getBytes()));
-        if (Utilities.contains(resp, left+expect+right)) {
+        if (BulkUtilities.contains(resp, left+expect+right)) {
             Scan.report("Transformation: "+send+"---"+expect, "", resp);
             return true;
         }

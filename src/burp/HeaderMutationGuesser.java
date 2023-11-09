@@ -15,10 +15,10 @@ public class HeaderMutationGuesser {
     private URL url;
 
     HeaderMutationGuesser(IHttpRequestResponse req, ConfigurableSettings config) {
-        this.url = Utilities.getURL(req);
+        this.url = BulkUtilities.getURL(req);
         this.req = req.getRequest();
-        if (Utilities.isHTTP2(this.req)) {
-            this.req = Utilities.convertToHttp1(this.req);
+        if (BulkUtilities.isHTTP2(this.req)) {
+            this.req = BulkUtilities.convertToHttp1(this.req);
         }
         this.config = config;
         this.service = req.getHttpService();
@@ -54,7 +54,7 @@ public class HeaderMutationGuesser {
 
             if (frontError == null || noErr == null || frontError.length == 0 || noErr.length == 0) {
                 String host = frontErrReq.getHttpService().getHost();
-                Utilities.out("Failed to fetch request while guessing mutations " + host);
+                BulkUtilities.out("Failed to fetch request while guessing mutations " + host);
                 continue;
             }
 
@@ -69,7 +69,7 @@ public class HeaderMutationGuesser {
 
                 if (testReq == null) {
                     String host = testReqResp.getHttpService().getHost();
-                    Utilities.out("Failed to send request to host " + host + " using mutation " + mutation + " using junk value");
+                    BulkUtilities.out("Failed to send request to host " + host + " using mutation " + mutation + " using junk value");
                     continue;
                 }
 
@@ -83,7 +83,7 @@ public class HeaderMutationGuesser {
                     byte[] validResp = validReqResp.getResponse();
                     if (validResp == null) {
                         String host = validReqResp.getHttpService().getHost();
-                        Utilities.out("Failed to send request to host " + host + " using mutation " + mutation + " with valid value");
+                        BulkUtilities.out("Failed to send request to host " + host + " using mutation " + mutation + " with valid value");
                     }
                     if (this.requestMatch(noErr, validResp)) {
                         ret.add(mutation);
@@ -106,12 +106,12 @@ public class HeaderMutationGuesser {
         Iterator<String> iterator = mutations.iterator();
         while (iterator.hasNext()) {
             String mutation = iterator.next();
-            Utilities.out("Found mutation against " + this.url + ": " + mutation);
+            BulkUtilities.out("Found mutation against " + this.url + ": " + mutation);
             IHttpRequestResponse[] evidence = this.evidence.get(mutation);
             IHttpService service = evidence[0].getHttpService();
-            Utilities.callbacks.addScanIssue(new CustomScanIssue(
+            BulkUtilities.callbacks.addScanIssue(new CustomScanIssue(
                     service,
-                    Utilities.helpers.analyzeRequest(service, evidence[0].getRequest()).getUrl(),
+                    BulkUtilities.helpers.analyzeRequest(service, evidence[0].getRequest()).getUrl(),
                     evidence,
                     "Header mutation found",
                     "Headers can be snuck to a back-end server using the '" + mutation + "' mutation.",
@@ -128,12 +128,12 @@ public class HeaderMutationGuesser {
 
     private IHttpRequestResponse requestHeader(byte[] baseReq, byte[] header) {
         byte[] req = this.addHeader(baseReq, header);
-        req = Utilities.addCacheBuster(req, Utilities.generateCanary());
+        req = BulkUtilities.addCacheBuster(req, BulkUtilities.generateCanary());
         return Scan.request(this.service, req, 0, true);
     }
 
     private byte[] removeHeader(byte[] req, String headerName) {
-        int[] offsets = Utilities.getHeaderOffsets(req, headerName);
+        int[] offsets = BulkUtilities.getHeaderOffsets(req, headerName);
         if (offsets == null) {
             return req;
         }
@@ -151,8 +151,8 @@ public class HeaderMutationGuesser {
             return false;
         }
 
-        IResponseInfo info1 = Utilities.helpers.analyzeResponse(resp1);
-        IResponseInfo info2 = Utilities.helpers.analyzeResponse(resp2);
+        IResponseInfo info1 = BulkUtilities.helpers.analyzeResponse(resp1);
+        IResponseInfo info2 = BulkUtilities.helpers.analyzeResponse(resp2);
         if (info1.getStatusCode() != info2.getStatusCode()) {
             return false;
         }
@@ -175,7 +175,7 @@ public class HeaderMutationGuesser {
     }
 
     private byte[] addHeader(byte[] baseReq, byte[] header) {
-        IRequestInfo info = Utilities.analyzeRequest(baseReq);
+        IRequestInfo info = BulkUtilities.analyzeRequest(baseReq);
         int offset = info.getBodyOffset() - 2;
         byte[] ret = new byte[baseReq.length + header.length + 2];
         byte[] crlf = "\r\n".getBytes(StandardCharsets.UTF_8);

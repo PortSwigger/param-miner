@@ -10,12 +10,12 @@ public class NormalisedPathScan extends Scan {
 
     @Override
     List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        baseReq = Utilities.appendToQuery(baseReq, "cb="+Utilities.generateCanary());
+        baseReq = BulkUtilities.appendToQuery(baseReq, "cb="+BulkUtilities.generateCanary());
 
-        Resp base = request(service, Utilities.appendToQuery(baseReq, "cbx=zxcv"));
+        Resp base = request(service, BulkUtilities.appendToQuery(baseReq, "cbx=zxcv"));
         short baseCode = base.getStatus();
 
-        byte[] poisonReq = Utilities.replaceFirst(baseReq, "?".getBytes(), "%3f".getBytes());
+        byte[] poisonReq = BulkUtilities.replaceFirst(baseReq, "?".getBytes(), "%3f".getBytes());
 
         Resp resp = request(service, poisonReq);
         short poisonedCode = resp.getStatus();
