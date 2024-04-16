@@ -1,5 +1,10 @@
 package burp;
 
+import burp.albinowaxUtils.Attack;
+import burp.albinowaxUtils.ConfigurableSettings;
+import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.albinowaxUtils.PayloadInjector;
+import burp.albinowaxUtils.Utilities;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -22,17 +27,18 @@ class ParamAttack {
     private ParamHolder paramBuckets;
     private int bucketSize = 1;
     private IHttpRequestResponse baseRequestResponse;
-    private PayloadInjector injector;
-    private String attackID;
+    private PayloadInjector      injector;
+    private String               attackID;
     private Attack base;
     private String targetURL;
     private Attack altBase;
     private boolean tryMethodFlip;
     private final ParamInsertionPoint insertionPoint;
-    final byte type;
+    final   byte                 type;
     private ConfigurableSettings config;
-    private ArrayList<String> headerMutations;
-
+    private       ArrayList<String> headerMutations;
+    private final Utilities         utilities;
+    
     int getStop() {
         return stop;
     }
@@ -102,15 +108,18 @@ class ParamAttack {
     void setHeaderMutations(ArrayList<String> mutations) { this.headerMutations = mutations; }
 
 
-    ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop, ConfigurableSettings config) {
-        started = false;
-        this.type = type;
-        this.stop = stop;
-        this.config = config;
-        this.baseRequestResponse = baseRequestResponse;
-        targetURL = baseRequestResponse.getHttpService().getHost();
-        params = calculatePayloads(baseRequestResponse, paramGrabber, type);
-        valueParams = new ArrayList<>();
+    ParamAttack(IHttpRequestResponse baseRequestResponse, byte type, ParamGrabber paramGrabber, int stop, ConfigurableSettings config,
+                Utilities utilities
+    ) {
+      this.utilities           = utilities;
+      started                  = false;
+      this.type                = type;
+      this.stop                = stop;
+      this.config              = config;
+      this.baseRequestResponse = baseRequestResponse;
+      targetURL                = baseRequestResponse.getHttpService().getHost();
+      params                   = calculatePayloads(baseRequestResponse, paramGrabber, type);
+      valueParams              = new ArrayList<>();
         for(int i = 0; i< params.size(); i++) {
             String candidate = params.get(i);
             if(candidate.contains("~")) {
@@ -122,10 +131,10 @@ class ParamAttack {
         }
 
         // prevents attack cross-talk with stored input detection
-        attackID = Utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis()).substring(0,2);
+        attackID = utilities.mangle(Arrays.hashCode(baseRequestResponse.getRequest())+"|"+System.currentTimeMillis()).substring(0,2);
 
         requestParams = new HashMap<>();
-        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) {
+        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>(), utilities)) {
             String[] parsed = Keysmith.parseKey(entry);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
@@ -135,11 +144,11 @@ class ParamAttack {
 
         insertionPoint = getInsertionPoint(baseRequestResponse, type, payload, attackID);
 
-        injector = new PayloadInjector(baseRequestResponse, insertionPoint);
+        injector = new PayloadInjector(baseRequestResponse, insertionPoint, utilities);
 
         updateBaseline();
 
-        //String ref = Utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
+        //String ref = utilities.getHeader(baseRequestResponse.getRequest(), "Referer");
         //HashMap<String, Attack> baselines = new HashMap<>();
         //baselines.put(ref, new Attack(baseRequestResponse));
         invertedBase = null;
@@ -151,7 +160,7 @@ class ParamAttack {
         // fixme this may exceed the max bucket size
         calculateBucketSize(type, longest);
 
-        if (!Utilities.globalSettings.getBoolean("carpet bomb")) {
+        if (!utilities.globalSettings.getBoolean("carpet bomb")) {
             StringBuilder basePayload = new StringBuilder();
             for (int i = 1; i < min(8, bucketSize); i++) {
                 basePayload.append("|");
@@ -165,21 +174,21 @@ class ParamAttack {
         // calculateBucketSize(type, longest); was here
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
-        Utilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
+        utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
-            invertedBase = Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
-            altBase = new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase));
-            if(Utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404 && Utilities.globalSettings.getBoolean("try method flip")) {
-                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
-                altBase.addAttack(new Attack(Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase)));
+            invertedBase = utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
+            altBase = new Attack(utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase), utilities);
+            if(utilities.helpers.analyzeResponse(altBase.getFirstRequest().getResponse()).getStatusCode() != 404 && utilities.globalSettings.getBoolean("try method flip")) {
+                altBase.addAttack(new Attack(utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase), utilities));
+                altBase.addAttack(new Attack(utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase), utilities));
+                altBase.addAttack(new Attack(utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(), invertedBase), utilities));
                 tryMethodFlip = true;
             }
         }
 
         // put the params into buckets
-        paramBuckets = new ParamHolder(type, bucketSize);
+        paramBuckets = new ParamHolder(type, bucketSize, utilities);
         paramBuckets.addParams(valueParams, false);
         paramBuckets.addParams(params, false);
 
@@ -189,7 +198,7 @@ class ParamAttack {
         }
 
         alreadyReported = getBlacklist(type);
-        //Utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
+        //utilities.out("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
     }
 
     private void calculateBucketSize(byte type, int longest) {
@@ -212,20 +221,20 @@ class ParamAttack {
         }
 
         while (true) {
-            Utilities.log("Trying bucket size: "+ bucketSize);
+            utilities.out("Trying bucket size: "+ bucketSize);
             long start = System.currentTimeMillis();
             StringBuilder trialPayload = new StringBuilder();
-            trialPayload.append(Utilities.randomString(longest));
+            trialPayload.append(utilities.randomString(longest));
             for (int i = 0; i < bucketSize; i++) {
                 trialPayload.append("|");
-                trialPayload.append(Utilities.randomString(longest));
+                trialPayload.append(utilities.randomString(longest));
             }
 
             Attack trial = injector.probeAttack(trialPayload.toString());
-            if (!Utilities.similar(base, trial)) {
+            if (!utilities.similar(base, trial)) {
                 trial.addAttack(injector.probeAttack(trialPayload.toString()));
                 trial.addAttack(injector.probeAttack(trialPayload.toString()));
-                if (!Utilities.similar(base, trial)) {
+                if (!utilities.similar(base, trial)) {
                     bucketSize = bucketSize / 2;
                     break;
                 }
@@ -234,11 +243,11 @@ class ParamAttack {
             long end = System.currentTimeMillis();
             if (end - start > 5000) {
                 bucketSize = bucketSize / 2;
-                Utilities.out("Setting bucketSize to "+bucketSize+" due to slow response");
+                utilities.out("Setting bucketSize to "+bucketSize+" due to slow response");
                 break;
             }
 
-            if (bucketSize >= Utilities.globalSettings.getInt("max bucketsize")) {
+            if (bucketSize >= utilities.globalSettings.getInt("max bucketsize")) {
                 break;
             }
 
@@ -253,26 +262,29 @@ class ParamAttack {
                 blacklist.add("__cfduid");
                 blacklist.add("PHPSESSID");
                 blacklist.add("csrftoken");
-                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_COOKIE)));
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_COOKIE),
+                  utilities));
                 break;
             case IParameter.PARAM_URL:
                 blacklist.add("lang");
-                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY),
+                  utilities));
                 break;
             case IParameter.PARAM_BODY:
-                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY)));
+                blacklist.addAll(Keysmith.getParamKeys(baseRequestResponse.getRequest(), new HashSet<>(IParameter.PARAM_URL, IParameter.PARAM_BODY),
+                  utilities));
                 break;
             case Utilities.PARAM_HEADER:
-                if (Utilities.globalSettings.getBoolean("skip boring words")) {
+                if (utilities.globalSettings.getBoolean("skip boring words")) {
                     blacklist.addAll(Utilities.boringHeaders);
                 }
                 break;
             default:
-                Utilities.out("Unrecognised type: "+type);
+                utilities.out("Unrecognised type: "+type);
                 break;
         }
 
-        if (Utilities.globalSettings.getBoolean("only report unique params")) {
+        if (utilities.globalSettings.getBoolean("only report unique params")) {
             blacklist.addAll(Utilities.reportedParams);
         }
 
@@ -280,25 +292,25 @@ class ParamAttack {
     }
 
     Attack updateBaseline() {
-        this.base = this.injector.probeAttack(Utilities.randomString(6));
+        this.base = this.injector.probeAttack(utilities.randomString(6));
         for(int i=0; i<4; i++) {
-            base.addAttack(this.injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
+            base.addAttack(this.injector.probeAttack(utilities.randomString((i+1)*(i+1))));
         }
         if (bucketSize > 1) {
-            base.addAttack(this.injector.probeAttack(Utilities.randomString(6) + "|" + Utilities.randomString(12)));
+            base.addAttack(this.injector.probeAttack(utilities.randomString(6) + "|" + utilities.randomString(12)));
         }
         return base;
     }
 
 
-    private static ParamInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
+    private ParamInsertionPoint getInsertionPoint(IHttpRequestResponse baseRequestResponse, byte type, String payload, String attackID) {
         switch(type) {
             case IParameter.PARAM_JSON:
-                return new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+                return new JsonParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID, utilities);
             case Utilities.PARAM_HEADER:
-                return new HeaderNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+                return new HeaderNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID, utilities);
             default:
-                return new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID);
+                return new ParamNameInsertionPoint(baseRequestResponse.getRequest(), "guesser", payload, type, attackID, utilities);
         }
     }
 
@@ -307,20 +319,20 @@ class ParamAttack {
 
         // collect keys in request, for key skipping, matching and re-mapping
         HashMap<String, String> requestParams = new HashMap<>();
-        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>())) { // todo give precedence to shallower keys
+        for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>(), utilities)) { // todo give precedence to shallower keys
             String[] parsed = Keysmith.parseKey(entry);
-            Utilities.log("Request param: " +parsed[1]);
+            utilities.out("Request param: " +parsed[1]);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
         // add JSON from response
-        params.addAll(Keysmith.getAllKeys(baseRequestResponse.getResponse(), requestParams));
+        params.addAll(Keysmith.getAllKeys(baseRequestResponse.getResponse(), requestParams, utilities));
 
         // add JSON from method-flip response
         if(baseRequestResponse.getRequest()[0] != 'G') {
-            IHttpRequestResponse getreq = Utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
-                    Utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
-            params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams));
+            IHttpRequestResponse getreq = utilities.callbacks.makeHttpRequest(baseRequestResponse.getHttpService(),
+                    utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest()));
+            params.addAll(Keysmith.getAllKeys(getreq.getResponse(), requestParams, utilities));
         }
 
 
@@ -338,7 +350,7 @@ class ParamAttack {
             }
 
             JsonParser parser = new JsonParser();
-            JsonElement json = parser.parse(Utilities.getBody(resp.getResponse()));
+            JsonElement json = parser.parse(utilities.getBody(resp.getResponse()));
             HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(json, requestParams));
             int matches = 0;
             for (String requestKey: keys) {
@@ -350,11 +362,11 @@ class ParamAttack {
             // if there are no matches, don't bother with prefixes
             // todo use root (or non-leaf) objects only
             if(matches < 1) {
-                //Utilities.out("No matches, discarding prefix");
+                //utilities.out("No matches, discarding prefix");
                 HashSet<String> filteredKeys = new HashSet<>();
                 for(String key: keys) {
                     String lastKey = Keysmith.parseKey(key)[1];
-                    if (Utilities.parseArrayIndex(lastKey) < 3) {
+                    if (utilities.parseArrayIndex(lastKey) < 3) {
                         filteredKeys.add(Keysmith.parseKey(key)[1]);
                     }
                 }
@@ -374,20 +386,20 @@ class ParamAttack {
         final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
         sorted.addAll(responses.keySet());
         for(Integer key: sorted) {
-            Utilities.log("Loading keys with "+key+" matches");
+            utilities.out("Loading keys with "+key+" matches");
             ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
             sortedByLength.sort(new LengthCompare());
             params.addAll(sortedByLength);
         }
 
         if (params.size() > 0) {
-            Utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
+            utilities.out("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
-        params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
+        params.addAll(Keysmith.getWords(utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
 
         if (config.getBoolean("request")) {
-            params.addAll(Keysmith.getWords(Utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
+            params.addAll(Keysmith.getWords(utilities.helpers.bytesToString(baseRequestResponse.getRequest())));
         }
 
         // todo move this stuff elsewhere - no need to load it into memory in advance

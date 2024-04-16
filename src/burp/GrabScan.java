@@ -1,5 +1,7 @@
 package burp;
 
+import burp.albinowaxUtils.Utilities;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,8 +9,9 @@ public class GrabScan implements IScannerCheck {
 
     private ParamGrabber paramGrabber;
 
-    GrabScan(ParamGrabber paramGrabber) {
+    GrabScan(ParamGrabber paramGrabber, Utilities utilites) {
         this.paramGrabber = paramGrabber;
+        this.utilites     = utilites;
     }
 
     @Override
@@ -18,7 +21,7 @@ public class GrabScan implements IScannerCheck {
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
-        if (Utilities.globalSettings.getBoolean("learn observed words")) {
+        if (utilites.globalSettings.getBoolean("learn observed words")) {
             paramGrabber.saveParams(baseRequestResponse);
         }
         return new ArrayList<>();
@@ -30,4 +33,6 @@ public class GrabScan implements IScannerCheck {
             return -1;
         else return 0;
     }
+
+private final Utilities utilites;
 }

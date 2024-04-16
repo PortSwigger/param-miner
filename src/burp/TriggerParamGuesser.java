@@ -1,10 +1,11 @@
 package burp;
 
+import burp.albinowaxUtils.ConfigurableSettings;
+import burp.albinowaxUtils.Utilities;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -13,23 +14,28 @@ import static org.apache.commons.lang3.math.NumberUtils.max;
 
 
 class TriggerParamGuesser implements ActionListener, Runnable {
-    private IHttpRequestResponse[] reqs;
-    private boolean backend;
-    private byte type;
-    private ParamGrabber paramGrabber;
-    private ThreadPoolExecutor taskEngine;
-    private ConfigurableSettings config;
 
-    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine) {
-        this.taskEngine = taskEngine;
-        this.paramGrabber = paramGrabber;
-        this.backend = backend;
-        this.type = type;
-        this.reqs = reqs;
+private final Utilities              utilities;
+private       IHttpRequestResponse[] reqs;
+private       boolean                backend;
+private       byte                   type;
+private       ParamGrabber           paramGrabber;
+private       ThreadPoolExecutor     taskEngine;
+private       ConfigurableSettings   config;
+    
+    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
+                        Utilities utilities
+    ) {
+      this.taskEngine   = taskEngine;
+      this.paramGrabber = paramGrabber;
+      this.backend      = backend;
+      this.type         = type;
+      this.reqs         = reqs;
+      this.utilities    = utilities;
     }
 
     public void actionPerformed(ActionEvent e) {
-        ConfigurableSettings config = Utilities.globalSettings.showSettings();
+        ConfigurableSettings config = utilities.globalSettings.showSettings();
         if (config != null) {
             this.config = config;
             //Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine, config);
@@ -39,7 +45,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
 
     public void run() {
         int queueSize = taskEngine.getQueue().size();
-        Utilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
+        utilities.out("Adding "+reqs.length+" tasks to queue of "+queueSize);
         queueSize += reqs.length;
         int thread_count = taskEngine.getCorePoolSize();
 
@@ -63,9 +69,9 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 String host = req.getHttpService().getHost();
                 int port = req.getHttpService().getPort();
                 String proto = req.getHttpService().getProtocol();
-                IHttpService service = Utilities.helpers.buildHttpService(host, port, proto);
+                IHttpService service = utilities.helpers.buildHttpService(host, port, proto);
 
-                IHttpRequestResponse newReq = Utilities.attemptRequest(service, downgraded, true);
+                IHttpRequestResponse newReq = utilities.attemptRequest(service, downgraded, true);
                 reqlist.set(i, newReq);
                 this.reqs[i] = newReq;
             }
@@ -93,7 +99,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
         int queued = 0;
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
-            Utilities.log("Loop "+i++);
+            utilities.out("Loop "+i++);
             Iterator<IHttpRequestResponse> left = reqlist.iterator();
             while (left.hasNext()) {
                 IHttpRequestResponse req = left.next();
@@ -101,11 +107,11 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 String host = req.getHttpService().getHost();
                 String key = req.getHttpService().getProtocol()+host;
                 if (req.getResponse() != null) {
-                    if (canSkip && Utilities.containsBytes(req.getResponse(), noCache)) {
+                    if (canSkip && utilities.containsBytes(req.getResponse(), noCache)) {
                         continue;
                     }
 
-                    IResponseInfo info = Utilities.helpers.analyzeResponse(req.getResponse());
+                    IResponseInfo info = utilities.helpers.analyzeResponse(req.getResponse());
                     key = key + info.getStatusCode() + info.getInferredMimeType();
                 }
 
@@ -118,9 +124,9 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                     cache.add(host);
                     keyCache.add(key);
                     left.remove();
-                    Utilities.log("Adding request on "+host+" to queue");
+                    utilities.out("Adding request on "+host+" to queue");
                     queued++;
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop, config));
+                    taskEngine.execute(new ParamGuesser(utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop, config, utilities));
                 } else {
                     remainingHosts.add(host);
                 }
@@ -134,7 +140,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
                 left = reqlist.iterator();
                 while (left.hasNext()) {
                     queued++;
-                    taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop, config));
+                    taskEngine.execute(new ParamGuesser(utilities.callbacks.saveBuffersToTempFiles(left.next()), backend, type, paramGrabber, taskEngine, stop, config, utilities));
                 }
                 break;
             }
@@ -143,7 +149,7 @@ class TriggerParamGuesser implements ActionListener, Runnable {
             }
         }
 
-        Utilities.out("Queued " + queued + " attacks");
+        utilities.out("Queued " + queued + " attacks");
 
     }
 }

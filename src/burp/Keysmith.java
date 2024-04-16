@@ -1,5 +1,6 @@
 package burp;
 
+import burp.albinowaxUtils.Utilities;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
@@ -28,7 +29,7 @@ public class Keysmith {
 
     }
 
-    static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
+    static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams, Utilities utilities){
         if (!"".equals(Utilities.getBody(resp))) {
             try {
                 return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
@@ -42,21 +43,21 @@ public class Keysmith {
             return getHtmlKeys(Utilities.getBody(resp));
         }
         else {
-            return getParamKeys(resp, new HashSet<>());
+            return getParamKeys(resp, new HashSet<>(), utilities);
         }
 
     }
 
-    static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types) {
+    static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types, Utilities utilities) {
         ArrayList<String> keys = new ArrayList<>();
 
-        List<IParameter> currentParams = Utilities.helpers.analyzeRequest(resp).getParameters();
+        List<IParameter> currentParams = utilities.helpers.analyzeRequest(resp).getParameters();
 
         for (IParameter param : currentParams) {
             String parsedParam = parseParam(param.getName().replace(':', ';'));
             if(types.isEmpty() || types.contains(param.getType())) {
                 keys.add(parsedParam);
-                Utilities.log(parsedParam);
+                utilities.out(parsedParam);
             }
         }
         return keys;
@@ -114,7 +115,7 @@ public class Keysmith {
                 for (String chunk: chunks) {
                     String[] keyvalue = chunk.split("=", 2);
                     String key = keyvalue[0];
-                    if (keyvalue.length > 1 && Utilities.invertable(keyvalue[1])) {
+                    if (keyvalue.length > 1 && Utilities.invertible(keyvalue[1])) {
                         key = key + "~" + keyvalue[1];
                     }
                     params.add(key);
@@ -125,7 +126,7 @@ public class Keysmith {
         Elements inputs = doc.select("input[name]");
         for(Element input: inputs) {
             String key= input.attr("name");
-            if (Utilities.invertable(input.attr("value"))) {
+            if (Utilities.invertible(input.attr("value"))) {
                 key = key + "~" + input.attr("value");
             }
             params.add(key);
@@ -192,7 +193,7 @@ public class Keysmith {
                 try {
                     if (!json.getAsJsonPrimitive().isJsonNull()) {
                         String val = json.getAsString();
-                        if (Utilities.invertable(val)) {
+                        if (Utilities.invertible(val)) {
                             prefix = prefix + "~" + val;
                         }
                     }

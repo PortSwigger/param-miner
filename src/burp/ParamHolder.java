@@ -1,5 +1,7 @@
 package burp;
 
+import burp.albinowaxUtils.Utilities;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,12 +10,14 @@ import java.util.Deque;
 class ParamHolder {
     private Deque<ArrayList<String>> paramBuckets;
     private byte type;
-    private int bucketSize;
+    private       int       bucketSize;
+    private final Utilities utilities;
 
-    ParamHolder(byte type, int bucketSize) {
-        this.type = type;
-        this.bucketSize = bucketSize;
-        paramBuckets = new ArrayDeque<>();
+    ParamHolder(byte type, int bucketSize, Utilities utilities) {
+      this.type       = type;
+      this.bucketSize = bucketSize;
+      this.utilities  = utilities;
+      paramBuckets    = new ArrayDeque<>();
     }
 
     int size() {
@@ -35,7 +39,7 @@ class ParamHolder {
             int max = params.size();
             for (int i=0; i<max; i++) {
                 String param = params.get(i);
-                if (param.contains("-") && Utilities.globalSettings.getBoolean("try -_ bypass")) {
+                if (param.contains("-") && utilities.globalSettings.getBoolean("try -_ bypass")) {
                     params.add(param.replace("-", "_"));
                 }
             }
@@ -78,13 +82,13 @@ class ParamHolder {
             paramBuckets.add(bucket);
         }
     }
-
-    private void removeBadEntries(ArrayList<String> params) {
+    
+private void removeBadEntries(ArrayList<String> params) {
         params.removeAll(Arrays.asList(""));
 
         if (type == Utilities.PARAM_HEADER) {
             params.removeIf(x -> Character.isDigit(x.charAt(0)));
-            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
+            if (utilities.globalSettings.getBoolean("lowercase headers")) {
                 params.replaceAll(String::toLowerCase);
             }
         }

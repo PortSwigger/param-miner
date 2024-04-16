@@ -7,7 +7,7 @@ import java.util.HashSet;
 /**
  * Created by james on 24/11/2016.
  */
-class Probe {
+public class Probe {
     public static byte APPEND = 0;
     public static byte PREPEND = 1;
     public static byte REPLACE = 2;
