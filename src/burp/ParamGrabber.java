@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
-import java.util.zip.CRC32;
 
 import static burp.Keysmith.getHtmlKeys;
 import static burp.Keysmith.getWords;
@@ -16,15 +15,17 @@ import static burp.Keysmith.getWords;
 
 public class ParamGrabber implements IProxyListener, IHttpListener {
 
-    private Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
+private final Utilities           utilities;
+private Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
     private HashSet<ArrayList<String>> done = new HashSet<>();
     private Set<String> savedGET  = ConcurrentHashMap.newKeySet();
     private Set<String> savedWords  = ConcurrentHashMap.newKeySet();
     private HashSet<String> alreadyScanned = new HashSet<>();
     private ThreadPoolExecutor taskEngine;
 
-    ParamGrabber(ThreadPoolExecutor taskEngine) {
-        this.taskEngine = taskEngine;
+    ParamGrabber(ThreadPoolExecutor taskEngine, Utilities utilities) {
+      this.taskEngine = taskEngine;
+      this.utilities  = utilities;
     }
 
     Set<IHttpRequestResponse> getSavedJson() {
@@ -53,18 +54,18 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
 
     void saveParams(IHttpRequestResponse baseRequestResponse) {
         // todo also use observed requests
-        String body = Utilities.getBody(baseRequestResponse.getResponse());
+        String body = utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {
-            savedWords.addAll(getWords(Utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
+            savedWords.addAll(getWords(utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
             savedGET.addAll(getHtmlKeys(body));
             try {
                 JsonParser parser = new JsonParser();
                 JsonElement json = parser.parse(body);
                 ArrayList<String> keys = Keysmith.getJsonKeys(json, new HashMap<>());
                 if (!done.contains(keys)) {
-                    //Utilities.out("Importing observed data...");
+                    //utilities.out("Importing observed data...");
                     done.add(keys);
-                    savedJson.add(Utilities.callbacks.saveBuffersToTempFiles(baseRequestResponse));
+                    savedJson.add(utilities.callbacks.saveBuffersToTempFiles(baseRequestResponse));
                 }
             } catch (JsonParseException e) {
 
@@ -73,40 +74,40 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
     }
 
     private void addCacheBusters(IHttpRequestResponse messageInfo) {
-        byte[] placeHolder = Utilities.helpers.stringToBytes("$randomplz");
-        if (Utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
+        byte[] placeHolder = utilities.helpers.stringToBytes("$randomplz");
+        if (utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
             messageInfo.setRequest(
-                    Utilities.fixContentLength(Utilities.replace(messageInfo.getRequest(), placeHolder, Utilities.helpers.stringToBytes(Utilities.generateCanary())))
+                    utilities.fixContentLength(utilities.replace(messageInfo.getRequest(), placeHolder, utilities.helpers.stringToBytes(utilities.generateCanary())))
             );
         }
 
         byte[] req = messageInfo.getRequest();
         String cacheBuster = null;
-        if (Utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
-            cacheBuster = Utilities.generateCanary();
+        if (utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
+            cacheBuster = utilities.generateCanary();
         }
-        else if (Utilities.globalSettings.getBoolean("Add 'fcbz' cachebuster")) {
+        else if (utilities.globalSettings.getBoolean("Add 'fcbz' cachebuster")) {
             cacheBuster = "fcbz";
         }
 
         if (cacheBuster != null) {
-            req = Utilities.addCacheBuster(req, cacheBuster);
+            req = utilities.addCacheBuster(req, cacheBuster);
         }
 
         messageInfo.setRequest(req);
     }
 
     private void launchScan(IHttpRequestResponse messageInfo) {
-        if (!Utilities.globalSettings.getBoolean("enable auto-mine")) {
+        if (!utilities.globalSettings.getBoolean("enable auto-mine")) {
             return;
         }
 
-        IRequestInfo reqInfo = Utilities.helpers.analyzeRequest(messageInfo.getHttpService(), messageInfo.getRequest());
-        if (!Utilities.callbacks.isInScope(reqInfo.getUrl())) {
+        IRequestInfo reqInfo = utilities.helpers.analyzeRequest(messageInfo.getHttpService(), messageInfo.getRequest());
+        if (!utilities.callbacks.isInScope(reqInfo.getUrl())) {
             return;
         }
 
-        IResponseInfo respInfo = Utilities.helpers.analyzeResponse(messageInfo.getResponse());
+        IResponseInfo respInfo = utilities.helpers.analyzeResponse(messageInfo.getResponse());
         StringBuilder codeBuidler = new StringBuilder();
         String contentType = respInfo.getStatedMimeType();
 
@@ -115,18 +116,18 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
 
         String broadCode = codeBuidler.toString();
         if (!alreadyScanned.contains(broadCode)){
-            //Utilities.out("Queueing headers+cookies on "+reqInfo.getUrl());
-            if (Utilities.globalSettings.getBoolean("auto-mine headers")) {
-                taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, Utilities.PARAM_HEADER, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            //utilities.out("Queueing headers+cookies on "+reqInfo.getUrl());
+            if (utilities.globalSettings.getBoolean("auto-mine headers")) {
+                taskEngine.execute(new ParamGuesser(utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, Utilities.PARAM_HEADER, this, taskEngine, utilities.globalSettings.getInt("rotation interval"), utilities.globalSettings, utilities));
             }
-            if (Utilities.globalSettings.getBoolean("auto-mine cookies")) {
-                taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_COOKIE, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+            if (utilities.globalSettings.getBoolean("auto-mine cookies")) {
+                taskEngine.execute(new ParamGuesser(utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, IParameter.PARAM_COOKIE, this, taskEngine, utilities.globalSettings.getInt("rotation interval"), utilities.globalSettings, utilities));
             }
 
             alreadyScanned.add(broadCode);
         }
 
-        if (!Utilities.globalSettings.getBoolean("auto-mine params")) {
+        if (!utilities.globalSettings.getBoolean("auto-mine params")) {
             return;
         }
 
@@ -151,8 +152,8 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
             guessType = IParameter.PARAM_BODY;
         }
 
-        Utilities.out("Queueing params on "+reqInfo.getUrl());
-        taskEngine.execute(new ParamGuesser(Utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, guessType, this, taskEngine, Utilities.globalSettings.getInt("rotation interval"), Utilities.globalSettings));
+        utilities.out("Queueing params on "+reqInfo.getUrl());
+        taskEngine.execute(new ParamGuesser(utilities.callbacks.saveBuffersToTempFiles(messageInfo), false, guessType, this, taskEngine, utilities.globalSettings.getInt("rotation interval"), utilities.globalSettings, utilities));
         alreadyScanned.add(paramCode);
     }
 }

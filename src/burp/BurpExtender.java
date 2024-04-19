@@ -1,38 +1,44 @@
 package burp;
 
+import burp.albinowaxUtils.BulkScan;
+import burp.albinowaxUtils.BulkScanLauncher;
+import burp.albinowaxUtils.ConfigMenu;
+import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.api.montoya.BurpExtension;
+import burp.api.montoya.MontoyaApi;
+
+import burp.albinowaxUtils.SettingsBox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static burp.Keysmith.getHtmlKeys;
-import static burp.Keysmith.getWords;
-
-
-
-
-public class BurpExtender implements IBurpExtender, IExtensionStateListener {
+public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
     private static final String name = "Param Miner";
     private static final String version = "1.4f";
     private ThreadPoolExecutor taskEngine;
-    static ParamGrabber paramGrabber;
-    static SettingsBox configSettings = new SettingsBox();
-    static SettingsBox guessSettings = new SettingsBox();
+    static       ParamGrabber paramGrabber;
+    static SettingsBox configSettings;
+    static SettingsBox guessSettings;
+
+    @Override
+    public void initialize(MontoyaApi montoyaApi) {
+
+    }
 
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
-        new Utilities(callbacks, new HashMap<>(), name);
+        utilities      = new Utilities(callbacks, new HashMap<>(), name);
+        configSettings = new SettingsBox(utilities);
+        guessSettings  = new SettingsBox(utilities);
 
         // config only (currently param-guess displays everything)
         configSettings.register("Add 'fcbz' cachebuster", false, "Add a static cache-buster to all outbound requests, to avoid manual cache poisoning probes affecting other users");
@@ -83,20 +89,20 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         guessSettings.register("poison only", false, "Don't report parameters if you can't use them for cache poisoning");
         guessSettings.register("tunnelling retry count", 20, "When attempting to mine a tunelled request, give up after this many consecutive failures to get a nested response");
         guessSettings.register("abort on tunnel failure", true, "When attempting to mine a tunelled request, give up if the tunnel retry count is exceeded");
-
+      
         loadWordlists();
         BlockingQueue<Runnable> tasks;
-        if (Utilities.globalSettings.getBoolean("enable auto-mine")) {
+        if (utilities.globalSettings.getBoolean("enable auto-mine")) {
             tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
         }
         else {
             tasks = new LinkedBlockingQueue<>();
         }
 
-        Utilities.globalSettings.registerSetting("thread pool size", 8);
-        taskEngine = new ThreadPoolExecutor(Utilities.globalSettings.getInt("thread pool size"), Utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
-        Utilities.globalSettings.registerListener("thread pool size", value -> {
-            Utilities.out("Updating active thread pool size to "+value);
+        utilities.globalSettings.registerSetting("thread pool size", 8);
+        taskEngine = new ThreadPoolExecutor(utilities.globalSettings.getInt("thread pool size"), utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks);
+        utilities.globalSettings.registerListener("thread pool size", value -> {
+            utilities.out("Updating active thread pool size to "+value);
             try {
                 taskEngine.setCorePoolSize(Integer.parseInt(value));
                 taskEngine.setMaximumPoolSize(Integer.parseInt(value));
@@ -110,50 +116,52 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
 
         try {
             StringUtils.isNumeric("1");
-        } catch (java.lang.NoClassDefFoundError e) {
-            Utilities.out("Failed to import the Apache Commons Lang library. You can get it from http://commons.apache.org/proper/commons-lang/");
+        } catch (NoClassDefFoundError e) {
+            utilities.out("Failed to import the Apache Commons Lang library. You can get it from http://commons.apache.org/proper/commons-lang/");
             throw new NoClassDefFoundError();
         }
 
         try {
             callbacks.getHelpers().analyzeResponseVariations();
-        } catch (java.lang.NoSuchMethodError e) {
-            Utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
+        } catch (NoSuchMethodError e) {
+            utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
             throw new NoSuchMethodError();
         }
 
-        paramGrabber = new ParamGrabber(taskEngine);
-        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
+        paramGrabber = new ParamGrabber(taskEngine, utilities);
+        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine, utilities));
 
-        if(Utilities.isBurpPro()) {
-            callbacks.registerScannerCheck(new GrabScan(paramGrabber));
+        if(utilities.isBurpPro()) {
+            callbacks.registerScannerCheck(new GrabScan(paramGrabber, utilities));
         }
 
         callbacks.registerHttpListener(paramGrabber);
         callbacks.registerProxyListener(paramGrabber);
 
-        SwingUtilities.invokeLater(new ConfigMenu());
-
-        new HeaderPoison("Header poison");
-        new PortDOS("port-DoS");
+        SwingUtilities.invokeLater(new ConfigMenu(utilities));
+      
+        BulkScanLauncher launcher = new BulkScanLauncher(BulkScan.scans, utilities);
+        
+        new HeaderPoison("Header poison", utilities, launcher);
+        new PortDOS("port-DoS", utilities, launcher);
         //new ValueScan("param-value probe");
-        new UnkeyedParamScan("Unkeyed param");
-        new FatGet("fat GET");
-        new NormalisedParamScan("normalised param");
-        new NormalisedPathScan("normalised path");
-        new RailsUtmScan("rails param cloaking scan");
-        new HeaderMutationScan("identify header smuggling mutations");
+        new UnkeyedParamScan("Unkeyed param", utilities, launcher);
+        new FatGet("fat GET", utilities, launcher);
+        new NormalisedParamScan("normalised param", utilities, launcher);
+        new NormalisedPathScan("normalised path", utilities, launcher);
+        new RailsUtmScan("rails param cloaking scan", utilities, launcher);
+        new HeaderMutationScan("identify header smuggling mutations", utilities, launcher);
+      
+      
+      
+      utilities.callbacks.registerExtensionStateListener(this);
 
-
-        new BulkScanLauncher(BulkScan.scans);
-
-        Utilities.callbacks.registerExtensionStateListener(this);
-
-        Utilities.out("Loaded " + name + " v" + version);
+        utilities.out("Loaded " + name + " v" + version);
     }
 
+private Utilities utilities;
 
-    private void loadWordlists() {
+private void loadWordlists() {
         Scanner s = new Scanner(getClass().getResourceAsStream("/functions"));
         while (s.hasNext()) {
             Utilities.phpFunctions.add(s.next());
@@ -173,12 +181,11 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     }
 
     public void extensionUnloaded() {
-        Utilities.log("Aborting all attacks");
-        Utilities.unloaded.set(true);
+        utilities.log("Aborting all attacks");
+        utilities.unloaded.set(true);
         taskEngine.getQueue().clear();
         taskEngine.shutdown();
     }
-
 }
 
 
@@ -195,181 +202,29 @@ class RequestWithOffsets {
     }
 }
 
-class ParamNameInsertionPoint extends ParamInsertionPoint {
-    String attackID;
-    String defaultPrefix;
-    String host;
-    HashMap<String, String> present;
-
-    ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
-        super(request, name, value, type);
-        this.attackID = attackID;
-
-        ArrayList<String> keys = Keysmith.getAllKeys(request, new HashMap<>());
-        HashMap<String, Integer> freq = new HashMap<>();
-        for (String key: keys) {
-            if (key.contains(":")) {
-                String object = key.split(":")[0];
-                freq.put(object, freq.getOrDefault(object, 0) + 1);
-            }
-        }
-
-        String maxKey = null;
-
-        if (Utilities.globalSettings.getBoolean("auto-nest params")) {
-            int max = 0;
-            for (Map.Entry<String, Integer> entry : freq.entrySet()) {
-                if (entry.getValue() > max) {
-                    maxKey = entry.getKey();
-                    max = entry.getValue();
-                }
-            }
-        }
-        defaultPrefix = maxKey;
-
-        if (maxKey != null) {
-            Utilities.out("Selected default key: "+maxKey);
-        }
-        else {
-            Utilities.log("No default key available");
-        }
-
-        present = new HashMap<>();
-        List<String> headers = Utilities.analyzeRequest(request).getHeaders();
-        for (String header: headers) {
-            if (header.startsWith("Host: ")) {
-                host = header.split(": ", 2)[1];
-            }
-            header = header.split(": ", 2)[0];
-            if (Utilities.globalSettings.getBoolean("lowercase headers")) {
-                present.put(header.toLowerCase(), header);
-            }
-            else {
-                present.put(header, header);
-            }
-        }
-    }
-
-    String calculateValue(String unparsed) {
-        String canary = Utilities.globalSettings.getString("force canary");
-        if (!"".equals(canary)) {
-            return canary;
-        }
-        return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
-    }
-
-    @Override
-    public byte[] buildRequest(byte[] payload) {
-        String bulk = Utilities.helpers.bytesToString(payload);
-        String[] params = bulk.split("[|]");
-        ArrayList<String> preppedParams = new ArrayList<>();
-        for(String key: params) {
-            if (defaultPrefix != null && !key.contains(":")) {
-                key = defaultPrefix + ":" + key;
-            }
-            preppedParams.add(Keysmith.unparseParam(key));
-        }
-
-        if(type == IParameter.PARAM_URL || type == IParameter.PARAM_BODY || type == IParameter.PARAM_COOKIE || type == Utilities.PARAM_HEADER) {
-            return buildBulkRequest(preppedParams);
-        }
-
-        return buildBasicRequest(preppedParams);
-    }
-
-    public byte[] buildBulkRequest(ArrayList<String> params) {
-        String merged = prepBulkParams(params);
-        String replaceKey = "TCZqBcS13SA8QRCpW";
-        IParameter newParam = Utilities.helpers.buildParameter(replaceKey, "", type);
-        byte[] built = Utilities.helpers.updateParameter(request, newParam);
-        return Utilities.fixContentLength(Utilities.replace(built, Utilities.helpers.stringToBytes(replaceKey+"="), Utilities.helpers.stringToBytes(merged)));
-    }
-
-    String prepBulkParams(ArrayList<String> params) {
-        ArrayList<String> preppedParams = new ArrayList<>();
-
-        String equals;
-        String join;
-        String trail;
-        if(type == IParameter.PARAM_COOKIE) {
-            equals = "=";
-            join = "; ";
-            trail = ";";
-        }
-        else if (type == Utilities.PARAM_HEADER) {
-            equals = ": ";
-            join ="\r\n";
-            trail = ""; // \r\n
-        }
-        else {
-            equals = "=";
-            join = "&";
-            trail = "";
-        }
-
-
-        for (String param: params) {
-            String fullParam[] = getValue(param);
-            if ("".equals(fullParam[0])) {
-                continue;
-            }
-            if (type == Utilities.PARAM_HEADER) {
-                preppedParams.add(fullParam[0] + equals + fullParam[1]);
-            }
-            else {
-                preppedParams.add(Utilities.encodeParam(fullParam[0]) + equals + Utilities.encodeParam(fullParam[1]));
-            }
-        }
-
-        return String.join(join, preppedParams) + trail;
-    }
-
-    String[] getValue(String name) {
-        if (name.contains("~")) {
-            String[] parts = name.split("~", 2);
-            parts[1] = parts[1].replace("%s", calculateValue(name));
-            parts[1] = parts[1].replace("%h", host);
-            return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
-        }
-        else {
-            return new String[]{name, calculateValue(name)};
-        }
-    }
-
-    byte[] buildBasicRequest(ArrayList<String> params) {
-        byte[] built = request;
-        for (String name: params) {
-            String[] param = getValue(name);
-            IParameter newParam = Utilities.helpers.buildParameter(param[0], Utilities.encodeParam(param[1]), type);
-            built = Utilities.helpers.updateParameter(built, newParam);
-        }
-        return built;
-    }
-}
-
 class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
 
-    public HeaderNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
-        super(request, name, value, type, attackID);
+    public HeaderNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID, Utilities utilities) {
+        super(request, name, value, type, attackID, utilities);
     }
 
     public byte[] buildBulkRequest(ArrayList<String> params) {
         String merged = prepBulkParams(params);
         Iterator<String> dupeCheck= params.iterator();
-        byte[] body = Utilities.getBodyBytes(request);
+        byte[] body = utilities.getBodyBytes(request);
 
         boolean fooReq = false;
-        if (Utilities.containsBytes(body, "FOO BAR AAH\r\n".getBytes())) {
+        if (utilities.containsBytes(body, "FOO BAR AAH\r\n".getBytes())) {
             fooReq = true;
         }
 
-        if (fooReq || Utilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
-            Utilities.chopNestedResponses = true;
+        if (fooReq || utilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
+            utilities.chopNestedResponses = true;
 
             boolean usingCorrectContentLength = true;
 
             try {
-                if (body.length != Integer.parseInt(Utilities.getHeader(request, "Content-Length"))) {
+                if (body.length != Integer.parseInt(utilities.getHeader(request, "Content-Length"))) {
                     usingCorrectContentLength = false;
                 }
             } catch (Exception e) {
@@ -379,31 +234,31 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
             while (dupeCheck.hasNext()) {
                 String param = dupeCheck.next().split("~", 2)[0];
                 byte[] toReplace = ("\n"+param+": ").getBytes();
-                if (Utilities.containsBytes(body, toReplace)) {
-                    body = Utilities.replace(body, toReplace, ("\nold"+param+": ").getBytes());
+                if (utilities.containsBytes(body, toReplace)) {
+                    body = utilities.replace(body, toReplace, ("\nold"+param+": ").getBytes());
                 }
             }
 
             byte[] newBody;
             if (fooReq) {
-                newBody = Utilities.replaceFirst(body, "FOO BAR AAH\r\n", "GET http://"+Utilities.getHeader(request, "Host")+"/ HTTP/1.1\r\n"+merged+"\r\n");
+                newBody = utilities.replaceFirst(body, "FOO BAR AAH\r\n", "GET http://"+utilities.getHeader(request, "Host")+"/ HTTP/1.1\r\n"+merged+"\r\n");
             }
             else {
-                newBody = Utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
+                newBody = utilities.replaceFirst(body, "HTTP/1.1", "HTTP/1.1\r\n"+merged);
             }
 
-            byte[] finalRequest = Utilities.setBody(request, new String(newBody));
+            byte[] finalRequest = utilities.setBody(request, new String(newBody));
             if (usingCorrectContentLength) {
-                finalRequest = Utilities.fixContentLength(finalRequest);
+                finalRequest = utilities.fixContentLength(finalRequest);
             }
 
-            finalRequest = Utilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
+            finalRequest = utilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
 
             return finalRequest;
         }
 
         String replaceKey = "TCZqBcS13SA8QRCpW";
-        byte[] built = Utilities.addOrReplaceHeader(request, replaceKey, "foo");
+        byte[] built = utilities.addOrReplaceHeader(request, replaceKey, "foo");
 
         if (params.isEmpty() || "".equals(merged)) {
             return built;
@@ -413,11 +268,11 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
             String param = dupeCheck.next().split("~", 2)[0];
             if (present.containsKey(param)) {
                 String toReplace = present.get(param)+": ";
-                built = Utilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
+                built = utilities.replace(built, toReplace.getBytes(), ("old"+toReplace).getBytes());
             }
         }
 
-        return Utilities.setHeader(built, replaceKey, "x\r\n"+merged);
+        return utilities.setHeader(built, replaceKey, "x\r\n"+merged);
     }
 }
 
@@ -428,13 +283,15 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     String attackID;
     JsonElement root;
 
-    public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
-        super(request, name, value, type); // Utilities.encodeJSON(value)
-        int start = Utilities.getBodyStart(request);
+    public JsonParamNameInsertionPoint(
+      byte[] request, String name, String value, byte type, String attackID, Utilities utilities
+    ) {
+        super(request, name, value, type, utilities); // utilities.encodeJSON(value)
+        int start = utilities.getBodyStart(request);
         this.attackID = attackID;
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
-        baseInput = Utilities.helpers.bytesToString(body);
+        baseInput = utilities.helpers.bytesToString(body);
         root = new JsonParser().parse(baseInput);
     }
 
@@ -442,23 +299,23 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         if (i+1 == keys.size()) {
             return paramValue;
         }
-        else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
-            return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
+        else if (utilities.parseArrayIndex(keys.get(i+1)) != -1) {
+            return new ArrayList(utilities.parseArrayIndex(keys.get(i+1)));
         }
         else {
             return new HashMap();
         }
     }
 
-    String calculateValue(String unparsed) {
-        return Utilities.toCanary(unparsed) + attackID + value + Utilities.fuzzSuffix();
+    public String calculateValue(String unparsed) {
+        return utilities.toCanary(unparsed) + attackID + value + utilities.fuzzSuffix();
     }
 
 
     @Override
     @SuppressWarnings("unchecked")
     public byte[] buildRequest(byte[] payload) throws RuntimeException {
-        String[] params = Utilities.helpers.bytesToString(payload).split("[|]");
+        String[] params = utilities.helpers.bytesToString(payload).split("[|]");
         String lastBuild = baseInput;
 
         try {
@@ -468,14 +325,14 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                 if (unparsed.contains("~")) {
                     String[] parts = unparsed.split("~", 2);
                     unparsed = parts[0];
-                    paramValue = Utilities.invert(parts[1]);
+                    paramValue = utilities.invert(parts[1]);
                 } else {
                     paramValue = calculateValue(unparsed);
                 }
 
                 ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
 
-                boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
+                boolean isArray = utilities.parseArrayIndex(keys.get(0)) != -1;
                 Object base;
                 if (isArray) {
                     try {
@@ -500,12 +357,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                         String key = keys.get(i);
                         boolean setValue = i + 1 == keys.size();
 
-                        int index = Utilities.parseArrayIndex(key);
+                        int index = utilities.parseArrayIndex(key);
                         if (index != -1) {
                             ArrayList injectionPoint = (ArrayList) next;
                             if (injectionPoint.size() < index + 1) {
                                 for (int k = injectionPoint.size(); k < index; k++) {
-                                    injectionPoint.add(Utilities.generateCanary());
+                                    injectionPoint.add(utilities.generateCanary());
                                 }
                                 injectionPoint.add(makeNode(keys, i, paramValue));
                             } else if (injectionPoint.get(index) == null || setValue) {
@@ -520,7 +377,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
                             next = injectionPoint.get(key);
                         }
                     } catch(ClassCastException e) {
-                        //Utilities.out("Cast error"); // todo figure out a sensible action to stop this form occuring
+                        //utilities.out("Cast error"); // todo figure out a sensible action to stop this form occuring
                     }
                 }
 
@@ -529,12 +386,12 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(headers);
-            outputStream.write(Utilities.helpers.stringToBytes(lastBuild));
-            return Utilities.fixContentLength(outputStream.toByteArray());
+            outputStream.write(utilities.helpers.stringToBytes(lastBuild));
+            return utilities.fixContentLength(outputStream.toByteArray());
         } catch (Exception e) {
-            Utilities.out("Error with " + String.join(":", params));
-            e.printStackTrace(new PrintStream(Utilities.callbacks.getStdout()));
-            return buildRequest(Utilities.helpers.stringToBytes("error_" + String.join(":", params).replace(":", "_")));
+            utilities.out("Error with " + String.join(":", params));
+            e.printStackTrace(new PrintStream(utilities.callbacks.getStdout()));
+            return buildRequest(utilities.helpers.stringToBytes("error_" + String.join(":", params).replace(":", "_")));
             // throw new RuntimeException("Request creation unexpectedly failed: "+e.getMessage());
         }
     }

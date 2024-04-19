@@ -1,32 +1,37 @@
 package burp;
 
+import burp.albinowaxUtils.ParamScan;
+import burp.albinowaxUtils.Resp;
+import burp.albinowaxUtils.Scan;
+import burp.albinowaxUtils.BulkScanLauncher;
+
 import java.util.List;
 
 public class NormalisedParamScan extends ParamScan {
 
-    NormalisedParamScan(String name) {
-        super(name);
+    NormalisedParamScan(String name, Utilities utilities,BulkScanLauncher launcher) {
+        super(name, utilities, launcher);
     }
 
     @Override
-    List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+    public List<IScanIssue> doScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
         String canary = "kkvjq%61mdk";
-        byte[] poisonReq = Utilities.addCacheBuster(insertionPoint.buildRequest(canary.getBytes()), Utilities.generateCanary());
-        byte[] victimReq = Utilities.replaceFirst(poisonReq, "kkvjq%61".getBytes(), "kkvjqa".getBytes());
+        byte[] poisonReq = utilities.addCacheBuster(insertionPoint.buildRequest(canary.getBytes()), utilities.generateCanary());
+        byte[] victimReq = utilities.replaceFirst(poisonReq, "kkvjq%61".getBytes(), "kkvjqa".getBytes());
 
         IHttpService service = baseRequestResponse.getHttpService();
 
-        Resp resp = request(service, poisonReq);
-        if (Utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
-            BulkScanLauncher.getTaskEngine().candidates.incrementAndGet();
+        Resp resp = Scan.request(service, poisonReq, utilities);
+        if (utilities.containsBytes(resp.getReq().getResponse(), canary.getBytes())) {
+            launcher.getTaskEngine().candidates.incrementAndGet();
 
             for (int i=0; i<5; i++) {
-                request(service, poisonReq);
+                Scan.request(service, poisonReq, utilities);
             }
 
-            Resp victimResp = request(service, victimReq);
-            if (Utilities.containsBytes(victimResp.getReq().getResponse(), canary.getBytes())) {
-                report("URL-decoded parameter", "The application appears to URL-decode parameters before placing them in the cache key, which may enable DoS attacks and also makes other vulnerabilities more exploitable. This was confirmed using the "+insertionPoint.getInsertionPointName()+" parameter. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", resp, victimResp);
+            Resp victimResp = Scan.request(service, victimReq, utilities);
+            if (utilities.containsBytes(victimResp.getReq().getResponse(), canary.getBytes())) {
+                report("URL-decoded parameter", "The application appears to URL-decode parameters before placing them in the cache key, which may enable DoS attacks and also makes other vulnerabilities more exploitable. This was confirmed using the "+insertionPoint.getInsertionPointName()+" parameter. <br>For further information on this technique, please refer to https://portswigger.net/research/web-cache-entanglement", utilities, resp, victimResp);
             }
         }
 
@@ -34,7 +39,7 @@ public class NormalisedParamScan extends ParamScan {
     }
 
     @Override
-    List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+    public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
         return null;
     }
 }

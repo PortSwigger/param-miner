@@ -7,14 +7,18 @@ import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
 class OfferParamGuess implements IContextMenuFactory {
-    private IBurpExtenderCallbacks callbacks;
-    private ParamGrabber paramGrabber;
-    private ThreadPoolExecutor taskEngine;
+private final Utilities              utilities;
+private final ParamGrabber           paramGrabber;
+private final ThreadPoolExecutor     taskEngine;
+private final IBurpExtenderCallbacks callbacks;
 
-    public OfferParamGuess(final IBurpExtenderCallbacks callbacks, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine) {
-        this.taskEngine = taskEngine;
-        this.callbacks = callbacks;
-        this.paramGrabber = paramGrabber;
+    public OfferParamGuess(final IBurpExtenderCallbacks callbacks, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
+                           Utilities utilities
+    ) {
+      this.taskEngine   = taskEngine;
+      this.callbacks    = callbacks;
+      this.paramGrabber = paramGrabber;
+      this.utilities    = utilities;
     }
 
     @Override
@@ -39,21 +43,21 @@ class OfferParamGuess implements IContextMenuFactory {
         JMenu scanMenu = new JMenu("Guess params");
 
         JMenuItem allButton = new JMenuItem("Guess everything!");
-        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine, utilities));
         
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
-        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
-        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
+        probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine, utilities));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine, utilities));
         scanMenu.add(probeButton);
 
         JMenuItem cookieProbeButton = new JMenuItem("Guess cookie parameters");
-        cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
-        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine));
+        cookieProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine, utilities));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_COOKIE, paramGrabber, taskEngine, utilities));
         scanMenu.add(cookieProbeButton);
 
         JMenuItem headerProbeButton = new JMenuItem("Guess headers");
-        headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
-        allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine));
+        headerProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine, utilities));
+        allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER, paramGrabber, taskEngine, utilities));
         scanMenu.add(headerProbeButton);
 
 //        if (invocation.getSelectionBounds() != null && reqs.length == 1) {
@@ -66,22 +70,22 @@ class OfferParamGuess implements IContextMenuFactory {
         if (reqs.length == 1 && reqs[0] != null) {
             IHttpRequestResponse req = reqs[0];
             byte[] resp = req.getRequest();
-            if (Utilities.countMatches(resp, Utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
+            if (Utilities.countMatches(resp, utilities.helpers.stringToBytes("%253c%2561%2560%2527%2522%2524%257b%257b%255c")) > 0) {
                 JMenuItem backendProbeButton = new JMenuItem("*Identify backend parameters*");
-                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
-                allButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine));
+                backendProbeButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine, utilities));
+                allButton.addActionListener(new TriggerParamGuesser(reqs, true, IParameter.PARAM_URL, paramGrabber, taskEngine, utilities));
                 scanMenu.add(backendProbeButton);
             }
 
-//            if (Utilities.containsBytes(resp, "HTTP/1.1".getBytes())) {
+//            if (utilities.containsBytes(resp, "HTTP/1.1".getBytes())) {
 //                JMenuItem tunHeaderProbeButton = new JMenuItem("Guess tunneled headers");
-//                tunHeaderProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
-//                allButton.addActionListener(new TriggerParamGuesser(reqs, false, Utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine));
+//                tunHeaderProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine, utilities));
+//                allButton.addActionListener(new TriggerParamGuesser(reqs, false, utilities.PARAM_HEADER_TUNNELED, paramGrabber, taskEngine, utilities));
 //                options.add(tunHeaderProbeButton);
 //            }
 
             if (resp != null && resp.length > 0 && resp[0] == 'P') {
-                IRequestInfo info = Utilities.helpers.analyzeRequest(req);
+                IRequestInfo info = utilities.helpers.analyzeRequest(req);
                 List<IParameter> params = info.getParameters();
 
                 HashSet<Byte> paramTypes = new HashSet<>();
@@ -118,8 +122,8 @@ class OfferParamGuess implements IContextMenuFactory {
                     }
 
                     JMenuItem postProbeButton = new JMenuItem("Guess " + humanType + " parameter");
-                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
-                    allButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine));
+                    postProbeButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine, utilities));
+                    allButton.addActionListener(new TriggerParamGuesser(reqs, false, type, paramGrabber, taskEngine, utilities));
                     scanMenu.add(postProbeButton);
                 }
             }

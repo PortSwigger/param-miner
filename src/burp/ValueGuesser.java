@@ -1,6 +1,13 @@
 package burp;
 
 
+import burp.albinowaxUtils.Attack;
+import burp.albinowaxUtils.ConfigurableSettings;
+import burp.albinowaxUtils.ParamScan;
+import burp.albinowaxUtils.PayloadInjector;
+import burp.albinowaxUtils.RawInsertionPoint;
+import burp.albinowaxUtils.Resp;
+import burp.albinowaxUtils.Scan;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.ActionEvent;
@@ -12,34 +19,36 @@ import java.util.List;
 class ValueGuesser implements Runnable, ActionListener {
     private IHttpRequestResponse[] reqs;
     private int[] selection;
-
-    ValueGuesser(IHttpRequestResponse[] reqs, int[] selection) {
+    private final Utilities utilities;
+    
+    ValueGuesser(IHttpRequestResponse[] reqs, int[] selection, Utilities utilities) {
         this.reqs = reqs;
         this.selection = selection;
+        this.utilities = utilities;
     }
 
     public void actionPerformed(ActionEvent e) {
-        ConfigurableSettings config = Utilities.globalSettings.showSettings();
+        ConfigurableSettings config = utilities.globalSettings.showSettings();
         if (config != null) {
             (new Thread(this)).start();
         }
     }
 
-    static void guessValue(IHttpRequestResponse req, int start, int end) {
+    void guessValue(IHttpRequestResponse req, int start, int end) {
         IScannerInsertionPoint valueInsertionPoint = new RawInsertionPoint(req.getRequest(), "name", start, end);
         guessValue(req, valueInsertionPoint);
     }
 
 
-    static void guessValue(IHttpRequestResponse req, IScannerInsertionPoint valueInsertionPoint) {
-        PayloadInjector valueInjector = new PayloadInjector(req, valueInsertionPoint);
-        IHttpService service = req.getHttpService();
+    void guessValue(IHttpRequestResponse req, IScannerInsertionPoint valueInsertionPoint) {
+        PayloadInjector valueInjector = new PayloadInjector(req, valueInsertionPoint, utilities);
+        IHttpService    service       = req.getHttpService();
         String domain = service.getHost();
 
-        Attack randBase = valueInjector.probeAttack(Utilities.generateCanary());
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-        randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
+        Attack randBase = valueInjector.probeAttack(utilities.generateCanary());
+        randBase.addAttack(valueInjector.probeAttack(utilities.generateCanary()));
+        randBase.addAttack(valueInjector.probeAttack(utilities.generateCanary()));
+        randBase.addAttack(valueInjector.probeAttack(utilities.generateCanary()));
 
         String baseValue = valueInsertionPoint.getBaseValue();
         ArrayList<String> potentialValues = new ArrayList<>();
@@ -76,7 +85,7 @@ class ValueGuesser implements Runnable, ActionListener {
 
 
         ArrayList<Resp> attacks = new ArrayList<>();
-        attacks.add(new Resp(randBase.getFirstRequest()));
+        attacks.add(new Resp(randBase.getFirstRequest(), utilities));
 
         boolean launchedScan = false;
         String title = "Alternative code path";
@@ -86,11 +95,11 @@ class ValueGuesser implements Runnable, ActionListener {
             Attack potentialBase = null;
             for(;count<5;count++) {
                 potentialBase = valueInjector.probeAttack(potentialValue);
-                if (Utilities.similar(randBase, potentialBase)) {
+                if (utilities.similar(randBase, potentialBase)) {
                     break;
                 }
-                randBase.addAttack(valueInjector.probeAttack(Utilities.generateCanary()));
-                if (Utilities.similar(randBase, potentialBase)) {
+                randBase.addAttack(valueInjector.probeAttack(utilities.generateCanary()));
+                if (utilities.similar(randBase, potentialBase)) {
                     break;
                 }
 
@@ -105,9 +114,9 @@ class ValueGuesser implements Runnable, ActionListener {
 
 
                 baseValue = potentialValue;
-                Utilities.out("Alternative code path triggered by value '"+baseValue+"'");
+                utilities.out("Alternative code path triggered by value '"+baseValue+"'");
                 IHttpRequestResponse altBase = valueInjector.buildRequest(potentialValue, false);//potentialBase.getFirstRequest();
-                attacks.add(new Resp(altBase));
+                attacks.add(new Resp(altBase, utilities));
 
                 if (potentialValue.equals("z")) {
                     title = "Fake code path";
@@ -118,11 +127,11 @@ class ValueGuesser implements Runnable, ActionListener {
 
                 if (!launchedScan) {
                     // scan this insertion point with our new base value
-                    // Utilities.doActiveScan(Utilities.attemptRequest(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
+                    // utilities.doActiveScan(utilities.attemptRequest(service, newBaseRequest), valueInsertionPoint.getPayloadOffsets(baseValue.getBytes()));
 
                     // scan the entire request with our new base value
                     title = "Alternative code path: "+potentialValue;
-                    Utilities.callbacks.doActiveScan(domain, service.getPort(), Utilities.isHTTPS(service), altBase.getRequest());
+                    utilities.callbacks.doActiveScan(domain, service.getPort(), utilities.isHTTPS(service), altBase.getRequest());
                     launchedScan = true;
                 }
             }
@@ -130,7 +139,7 @@ class ValueGuesser implements Runnable, ActionListener {
 
         if (false && attacks.size() > 1) {
             title += "#"+(attacks.size()-1);
-            Scan.report(title, "details", attacks.toArray(new Resp[0]));
+            Scan.report(title, "details", utilities, attacks.toArray(new Resp[0]));
         }
     }
 
@@ -140,20 +149,22 @@ class ValueGuesser implements Runnable, ActionListener {
     }
 }
 
-class ValueScan extends ParamScan {
 
-    ValueScan(String name) {
-        super(name);
-    }
-
-    @Override
-    List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        return null;
-    }
-
-    @Override
-    List<IScanIssue> doScan(IHttpRequestResponse baseReq, IScannerInsertionPoint insertionPoint) {
-        ValueGuesser.guessValue(baseReq, insertionPoint);
-        return null;
-    }
-}
+// todo: this was never used, what was it for?
+//class ValueScan extends ParamScan {
+//
+//    ValueScan(String name) {
+//        super(name);
+//    }
+//
+//    @Override
+//    public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
+//        return null;
+//    }
+//
+//    @Override
+//    public List<IScanIssue> doScan(IHttpRequestResponse baseReq, IScannerInsertionPoint insertionPoint) {
+//        ValueGuesser.guessValue(baseReq, insertionPoint);
+//        return null;
+//    }
+//}

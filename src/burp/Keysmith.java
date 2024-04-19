@@ -28,7 +28,7 @@ public class Keysmith {
 
     }
 
-    static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams){
+    static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams, Utilities utilities){
         if (!"".equals(Utilities.getBody(resp))) {
             try {
                 return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
@@ -42,21 +42,21 @@ public class Keysmith {
             return getHtmlKeys(Utilities.getBody(resp));
         }
         else {
-            return getParamKeys(resp, new HashSet<>());
+            return getParamKeys(resp, new HashSet<>(), utilities);
         }
 
     }
 
-    static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types) {
+    static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types, Utilities utilities) {
         ArrayList<String> keys = new ArrayList<>();
 
-        List<IParameter> currentParams = Utilities.helpers.analyzeRequest(resp).getParameters();
+        List<IParameter> currentParams = utilities.helpers.analyzeRequest(resp).getParameters();
 
         for (IParameter param : currentParams) {
             String parsedParam = parseParam(param.getName().replace(':', ';'));
             if(types.isEmpty() || types.contains(param.getType())) {
                 keys.add(parsedParam);
-                Utilities.log(parsedParam);
+                utilities.log(parsedParam);
             }
         }
         return keys;

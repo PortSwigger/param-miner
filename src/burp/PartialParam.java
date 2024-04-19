@@ -1,16 +1,16 @@
 package burp;
 
-class PartialParam implements IParameter {
+public class PartialParam implements IParameter {
 
     private int valueStart, valueEnd;
     private String name;
     private byte type;
 
-    PartialParam(String name, int valueStart, int valueEnd) {
+    public PartialParam(String name, int valueStart, int valueEnd) {
         this(name, valueStart, valueEnd, IParameter.PARAM_COOKIE);
     }
 
-    PartialParam(String name, int valueStart, int valueEnd, byte type) {
+    public PartialParam(String name, int valueStart, int valueEnd, byte type) {
         this.name = name;
         this.valueStart = valueStart;
         this.valueEnd = valueEnd;
