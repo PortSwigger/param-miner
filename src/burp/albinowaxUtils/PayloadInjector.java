@@ -9,6 +9,7 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScannerInsertionPoint;
 import burp.Probe;
+import burp.model.header.HeaderMutator;
 import burp.model.utilities.Utilities;
 
 import java.io.IOException;
