@@ -1,5 +1,6 @@
 package burp;
 
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.CustomScanIssue;
 import burp.albinowaxUtils.HeaderMutator;

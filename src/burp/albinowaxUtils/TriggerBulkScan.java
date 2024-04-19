@@ -10,6 +10,7 @@ import burp.IScanIssue;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 
 import java.awt.event.ActionEvent;
@@ -19,17 +20,17 @@ public class TriggerBulkScan implements ActionListener {
 private IHttpRequestResponse[] reqs;
 private       IScanIssue[]     issues;
 private       Scan             scan;
-private final burp.Utilities   utilities;
+private final Utilities        utilities;
 private final BulkScanLauncher luancher;
 
-public TriggerBulkScan(Scan scan, IHttpRequestResponse[] reqs, burp.Utilities utilities, BulkScanLauncher luancher) {
+public TriggerBulkScan(Scan scan, IHttpRequestResponse[] reqs, Utilities utilities, BulkScanLauncher luancher) {
   this.scan = scan;
   this.reqs = reqs;
   this.utilities = utilities;
   this.luancher = luancher;
 }
 
-public TriggerBulkScan(Scan scan, IScanIssue[] issues, burp.Utilities utilities, BulkScanLauncher luancher) {
+public TriggerBulkScan(Scan scan, IScanIssue[] issues, Utilities utilities, BulkScanLauncher luancher) {
   this.scan = scan;
   this.issues = issues;
   this.utilities = utilities;

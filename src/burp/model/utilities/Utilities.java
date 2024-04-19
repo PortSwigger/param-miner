@@ -1,5 +1,16 @@
-package burp;
+package burp.model.utilities;
 
+import burp.IBurpExtenderCallbacks;
+import burp.IExtensionHelpers;
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IParameter;
+import burp.IRequestInfo;
+import burp.IResponseInfo;
+import burp.IScanIssue;
+import burp.IScannerInsertionPoint;
+import burp.PartialParam;
+import burp.Probe;
 import burp.albinowaxUtils.Attack;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.Fuzzable;
@@ -231,7 +242,7 @@ public String encodeJSON(String input) {
 }
 
 public PartialParam paramify(byte[] request, String name, String target, String fakeBaseValue) {
-  int start = burp.Utilities.indexOf(request, target.getBytes(), true, 0, request.length);
+  int start = Utilities.indexOf(request, target.getBytes(), true, 0, request.length);
   if(start == -1) {
     throw new RuntimeException("Failed to find target");
   }
@@ -334,21 +345,21 @@ public static byte[] setHeader(byte[] request, String header, String value, bool
   }
 }
 final         boolean                 DEBUG               = false;
-static final  byte                    CONFIRMATIONS       = 5;
-static final  byte                    PARAM_HEADER        = 7;
-static        boolean       chopNestedResponses = false;
-public        boolean         supportsHTTP2 = true;
-public        AtomicBoolean   unloaded      = new AtomicBoolean(false);
-static        HashSet<String> phpFunctions  = new HashSet();
-static               ArrayList<String>       paramNames          = new ArrayList();
-static               HashSet<String>         boringHeaders       = new HashSet();
-static               Set<String>             reportedParams      = ConcurrentHashMap.newKeySet();
-static               CircularFifoQueue<Long> requestTimes        = new CircularFifoQueue(100);
+static final        byte    CONFIRMATIONS       = 5;
+public static final byte    PARAM_HEADER        = 7;
+public static       boolean chopNestedResponses = false;
+public        boolean supportsHTTP2       = true;
+public        AtomicBoolean     unloaded     = new AtomicBoolean(false);
+public static HashSet<String>   phpFunctions  = new HashSet();
+public static ArrayList<String> paramNames     = new ArrayList();
+public static HashSet<String>         boringHeaders  = new HashSet();
+public static Set<String>             reportedParams = ConcurrentHashMap.newKeySet();
+static        CircularFifoQueue<Long> requestTimes   = new CircularFifoQueue(100);
 static               Random                  rnd                 = new Random();
 static               ThreadLocal<Integer>    goAcceleratorPort   = new ThreadLocal();
 static               AtomicInteger           nextPort            = new AtomicInteger(1901);
 
-Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> settings, String name) {
+public Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> settings, String name) {
   this.name      = name;
   callbacks      = incallbacks;
   stdout         = new PrintWriter(callbacks.getStdout(), true);
@@ -390,7 +401,7 @@ String getResource(String name) {
   return (new Scanner(Utilities.class.getResourceAsStream(name), "UTF-8")).useDelimiter("\\A").next();
 }
 
-String getNameFromType(byte type) {
+public String getNameFromType(byte type) {
   switch(type) {
   case 0:
     return "url";
@@ -410,7 +421,7 @@ String getNameFromType(byte type) {
   }
 }
 
-int generate(int seed, int count, List<String> accumulator) {
+public int generate(int seed, int count, List<String> accumulator) {
   int num = seed;
   
   for(int limit = seed + count; num < limit; ++num) {
@@ -537,7 +548,7 @@ static List<int[]> getMatches(byte[] response, byte[] match, int giveUpAfter) {
   }
 }
 
-IHttpRequestResponse attemptRequest(IHttpService service, byte[] req) {
+public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req) {
   return attemptRequest(service, req, false);
 }
 
@@ -705,7 +716,7 @@ byte[] getNestedResponse(byte[] response) {
   }
 }
 
-byte[] getBodyBytes(byte[] response) {
+public byte[] getBodyBytes(byte[] response) {
   if(response == null) {
     return null;
   }
@@ -926,7 +937,7 @@ public static String generateCanary() {
   return randomString(4 + rnd.nextInt(7)) + rnd.nextInt(9);
 }
 
-static int parseArrayIndex(String key) {
+public static int parseArrayIndex(String key) {
   try {
     if(key.length() > 2 && key.startsWith("[") && key.endsWith("]")) {
       return Integer.parseInt(key.substring(1, key.length() - 1));
@@ -967,15 +978,15 @@ public String getExtension(byte[] request) {
   return last_dot == -1 ? "" : url.substring(last_dot);
 }
 
-byte[] replace(byte[] request, String find, String replace) {
+public byte[] replace(byte[] request, String find, String replace) {
   return replace(request, find.getBytes(), replace.getBytes());
 }
 
-byte[] replace(byte[] request, byte[] find, byte[] replace) {
+public byte[] replace(byte[] request, byte[] find, byte[] replace) {
   return replace(request, find, replace, -1);
 }
 
-private static byte[] replace(byte[] request, byte[] find, byte[] replace, int limit) {
+public static byte[] replace(byte[] request, byte[] find, byte[] replace, int limit) {
   List<int[]> matches = getMatches(request, find, -1);
   if(limit != -1 && limit < matches.size()) {
     matches = matches.subList(0, limit);
@@ -1012,7 +1023,7 @@ private static byte[] replace(byte[] request, byte[] find, byte[] replace, int l
   }
 }
 
-IHttpRequestResponse fetchFromSitemap(URL url) {
+public IHttpRequestResponse fetchFromSitemap(URL url) {
   IHttpRequestResponse[] pages = callbacks.getSiteMap(sensibleURL(url));
   IHttpRequestResponse[] var2  = pages;
   int                    var3  = pages.length;
@@ -1027,7 +1038,7 @@ IHttpRequestResponse fetchFromSitemap(URL url) {
   return null;
 }
 
-private String sensibleURL(URL url) {
+public String sensibleURL(URL url) {
   String out = url.toString();
   if(url.getDefaultPort() == url.getPort()) {
     out = out.replaceFirst(":" + url.getPort(), "");
@@ -1052,7 +1063,7 @@ public static URL getURL(byte[] request, IHttpService service) {
   return url;
 }
 
-int countByte(byte[] response, byte match) {
+public int countByte(byte[] response, byte match) {
   int count = 0;
   
   for(int i = 0; i < response.length; ++i) {
@@ -1064,7 +1075,7 @@ int countByte(byte[] response, byte match) {
   return count;
 }
 
-int countMatches(Resp response, String match) {
+public int countMatches(Resp response, String match) {
   byte[] resp = response.getReq().getResponse();
   return resp != null && resp.length != 0 ? countMatches(resp, match.getBytes()) : 0;
 }
@@ -1092,11 +1103,11 @@ public byte[] replaceFirst(byte[] request, String find, String replace) {
   return replace(request, find.getBytes(), replace.getBytes(), 1);
 }
 
-static byte[] replaceFirst(byte[] request, byte[] find, byte[] replace) {
+public static byte[] replaceFirst(byte[] request, byte[] find, byte[] replace) {
   return replace(request, find, replace, 1);
 }
 
-byte[] appendToQueryzzz(byte[] request, String suffix) {
+public byte[] appendToQueryzzz(byte[] request, String suffix) {
   if(suffix != null && !suffix.equals("")) {
     int lineEnd = 0;
     
@@ -1122,7 +1133,7 @@ byte[] appendToQueryzzz(byte[] request, String suffix) {
   }
 }
 
-byte[] setBody(byte[] req, String body) {
+public byte[] setBody(byte[] req, String body) {
   try {
     ByteArrayOutputStream synced = new ByteArrayOutputStream();
     synced.write(Arrays.copyOfRange(req, 0, getBodyStart(req)));
@@ -1148,7 +1159,7 @@ public static byte[] appendToQuery(byte[] request, String suffix) {
   return replaceFirst(request, url.getBytes(), (url + suffix).getBytes());
 }
 
-byte[] appendToPath(byte[] request, String suffix) {
+public byte[] appendToPath(byte[] request, String suffix) {
   if(suffix != null && !suffix.equals("")) {
     int i = 0;
     
@@ -1174,15 +1185,15 @@ byte[] appendToPath(byte[] request, String suffix) {
   }
 }
 
-String fuzzSuffix() {
+public String fuzzSuffix() {
   return globalSettings.getBoolean("fuzz detect") ? "<a`'\"${{\\" : "";
 }
 
-String toCanary(String payload) {
+public String toCanary(String payload) {
   return globalSettings.getString("canary") + mangle(payload);
 }
 
-String mangle(String seed) {
+public String mangle(String seed) {
   Random        seededRandom = new Random(seed.hashCode());
   StringBuilder sb           = new StringBuilder(7);
   sb.append("ghijklmnopqrstuvwxyz".charAt(seededRandom.nextInt("ghijklmnopqrstuvwxyz".length())));
@@ -1335,11 +1346,11 @@ public byte[] addCacheBuster(byte[] req, String cacheBuster) {
   return req;
 }
 
-boolean isHTTPS(IHttpService service) {
+public boolean isHTTPS(IHttpService service) {
   return service.getProtocol().toLowerCase().contains("https");
 }
 
-IRequestInfo analyzeRequest(byte[] request) {
+public IRequestInfo analyzeRequest(byte[] request) {
   return analyzeRequest(request, null);
 }
 
@@ -1355,7 +1366,7 @@ IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequ
   return reportReflectionIssue(attacks, baseRequestResponse, "", "");
 }
 
-IScanIssue reportReflectionIssue(
+public IScanIssue reportReflectionIssue(
   Attack[] attacks, IHttpRequestResponse baseRequestResponse, String title, String detail
 ) {
   IHttpRequestResponse[] requests  = new IHttpRequestResponse[attacks.length];

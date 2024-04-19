@@ -6,7 +6,7 @@
 package burp.view;
 
 import burp.IExtensionStateListener;
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
@@ -22,7 +22,7 @@ private final Utilities utilities;
 private JMenu menuButton;
 private JMenuItem menuItem;
 
-public ConfigMenu(burp.Utilities utilities) {
+public ConfigMenu(Utilities utilities) {
   utilities.callbacks.registerExtensionStateListener(this);
   this.utilities = utilities;
 }

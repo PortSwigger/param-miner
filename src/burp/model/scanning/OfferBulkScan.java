@@ -9,6 +9,7 @@ import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import burp.IHttpRequestResponse;
 import burp.albinowaxUtils.TriggerBulkScan;
+import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,11 +18,11 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 class OfferBulkScan implements IContextMenuFactory {
-private List<Scan> scans;
-private final burp.Utilities   utilities;
+private       List<Scan>       scans;
+private final Utilities        utilities;
 private final BulkScanLauncher launcher;
 
-OfferBulkScan(List<Scan> scans, burp.Utilities utilities, BulkScanLauncher launcher) {
+OfferBulkScan(List<Scan> scans, Utilities utilities, BulkScanLauncher launcher) {
   this.scans     = scans;
   this.utilities = utilities;
   this.launcher  = launcher;

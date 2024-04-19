@@ -1,6 +1,6 @@
 package burp.view;
 
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

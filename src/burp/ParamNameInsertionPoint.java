@@ -1,6 +1,7 @@
 package burp;
 
 import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;
 import java.util.HashMap;

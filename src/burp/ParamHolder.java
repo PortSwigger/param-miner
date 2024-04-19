@@ -1,5 +1,7 @@
 package burp;
 
+import burp.model.utilities.Utilities;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,7 +10,7 @@ import java.util.Deque;
 class ParamHolder {
     private Deque<ArrayList<String>> paramBuckets;
     private byte type;
-    private int bucketSize;
+    private       int       bucketSize;
     private final Utilities utilities;
 
     ParamHolder(byte type, int bucketSize, Utilities utilities) {

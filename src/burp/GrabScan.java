@@ -1,5 +1,7 @@
 package burp;
 
+import burp.model.utilities.Utilities;
+
 import java.util.ArrayList;
 import java.util.List;
 

@@ -4,12 +4,13 @@ import burp.model.scanning.ParamScan;
 import burp.albinowaxUtils.Resp;
 import burp.model.scanning.Scan;
 import burp.model.scanning.BulkScanLauncher;
+import burp.model.utilities.Utilities;
 
 import java.util.List;
 
 public class NormalisedParamScan extends ParamScan {
 
-    NormalisedParamScan(String name, Utilities utilities,BulkScanLauncher launcher) {
+    NormalisedParamScan(String name, Utilities utilities, BulkScanLauncher launcher) {
         super(name, utilities, launcher);
     }
 

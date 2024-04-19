@@ -3,7 +3,7 @@ package burp.albinowaxUtils;
 import burp.IHttpService;
 import burp.IParameter;
 import burp.IRequestInfo;
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -17,7 +17,7 @@ public LazyRequestInfo(byte[] request, IHttpService service) {
 
 public String getMethod() {
   if(this.method == null) {
-    this.method = burp.Utilities.getMethod(this.request);
+    this.method = Utilities.getMethod(this.request);
   }
   
   return this.method;

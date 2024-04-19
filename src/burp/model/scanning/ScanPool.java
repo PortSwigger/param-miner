@@ -1,7 +1,7 @@
 package burp.model.scanning;
 
 import burp.IExtensionStateListener;
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;

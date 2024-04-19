@@ -5,6 +5,7 @@ import java.util.List;
 import burp.model.scanning.BulkScanLauncher;
 import burp.albinowaxUtils.Resp;
 import burp.model.scanning.Scan;
+import burp.model.utilities.Utilities;
 
 public class PortDOS extends Scan {
 

@@ -7,7 +7,7 @@ package burp.albinowaxUtils;
 
 import java.util.Comparator;
 
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 import burp.model.scanning.ScanItem;
 import org.apache.commons.lang3.StringUtils;
 

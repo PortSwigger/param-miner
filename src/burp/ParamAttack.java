@@ -1,6 +1,7 @@
 package burp;
 
 import burp.albinowaxUtils.Attack;
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.albinowaxUtils.PayloadInjector;
@@ -35,8 +36,8 @@ class ParamAttack {
     private final ParamInsertionPoint insertionPoint;
     final   byte                 type;
     private ConfigurableSettings config;
-    private ArrayList<String>    headerMutations;
-    private final Utilities utilities;
+    private       ArrayList<String> headerMutations;
+    private final Utilities         utilities;
     
     int getStop() {
         return stop;

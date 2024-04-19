@@ -1,5 +1,6 @@
 package burp;
 
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 

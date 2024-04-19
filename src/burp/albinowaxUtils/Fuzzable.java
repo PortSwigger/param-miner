@@ -1,9 +1,8 @@
 package burp.albinowaxUtils;
 
-import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class Fuzzable extends CustomScanIssue {

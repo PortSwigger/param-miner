@@ -2,17 +2,15 @@ package burp.albinowaxUtils;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
-import burp.api.montoya.core.ByteArray;
-import burp.api.montoya.http.HttpService;
 import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.model.utilities.Utilities;
 
 public class Req implements IHttpRequestResponse {
 
-private byte[] req;
+private byte[]       req;
 private byte[]       resp;
 private IHttpService service;
-private burp.Utilities utilities;
+private Utilities    utilities;
 
 public Req(byte[] req, byte[] resp, IHttpService service) {
   this.req = req;
@@ -20,7 +18,7 @@ public Req(byte[] req, byte[] resp, IHttpService service) {
   this.service = service;
 }
 
-Req(HttpRequestResponse resp, burp.Utilities utilities) {
+Req(HttpRequestResponse resp, Utilities utilities) {
   this.req       = resp.request().toByteArray().getBytes();
   this.utilities = utilities;
   if (resp.response() != null) {

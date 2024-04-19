@@ -3,7 +3,7 @@ package burp.albinowaxUtils;
 import burp.IHttpRequestResponse;
 import burp.IResponseInfo;
 import burp.IResponseVariations;
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.util.Arrays;
 

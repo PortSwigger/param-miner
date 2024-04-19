@@ -7,15 +7,16 @@ package burp.albinowaxUtils;
 
 import burp.IParameter;
 import burp.IScannerInsertionPoint;
+import burp.model.utilities.Utilities;
 
 public class ParamInsertionPoint implements IScannerInsertionPoint {
 public byte[] request;
 String name;
-public String value;
-public byte   type;
-public burp.Utilities utilities;
+public String    value;
+public byte      type;
+public Utilities utilities;
 
-public ParamInsertionPoint(byte[] request, IParameter param, burp.Utilities utilities) {
+public ParamInsertionPoint(byte[] request, IParameter param, Utilities utilities) {
   this.request = request;
   this.name = param.getName();
   this.value = param.getValue();
@@ -23,7 +24,7 @@ public ParamInsertionPoint(byte[] request, IParameter param, burp.Utilities util
   this.utilities = utilities;
 }
 
-public ParamInsertionPoint(byte[] request, String name, String value, byte type, burp.Utilities utilities) {
+public ParamInsertionPoint(byte[] request, String name, String value, byte type, Utilities utilities) {
   this.request = request;
   this.name = name;
   this.value = value;

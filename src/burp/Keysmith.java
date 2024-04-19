@@ -1,5 +1,6 @@
 package burp;
 
+import burp.model.utilities.Utilities;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;

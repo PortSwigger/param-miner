@@ -2,6 +2,7 @@ package burp;
 
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
+import burp.model.utilities.Utilities;
 import burp.view.ConfigMenu;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.api.montoya.BurpExtension;
@@ -249,7 +250,7 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
 
             byte[] finalRequest = utilities.setBody(request, new String(newBody));
             if (usingCorrectContentLength) {
-                finalRequest = utilities.fixContentLength(finalRequest);
+                finalRequest = Utilities.fixContentLength(finalRequest);
             }
 
             finalRequest = utilities.addOrReplaceHeader(finalRequest, "X-Mine-Nested-Request", "1");
@@ -287,7 +288,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
       byte[] request, String name, String value, byte type, String attackID, Utilities utilities
     ) {
         super(request, name, value, type, utilities); // utilities.encodeJSON(value)
-        int start = utilities.getBodyStart(request);
+        int start = Utilities.getBodyStart(request);
         this.attackID = attackID;
         headers = Arrays.copyOfRange(request, 0, start);
         body = Arrays.copyOfRange(request, start, request.length);
@@ -299,8 +300,8 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
         if (i+1 == keys.size()) {
             return paramValue;
         }
-        else if (utilities.parseArrayIndex(keys.get(i+1)) != -1) {
-            return new ArrayList(utilities.parseArrayIndex(keys.get(i+1)));
+        else if (Utilities.parseArrayIndex(keys.get(i+1)) != -1) {
+            return new ArrayList(Utilities.parseArrayIndex(keys.get(i+1)));
         }
         else {
             return new HashMap();

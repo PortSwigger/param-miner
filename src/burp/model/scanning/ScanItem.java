@@ -7,14 +7,15 @@ import burp.IScannerInsertionPoint;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.albinowaxUtils.RawInsertionPoint;
 import burp.albinowaxUtils.Req;
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ScanItem {
-private final burp.Utilities utilities;
-private Scan                 scan;
+private final Utilities utilities;
+private       Scan      scan;
 public  IHttpRequestResponse req;
 public  String               host;
 private ConfigurableSettings config;
@@ -24,7 +25,7 @@ private IParameter param;
 private String     key = null;
 String method = null;
 
-ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan, burp.Utilities utilities) {
+ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan, Utilities utilities) {
   this.utilities = utilities;
   this.req = req;
   this.host = req.getHttpService().getHost();
@@ -32,7 +33,7 @@ ScanItem(IHttpRequestResponse req, ConfigurableSettings config, Scan scan, burp.
   this.scan = scan;
 }
 
-ScanItem(burp.Utilities utilities, IHttpRequestResponse req, ConfigurableSettings config, Scan scan, IParameter param, IScannerInsertionPoint insertionPoint) {
+ScanItem(Utilities utilities, IHttpRequestResponse req, ConfigurableSettings config, Scan scan, IParameter param, IScannerInsertionPoint insertionPoint) {
   this.utilities      = utilities;
   this.req            = req;
   this.config         = config;
@@ -43,7 +44,7 @@ ScanItem(burp.Utilities utilities, IHttpRequestResponse req, ConfigurableSetting
   this.param          = param;
 }
 
-ScanItem(burp.Utilities utilities, IHttpRequestResponse req, ConfigurableSettings config, Scan scan, IParameter param) {
+ScanItem(Utilities utilities, IHttpRequestResponse req, ConfigurableSettings config, Scan scan, IParameter param) {
   this.utilities      = utilities;
   this.req            = req;
   this.host           = req.getHttpService().getHost();

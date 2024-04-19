@@ -5,7 +5,7 @@
 
 package burp.view;
 
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.awt.Color;
 import java.awt.Frame;
@@ -267,11 +267,11 @@ static JFrame getBurpFrame() {
 private static final LinkedHashMap<String, String> settings            = new LinkedHashMap<>();
 private static final LinkedHashMap<String, String> settingDescriptions = new LinkedHashMap<>();
 private static final LinkedHashMap<String, String> defaultSettings     = new LinkedHashMap<>();
-private final        burp.Utilities                utilities;
-private final NumberFormatter                 onlyInt;
+private final        Utilities                     utilities;
+private final        NumberFormatter               onlyInt;
 private final HashMap<String, ConfigListener> callbacks = new HashMap();
 
-private ConfigurableSettings(burp.Utilities utilities, ConfigurableSettings base) {
+private ConfigurableSettings(Utilities utilities, ConfigurableSettings base) {
   this.utilities = utilities;
   this.onlyInt   = base.onlyInt;
 }

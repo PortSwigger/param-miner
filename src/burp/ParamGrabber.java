@@ -1,5 +1,6 @@
 package burp;
 
+import burp.model.utilities.Utilities;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -15,8 +16,8 @@ import static burp.Keysmith.getWords;
 
 public class ParamGrabber implements IProxyListener, IHttpListener {
 
-private final Utilities           utilities;
-private Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
+private final Utilities                 utilities;
+private       Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
     private HashSet<ArrayList<String>> done = new HashSet<>();
     private Set<String> savedGET  = ConcurrentHashMap.newKeySet();
     private Set<String> savedWords  = ConcurrentHashMap.newKeySet();

@@ -2,6 +2,7 @@ package burp;
 
 
 import burp.albinowaxUtils.Attack;
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.PayloadInjector;
 import burp.albinowaxUtils.RawInsertionPoint;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 
 class ValueGuesser implements Runnable, ActionListener {
     private IHttpRequestResponse[] reqs;
-    private int[] selection;
+    private       int[]     selection;
     private final Utilities utilities;
     
     ValueGuesser(IHttpRequestResponse[] reqs, int[] selection, Utilities utilities) {

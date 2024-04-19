@@ -19,17 +19,18 @@ import burp.albinowaxUtils.CustomScanIssue;
 import burp.albinowaxUtils.Req;
 import burp.albinowaxUtils.Resp;
 import burp.albinowaxUtils.ZgrabLoader;
+import burp.model.utilities.Utilities;
 import burp.view.SettingsBox;
 import org.apache.commons.lang3.NotImplementedException;
 
 public abstract class Scan implements IScannerCheck {
 static ZgrabLoader loader = null;
 String      name = "";
-public          SettingsBox    scanSettings;
-protected final burp.Utilities utilities;
+public          SettingsBox      scanSettings;
+protected final Utilities        utilities;
 protected final BulkScanLauncher launcher;
 
-public Scan(String name, burp.Utilities utilities, BulkScanLauncher launcher) {
+public Scan(String name, Utilities utilities, BulkScanLauncher launcher) {
   this.name      = name;
   this.utilities = utilities;
   this.launcher  = launcher;
@@ -94,11 +95,11 @@ public void recordCandidateFound() {
   launcher.getTaskEngine().candidates.incrementAndGet();
 }
 
-public static void report(String title, String detail, burp.Utilities utilities, Resp... requests) {
+public static void report(String title, String detail, Utilities utilities, Resp... requests) {
   report(title, detail, (byte[])null, utilities, requests);
 }
 
-public static  void report(String title, String detail, byte[] baseBytes, burp.Utilities utilities, Resp... requests) {
+public static  void report(String title, String detail, byte[] baseBytes, Utilities utilities, Resp... requests) {
   IHttpRequestResponse base = requests[0].getReq();
   IHttpService service = base.getHttpService();
   ArrayList<IHttpRequestResponse> reqsToReport = new ArrayList();
@@ -149,21 +150,21 @@ public static  void report(String title, String detail, byte[] baseBytes, burp.U
   }
 }
 
-public static Resp request(IHttpService service, byte[] req, burp.Utilities utilities) {
+public static Resp request(IHttpService service, byte[] req, Utilities utilities) {
   return request(service, req, 0, utilities);
 }
 
-public static Resp request(IHttpService service, byte[] req, int maxRetries, burp.Utilities utilities) {
+public static Resp request(IHttpService service, byte[] req, int maxRetries, Utilities utilities) {
   return request(service, req, maxRetries, false, utilities);
 }
 
-public static Resp request(IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, burp.Utilities utilities) {
+public static Resp request(IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, Utilities utilities) {
   return request(service, req, maxRetries, forceHTTP1, (HashMap)null, utilities);
 }
 
 public static Resp request(
   IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, HashMap<String, Boolean> config,
-  burp.Utilities utilities
+  Utilities utilities
 ) {
   if (utilities.unloaded.get()) {
     throw new RuntimeException("Aborting due to extension unload");

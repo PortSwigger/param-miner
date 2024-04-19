@@ -5,6 +5,7 @@ import java.util.List;
 
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
+import burp.model.utilities.Utilities;
 
 public class HeaderMutationScan extends Scan {
     HeaderMutationScan(String name, Utilities utilities, BulkScanLauncher launcher) {

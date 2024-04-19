@@ -1,16 +1,18 @@
 package burp.model.scanning;
 
 
+import burp.model.utilities.Utilities;
+
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class BulkScanLauncher {
-private ScanPool taskEngine;
-private final burp.Utilities utilities;
+private       ScanPool  taskEngine;
+private final Utilities utilities;
 
-public BulkScanLauncher(List<Scan> scans, burp.Utilities utilities) {
+public BulkScanLauncher(List<Scan> scans, Utilities utilities) {
   this.utilities = utilities;
   taskEngine     = buildTaskEngine();
   utilities.callbacks.registerContextMenuFactory(new OfferBulkScan(scans, utilities, this));

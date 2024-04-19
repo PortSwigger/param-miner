@@ -4,6 +4,7 @@ package burp;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.ParamScan;
 import burp.albinowaxUtils.Resp;
+import burp.model.utilities.Utilities;
 
 import java.util.List;
 

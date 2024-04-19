@@ -9,14 +9,14 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScannerInsertionPoint;
 import burp.Probe;
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
 public class PayloadInjector {
-private final burp.Utilities utilities;
-private       IHttpService   service;
+private final Utilities    utilities;
+private       IHttpService service;
 private IScannerInsertionPoint insertionPoint;
 private IHttpRequestResponse   base;
 
@@ -32,7 +32,7 @@ public IHttpRequestResponse getBase() {
   return this.base;
 }
 
-public PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, burp.Utilities utilities) {
+public PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint, Utilities utilities) {
   this.service = baseRequestResponse.getHttpService();
   this.base = baseRequestResponse;
   this.insertionPoint = insertionPoint;

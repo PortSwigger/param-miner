@@ -1,7 +1,7 @@
 package burp.model.scanning;
 
 import burp.IHttpRequestResponsePersisted;
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 public class BulkScanItem implements Runnable {
 private final ScanItem                      baseItem;

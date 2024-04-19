@@ -5,7 +5,7 @@
 
 package burp.albinowaxUtils;
 
-import burp.Utilities;
+import burp.model.utilities.Utilities;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

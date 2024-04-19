@@ -4,6 +4,7 @@ import java.util.List;
 
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
+import burp.model.utilities.Utilities;
 
 public class HeaderPoison extends Scan {
 

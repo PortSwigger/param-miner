@@ -2,6 +2,7 @@ package burp;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.ParamScan;
 import burp.albinowaxUtils.Resp;
+import burp.model.utilities.Utilities;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class FatGet extends ParamScan {
         // convert to POST
         poison = utilities.helpers.toggleRequestMethod(poison);
 
-        poison = utilities.fixContentLength(utilities.replaceFirst(poison, canary.getBytes(), (canary).getBytes()));
+        poison = Utilities.fixContentLength(Utilities.replaceFirst(poison, canary.getBytes(), (canary).getBytes()));
 
         // convert method back to GET
         poison = utilities.setMethod(poison, "GET");
@@ -36,7 +37,7 @@ public class FatGet extends ParamScan {
         poison = utilities.addOrReplaceHeader(poison, "X-HTTP-Method", "POST");
         poison = utilities.addOrReplaceHeader(poison, "X-Method-Override", "POST");
 
-        poison = utilities.addCacheBuster(poison, utilities.generateCanary());
+        poison = utilities.addCacheBuster(poison, Utilities.generateCanary());
 
         IHttpService service = baseRequestResponse.getHttpService();
 

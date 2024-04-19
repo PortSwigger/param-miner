@@ -2,6 +2,7 @@ package burp;
 
 import burp.albinowaxUtils.Attack;
 import burp.model.scanning.BulkScan;
+import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.CustomScanIssue;
 import burp.albinowaxUtils.ParamInsertionPoint;
@@ -41,9 +42,9 @@ class ParamGuesser implements Runnable {
     private ParamGrabber paramGrabber;
     private ParamAttack          attack;
     private ConfigurableSettings config;
-    private boolean              forceHttp1;
+    private       boolean   forceHttp1;
     private final Utilities utilities;
-    private byte[] staticCanary;
+    private       byte[]    staticCanary;
 
     ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int stop, ConfigurableSettings config,
                  Utilities utilities

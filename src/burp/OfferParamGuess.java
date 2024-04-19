@@ -1,5 +1,7 @@
 package burp;
 
+import burp.model.utilities.Utilities;
+
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -7,8 +9,8 @@ import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
 class OfferParamGuess implements IContextMenuFactory {
-private final Utilities              utilities;
-private final ParamGrabber           paramGrabber;
+private final Utilities    utilities;
+private final ParamGrabber paramGrabber;
 private final ThreadPoolExecutor     taskEngine;
 private final IBurpExtenderCallbacks callbacks;
 
