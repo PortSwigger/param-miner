@@ -1,6 +1,7 @@
 package burp;
 
 import burp.albinowaxUtils.Attack;
+import burp.model.header.HeaderMutationGuesser;
 import burp.model.scanning.BulkScan;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
@@ -32,7 +33,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * Created by james on 30/08/2017.
  */
-class ParamGuesser implements Runnable {
+public class ParamGuesser implements Runnable {
 
     private IHttpRequestResponse req;
     private boolean backend;
@@ -46,8 +47,10 @@ class ParamGuesser implements Runnable {
     private final Utilities utilities;
     private       byte[]    staticCanary;
 
-    ParamGuesser(IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, int stop, ConfigurableSettings config,
-                 Utilities utilities
+    public ParamGuesser(
+      IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
+      int stop, ConfigurableSettings config,
+      Utilities utilities
     ) {
       this.paramGrabber = paramGrabber;
       this.req          = req;
@@ -95,7 +98,7 @@ class ParamGuesser implements Runnable {
             // Check for mutations
             if (this.type == Utilities.PARAM_HEADER && config.getBoolean("identify smuggle mutations")) {
                 HeaderMutationGuesser mutationGuesser = new HeaderMutationGuesser(req, this.config, utilities);
-                ArrayList<String> mutations = mutationGuesser.guessMutations();
+                ArrayList<String>     mutations       = mutationGuesser.guessMutations();
                 this.attack.setHeaderMutations(mutations);
 
                 // Report if required

@@ -1,14 +1,18 @@
-package burp;
+package burp.model.header;
 
 import java.util.List;
 
+import burp.BurpExtender;
+import burp.IHttpRequestResponse;
+import burp.IScanIssue;
+import burp.ParamGuesser;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
 import burp.model.utilities.Utilities;
 
 public class HeaderPoison extends Scan {
 
-    HeaderPoison(String name, Utilities utilities, BulkScanLauncher launcher) {
+    public HeaderPoison(String name, Utilities utilities, BulkScanLauncher launcher) {
         super(name, utilities, launcher);
         scanSettings.importSettings(BurpExtender.guessSettings);
     }

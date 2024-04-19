@@ -1,5 +1,7 @@
 package burp;
 
+import burp.model.header.HeaderMutationScan;
+import burp.model.header.HeaderPoison;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.utilities.Utilities;
@@ -24,10 +26,10 @@ import java.util.concurrent.*;
 public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
     private static final String name = "Param Miner";
     private static final String version = "1.4f";
-    private ThreadPoolExecutor taskEngine;
-    static       ParamGrabber paramGrabber;
-    static SettingsBox configSettings;
-    static SettingsBox guessSettings;
+private       ThreadPoolExecutor taskEngine;
+public static ParamGrabber       paramGrabber;
+static        SettingsBox        configSettings;
+public static SettingsBox guessSettings;
 
     @Override
     public void initialize(MontoyaApi montoyaApi) {
