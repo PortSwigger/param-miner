@@ -1,4 +1,4 @@
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import burp.IHttpRequestResponsePersisted;
 import burp.Utilities;

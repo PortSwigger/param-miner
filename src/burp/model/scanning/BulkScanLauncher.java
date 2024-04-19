@@ -1,4 +1,4 @@
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 
 import java.util.List;

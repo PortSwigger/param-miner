@@ -1,4 +1,4 @@
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import burp.IExtensionStateListener;
 import burp.Utilities;

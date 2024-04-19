@@ -7,26 +7,29 @@ package burp.albinowaxUtils;
 
 import burp.IHttpRequestResponse;
 import burp.IScanIssue;
+import burp.model.scanning.BulkScan;
+import burp.model.scanning.BulkScanLauncher;
+import burp.model.scanning.Scan;
 import burp.view.ConfigurableSettings;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-class TriggerBulkScan implements ActionListener {
+public class TriggerBulkScan implements ActionListener {
 private IHttpRequestResponse[] reqs;
-private IScanIssue[]           issues;
-private Scan                   scan;
-private final burp.Utilities utilities;
+private       IScanIssue[]     issues;
+private       Scan             scan;
+private final burp.Utilities   utilities;
 private final BulkScanLauncher luancher;
 
-TriggerBulkScan(Scan scan, IHttpRequestResponse[] reqs, burp.Utilities utilities, BulkScanLauncher luancher) {
+public TriggerBulkScan(Scan scan, IHttpRequestResponse[] reqs, burp.Utilities utilities, BulkScanLauncher luancher) {
   this.scan = scan;
   this.reqs = reqs;
   this.utilities = utilities;
   this.luancher = luancher;
 }
 
-TriggerBulkScan(Scan scan, IScanIssue[] issues, burp.Utilities utilities, BulkScanLauncher luancher) {
+public TriggerBulkScan(Scan scan, IScanIssue[] issues, burp.Utilities utilities, BulkScanLauncher luancher) {
   this.scan = scan;
   this.issues = issues;
   this.utilities = utilities;

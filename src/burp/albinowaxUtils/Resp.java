@@ -35,7 +35,7 @@ public Resp(IHttpRequestResponse req, Utilities utilities) {
   this(req, System.currentTimeMillis(), utilities);
 }
 
-Resp(IHttpRequestResponse req, long startTime, Utilities utilities) {
+public Resp(IHttpRequestResponse req, long startTime, Utilities utilities) {
   this.utilities    = utilities;
   this.timestamp    = 0L;
   this.responseTime = 0L;

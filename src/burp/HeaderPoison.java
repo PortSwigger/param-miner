@@ -2,8 +2,8 @@ package burp;
 
 import java.util.List;
 
-import burp.albinowaxUtils.BulkScanLauncher;
-import burp.albinowaxUtils.Scan;
+import burp.model.scanning.BulkScanLauncher;
+import burp.model.scanning.Scan;
 
 public class HeaderPoison extends Scan {
 

@@ -1,9 +1,9 @@
 package burp;
 
-import burp.albinowaxUtils.ParamScan;
+import burp.model.scanning.ParamScan;
 import burp.albinowaxUtils.Resp;
-import burp.albinowaxUtils.Scan;
-import burp.albinowaxUtils.BulkScanLauncher;
+import burp.model.scanning.Scan;
+import burp.model.scanning.BulkScanLauncher;
 
 import java.util.List;
 

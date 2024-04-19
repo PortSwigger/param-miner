@@ -2,9 +2,9 @@ package burp;
 
 import java.util.List;
 
-import burp.albinowaxUtils.BulkScanLauncher;
+import burp.model.scanning.BulkScanLauncher;
 import burp.albinowaxUtils.Resp;
-import burp.albinowaxUtils.Scan;
+import burp.model.scanning.Scan;
 
 public class NormalisedPathScan extends Scan {
 

@@ -1,7 +1,7 @@
 package burp;
 
-import burp.albinowaxUtils.BulkScan;
-import burp.albinowaxUtils.BulkScanLauncher;
+import burp.model.scanning.BulkScan;
+import burp.model.scanning.BulkScanLauncher;
 import burp.view.ConfigMenu;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.api.montoya.BurpExtension;

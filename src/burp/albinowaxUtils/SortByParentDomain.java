@@ -8,10 +8,11 @@ package burp.albinowaxUtils;
 import java.util.Comparator;
 
 import burp.Utilities;
+import burp.model.scanning.ScanItem;
 import org.apache.commons.lang3.StringUtils;
 
-class SortByParentDomain implements Comparator<ScanItem> {
-SortByParentDomain() {
+public class SortByParentDomain implements Comparator<ScanItem> {
+public SortByParentDomain() {
 }
 
 public int compare(ScanItem o1, ScanItem o2) {

@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +15,10 @@ import burp.IHttpService;
 import burp.IScanIssue;
 import burp.IScannerCheck;
 import burp.IScannerInsertionPoint;
+import burp.albinowaxUtils.CustomScanIssue;
+import burp.albinowaxUtils.Req;
+import burp.albinowaxUtils.Resp;
+import burp.albinowaxUtils.ZgrabLoader;
 import burp.view.SettingsBox;
 import org.apache.commons.lang3.NotImplementedException;
 

@@ -7,14 +7,14 @@ import burp.api.montoya.http.HttpService;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 
-class Req implements IHttpRequestResponse {
+public class Req implements IHttpRequestResponse {
 
 private byte[] req;
 private byte[]       resp;
 private IHttpService service;
 private burp.Utilities utilities;
 
-Req(byte[] req, byte[] resp, IHttpService service) {
+public Req(byte[] req, byte[] resp, IHttpService service) {
   this.req = req;
   this.resp = resp;
   this.service = service;

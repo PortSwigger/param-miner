@@ -3,11 +3,12 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import burp.IHttpRequestResponse;
+import burp.albinowaxUtils.TriggerBulkScan;
 
 import java.util.ArrayList;
 import java.util.Iterator;

@@ -6,7 +6,7 @@ import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.PayloadInjector;
 import burp.albinowaxUtils.RawInsertionPoint;
 import burp.albinowaxUtils.Resp;
-import burp.albinowaxUtils.Scan;
+import burp.model.scanning.Scan;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.event.ActionEvent;

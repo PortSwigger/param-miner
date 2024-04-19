@@ -5,20 +5,14 @@
 
 package burp.albinowaxUtils;
 
-import burp.IHttpService;
+import burp.model.scanning.Scan;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 public class ZgrabLoader {
 private Connection conn;
-private Scan scanner;
+private Scan       scanner;
 
 ZgrabLoader(Scan scanner) {
   this.scanner = scanner;

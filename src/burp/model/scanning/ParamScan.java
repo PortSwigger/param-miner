@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;

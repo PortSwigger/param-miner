@@ -1,9 +1,12 @@
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import burp.IHttpRequestResponse;
 import burp.IParameter;
 import burp.IResponseInfo;
 import burp.IScannerInsertionPoint;
+import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.albinowaxUtils.RawInsertionPoint;
+import burp.albinowaxUtils.Req;
 import burp.view.ConfigurableSettings;
 
 import java.util.ArrayList;
@@ -11,9 +14,9 @@ import java.util.Iterator;
 
 public class ScanItem {
 private final burp.Utilities utilities;
-private       Scan           scan;
-IHttpRequestResponse req;
-String               host;
+private Scan                 scan;
+public  IHttpRequestResponse req;
+public  String               host;
 private ConfigurableSettings config;
 private boolean              prepared = false;
 IScannerInsertionPoint insertionPoint;

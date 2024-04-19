@@ -15,7 +15,7 @@ public String value;
 public byte   type;
 public burp.Utilities utilities;
 
-ParamInsertionPoint(byte[] request, IParameter param, burp.Utilities utilities) {
+public ParamInsertionPoint(byte[] request, IParameter param, burp.Utilities utilities) {
   this.request = request;
   this.name = param.getName();
   this.value = param.getValue();

@@ -1,4 +1,4 @@
-package burp.albinowaxUtils;
+package burp.model.scanning;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.Utilities;
+import burp.albinowaxUtils.SortByParentDomain;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -24,8 +25,9 @@ private       ConfigurableSettings config;
 public static List<Scan>           scans = new ArrayList();
 public static ConcurrentHashMap<String, Boolean> hostsToSkip = new ConcurrentHashMap();
 
-BulkScan(Scan scan, IHttpRequestResponse[] reqs, ConfigurableSettings config, Utilities utilities,
-         BulkScanLauncher luancher
+public BulkScan(
+  Scan scan, IHttpRequestResponse[] reqs, ConfigurableSettings config, Utilities utilities,
+  BulkScanLauncher luancher
 ) {
   this.scan = scan;
   this.reqs = reqs;

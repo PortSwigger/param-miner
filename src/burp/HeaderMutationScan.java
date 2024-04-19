@@ -3,8 +3,8 @@ package burp;
 import java.util.ArrayList;
 import java.util.List;
 
-import burp.albinowaxUtils.BulkScanLauncher;
-import burp.albinowaxUtils.Scan;
+import burp.model.scanning.BulkScanLauncher;
+import burp.model.scanning.Scan;
 
 public class HeaderMutationScan extends Scan {
     HeaderMutationScan(String name, Utilities utilities, BulkScanLauncher launcher) {
