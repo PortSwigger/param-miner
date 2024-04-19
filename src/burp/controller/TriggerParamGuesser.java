@@ -1,5 +1,11 @@
-package burp;
+package burp.controller;
 
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IParameter;
+import burp.IResponseInfo;
+import burp.ParamGrabber;
+import burp.ParamGuesser;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -13,7 +19,7 @@ import static java.lang.Math.min;
 import static org.apache.commons.lang3.math.NumberUtils.max;
 
 
-class TriggerParamGuesser implements ActionListener, Runnable {
+public class TriggerParamGuesser implements ActionListener, Runnable {
 
 private final Utilities              utilities;
 private       IHttpRequestResponse[] reqs;
@@ -23,8 +29,9 @@ private       ParamGrabber           paramGrabber;
 private       ThreadPoolExecutor     taskEngine;
 private       ConfigurableSettings   config;
     
-    TriggerParamGuesser(IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
-                        Utilities utilities
+    public TriggerParamGuesser(
+      IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
+      Utilities utilities
     ) {
       this.taskEngine   = taskEngine;
       this.paramGrabber = paramGrabber;
@@ -68,7 +75,7 @@ private       ConfigurableSettings   config;
                 byte[] downgraded = Utilities.convertToHttp1(req.getRequest());
                 String host = req.getHttpService().getHost();
                 int port = req.getHttpService().getPort();
-                String proto = req.getHttpService().getProtocol();
+                String       proto   = req.getHttpService().getProtocol();
                 IHttpService service = utilities.helpers.buildHttpService(host, port, proto);
 
                 IHttpRequestResponse newReq = utilities.attemptRequest(service, downgraded, true);

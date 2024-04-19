@@ -8,7 +8,7 @@ package burp.model.scanning;
 import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import burp.IHttpRequestResponse;
-import burp.albinowaxUtils.TriggerBulkScan;
+import burp.controller.TriggerBulkScan;
 import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;

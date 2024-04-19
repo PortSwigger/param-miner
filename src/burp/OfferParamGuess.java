@@ -1,5 +1,6 @@
 package burp;
 
+import burp.controller.TriggerParamGuesser;
 import burp.model.utilities.Utilities;
 
 import javax.swing.*;

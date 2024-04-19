@@ -1,6 +1,9 @@
-package burp;
+package burp.controller;
 
 
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IScannerInsertionPoint;
 import burp.albinowaxUtils.Attack;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
@@ -16,7 +19,7 @@ import java.util.ArrayList;
 
 class ValueGuesser implements Runnable, ActionListener {
     private IHttpRequestResponse[] reqs;
-    private       int[]     selection;
+    private       int[]            selection;
     private final Utilities utilities;
     
     ValueGuesser(IHttpRequestResponse[] reqs, int[] selection, Utilities utilities) {
@@ -41,7 +44,7 @@ class ValueGuesser implements Runnable, ActionListener {
     void guessValue(IHttpRequestResponse req, IScannerInsertionPoint valueInsertionPoint) {
         PayloadInjector valueInjector = new PayloadInjector(req, valueInsertionPoint, utilities);
         IHttpService    service       = req.getHttpService();
-        String domain = service.getHost();
+        String          domain        = service.getHost();
 
         Attack randBase = valueInjector.probeAttack(utilities.generateCanary());
         randBase.addAttack(valueInjector.probeAttack(utilities.generateCanary()));
