@@ -1,7 +1,7 @@
 package burp;
 
 import burp.albinowaxUtils.Attack;
-import burp.albinowaxUtils.ConfigurableSettings;
+import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.albinowaxUtils.PayloadInjector;
 import com.google.gson.JsonElement;

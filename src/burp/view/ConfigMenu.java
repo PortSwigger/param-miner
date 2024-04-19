@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.view;
 
 import burp.IExtensionStateListener;
 import burp.Utilities;

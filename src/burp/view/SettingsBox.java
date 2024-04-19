@@ -1,4 +1,4 @@
-package burp.albinowaxUtils;
+package burp.view;
 
 import burp.Utilities;
 

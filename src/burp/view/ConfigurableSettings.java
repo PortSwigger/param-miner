@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.view;
 
 import burp.Utilities;
 
@@ -122,7 +122,7 @@ public ConfigurableSettings showSettings() {
   return this.showSettings(new ArrayList<>(settings.keySet()));
 }
 
-ConfigurableSettings showSettings(final ArrayList<String> settingsToShow) {
+public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow) {
   JPanel panel = new JPanel();
   panel.setLayout(new GridLayout(0, 6));
   panel.setSize(800, 800);

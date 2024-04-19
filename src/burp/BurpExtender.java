@@ -2,12 +2,12 @@ package burp;
 
 import burp.albinowaxUtils.BulkScan;
 import burp.albinowaxUtils.BulkScanLauncher;
-import burp.albinowaxUtils.ConfigMenu;
+import burp.view.ConfigMenu;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.api.montoya.BurpExtension;
 import burp.api.montoya.MontoyaApi;
 
-import burp.albinowaxUtils.SettingsBox;
+import burp.view.SettingsBox;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;

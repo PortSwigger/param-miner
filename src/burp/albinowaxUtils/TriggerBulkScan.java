@@ -7,6 +7,7 @@ package burp.albinowaxUtils;
 
 import burp.IHttpRequestResponse;
 import burp.IScanIssue;
+import burp.view.ConfigurableSettings;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.view;
 
 public interface ConfigListener {
 public void valueUpdated(String var1);

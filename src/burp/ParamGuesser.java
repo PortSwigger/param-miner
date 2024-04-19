@@ -2,7 +2,7 @@ package burp;
 
 import burp.albinowaxUtils.Attack;
 import burp.albinowaxUtils.BulkScan;
-import burp.albinowaxUtils.ConfigurableSettings;
+import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.CustomScanIssue;
 import burp.albinowaxUtils.ParamInsertionPoint;
 import burp.albinowaxUtils.ParamScan;

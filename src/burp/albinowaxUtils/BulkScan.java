@@ -13,14 +13,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.Utilities;
+import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.math.NumberUtils;
 
 public class BulkScan implements Runnable {
 private       IHttpRequestResponse[]    reqs;
-private       Scan                      scan;
+private       Scan                 scan;
 private       ConfigurableSettings config;
-public static List<Scan> scans = new ArrayList();
+public static List<Scan>           scans = new ArrayList();
 public static ConcurrentHashMap<String, Boolean> hostsToSkip = new ConcurrentHashMap();
 
 BulkScan(Scan scan, IHttpRequestResponse[] reqs, ConfigurableSettings config, Utilities utilities,

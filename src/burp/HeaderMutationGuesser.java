@@ -1,6 +1,6 @@
 package burp;
 
-import burp.albinowaxUtils.ConfigurableSettings;
+import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.CustomScanIssue;
 import burp.albinowaxUtils.HeaderMutator;
 

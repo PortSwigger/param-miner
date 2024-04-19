@@ -4,6 +4,7 @@ import burp.IHttpRequestResponse;
 import burp.IParameter;
 import burp.IResponseInfo;
 import burp.IScannerInsertionPoint;
+import burp.view.ConfigurableSettings;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,7 +15,7 @@ private       Scan           scan;
 IHttpRequestResponse req;
 String               host;
 private ConfigurableSettings config;
-private boolean                   prepared = false;
+private boolean              prepared = false;
 IScannerInsertionPoint insertionPoint;
 private IParameter param;
 private String     key = null;

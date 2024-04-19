@@ -15,12 +15,13 @@ import burp.IHttpService;
 import burp.IScanIssue;
 import burp.IScannerCheck;
 import burp.IScannerInsertionPoint;
+import burp.view.SettingsBox;
 import org.apache.commons.lang3.NotImplementedException;
 
 public abstract class Scan implements IScannerCheck {
 static ZgrabLoader loader = null;
 String      name = "";
-public SettingsBox scanSettings;
+public          SettingsBox    scanSettings;
 protected final burp.Utilities utilities;
 protected final BulkScanLauncher launcher;
 
