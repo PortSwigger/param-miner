@@ -2,26 +2,20 @@ package burp;
 
 import burp.model.header.HeaderMutationScan;
 import burp.model.header.HeaderPoison;
-import burp.model.insertionPoints.ParamNameInsertionPoint;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.GrabScan;
+import burp.model.scanning.NormalisedParamScan;
+import burp.model.scanning.NormalisedPathScan;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigMenu;
-import burp.model.insertionPoints.ParamInsertionPoint;
 import burp.api.montoya.BurpExtension;
 import burp.api.montoya.MontoyaApi;
 
 import burp.view.SettingsBox;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.*;
 
