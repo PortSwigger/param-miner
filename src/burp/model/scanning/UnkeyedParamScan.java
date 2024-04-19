@@ -1,8 +1,10 @@
-package burp;
+package burp.model.scanning;
 
 
-import burp.model.scanning.BulkScanLauncher;
-import burp.model.scanning.ParamScan;
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IScanIssue;
+import burp.IScannerInsertionPoint;
 import burp.albinowaxUtils.Resp;
 import burp.model.utilities.Utilities;
 
@@ -10,7 +12,7 @@ import java.util.List;
 
 public class UnkeyedParamScan extends ParamScan {
 
-    UnkeyedParamScan(String name, Utilities utilities, BulkScanLauncher launcher) {
+    public UnkeyedParamScan(String name, Utilities utilities, BulkScanLauncher launcher) {
         super(name, utilities, launcher);
     }
 

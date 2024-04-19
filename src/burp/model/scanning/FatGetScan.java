@@ -1,14 +1,16 @@
-package burp;
-import burp.model.scanning.BulkScanLauncher;
-import burp.model.scanning.ParamScan;
+package burp.model.scanning;
+import burp.IHttpRequestResponse;
+import burp.IHttpService;
+import burp.IScanIssue;
+import burp.IScannerInsertionPoint;
 import burp.albinowaxUtils.Resp;
 import burp.model.utilities.Utilities;
 
 import java.util.List;
 
-public class FatGet extends ParamScan {
+public class FatGetScan extends ParamScan {
 
-    FatGet(String name, Utilities utilities, BulkScanLauncher launcher) {
+    public FatGetScan(String name, Utilities utilities, BulkScanLauncher launcher) {
         super(name, utilities, launcher);
     }
 

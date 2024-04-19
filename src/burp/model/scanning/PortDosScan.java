@@ -1,15 +1,15 @@
-package burp;
+package burp.model.scanning;
 
 import java.util.List;
 
-import burp.model.scanning.BulkScanLauncher;
+import burp.IHttpService;
+import burp.IScanIssue;
 import burp.albinowaxUtils.Resp;
-import burp.model.scanning.Scan;
 import burp.model.utilities.Utilities;
 
-public class PortDOS extends Scan {
+public class PortDosScan extends Scan {
 
-    PortDOS(String name, Utilities utilities, BulkScanLauncher launcher) {
+    public PortDosScan(String name, Utilities utilities, BulkScanLauncher launcher) {
         super(name, utilities, launcher);
     }
 
