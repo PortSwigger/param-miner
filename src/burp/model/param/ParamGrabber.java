@@ -1,5 +1,14 @@
-package burp;
+package burp.model.param;
 
+import burp.IBurpExtenderCallbacks;
+import burp.IHttpListener;
+import burp.IHttpRequestResponse;
+import burp.IInterceptedProxyMessage;
+import burp.IParameter;
+import burp.IProxyListener;
+import burp.IRequestInfo;
+import burp.IResponseInfo;
+import burp.Keysmith;
 import burp.model.utilities.Utilities;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
@@ -17,14 +26,14 @@ import static burp.Keysmith.getWords;
 public class ParamGrabber implements IProxyListener, IHttpListener {
 
 private final Utilities                 utilities;
-private       Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet();
-    private HashSet<ArrayList<String>> done = new HashSet<>();
-    private Set<String> savedGET  = ConcurrentHashMap.newKeySet();
-    private Set<String> savedWords  = ConcurrentHashMap.newKeySet();
-    private HashSet<String> alreadyScanned = new HashSet<>();
-    private ThreadPoolExecutor taskEngine;
+private       Set<IHttpRequestResponse> savedJson      = ConcurrentHashMap.newKeySet();
+    private HashSet<ArrayList<String>>  done           = new HashSet<>();
+    private Set<String>                 savedGET       = ConcurrentHashMap.newKeySet();
+    private Set<String>                 savedWords     = ConcurrentHashMap.newKeySet();
+    private HashSet<String>             alreadyScanned = new HashSet<>();
+    private ThreadPoolExecutor          taskEngine;
 
-    ParamGrabber(ThreadPoolExecutor taskEngine, Utilities utilities) {
+    public ParamGrabber(ThreadPoolExecutor taskEngine, Utilities utilities) {
       this.taskEngine = taskEngine;
       this.utilities  = utilities;
     }
@@ -108,7 +117,7 @@ private       Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet(
             return;
         }
 
-        IResponseInfo respInfo = utilities.helpers.analyzeResponse(messageInfo.getResponse());
+        IResponseInfo respInfo    = utilities.helpers.analyzeResponse(messageInfo.getResponse());
         StringBuilder codeBuidler = new StringBuilder();
         String contentType = respInfo.getStatedMimeType();
 

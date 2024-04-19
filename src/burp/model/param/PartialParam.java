@@ -1,4 +1,6 @@
-package burp;
+package burp.model.param;
+
+import burp.IParameter;
 
 public class PartialParam implements IParameter {
 

@@ -1,5 +1,12 @@
-package burp;
+package burp.model.param;
 
+import burp.IBurpExtenderCallbacks;
+import burp.IContextMenuFactory;
+import burp.IContextMenuInvocation;
+import burp.IHttpRequestResponse;
+import burp.IParameter;
+import burp.IRequestInfo;
+import burp.IScanIssue;
 import burp.controller.TriggerParamGuesser;
 import burp.model.utilities.Utilities;
 
@@ -9,9 +16,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
-class OfferParamGuess implements IContextMenuFactory {
-private final Utilities    utilities;
-private final ParamGrabber paramGrabber;
+public class OfferParamGuess implements IContextMenuFactory {
+private final Utilities              utilities;
+private final ParamGrabber           paramGrabber;
 private final ThreadPoolExecutor     taskEngine;
 private final IBurpExtenderCallbacks callbacks;
 
@@ -26,8 +33,8 @@ private final IBurpExtenderCallbacks callbacks;
 
     @Override
     public List<JMenuItem> createMenuItems(IContextMenuInvocation invocation) {
-        IHttpRequestResponse[] reqs = invocation.getSelectedMessages();
-        List<JMenuItem> options = new ArrayList<>();
+        IHttpRequestResponse[] reqs    = invocation.getSelectedMessages();
+        List<JMenuItem>        options = new ArrayList<>();
 
         if(reqs == null || reqs.length == 0) {
             if (invocation.getSelectedIssues().length > 0) {
@@ -88,7 +95,7 @@ private final IBurpExtenderCallbacks callbacks;
 //            }
 
             if (resp != null && resp.length > 0 && resp[0] == 'P') {
-                IRequestInfo info = utilities.helpers.analyzeRequest(req);
+                IRequestInfo     info   = utilities.helpers.analyzeRequest(req);
                 List<IParameter> params = info.getParameters();
 
                 HashSet<Byte> paramTypes = new HashSet<>();

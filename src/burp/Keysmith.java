@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  */
 public class Keysmith {
 
-    static ArrayList<String> getJsonKeys(JsonElement json, HashMap<String, String> witnessedParams){
+    public static ArrayList<String> getJsonKeys(JsonElement json, HashMap<String, String> witnessedParams){
         try {
             return getJsonKeys(json, null, witnessedParams);
         }
@@ -50,7 +50,7 @@ public class Keysmith {
 
     }
 
-    static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types, Utilities utilities) {
+    public static ArrayList<String> getParamKeys(byte[] resp, HashSet<Byte> types, Utilities utilities) {
         ArrayList<String> keys = new ArrayList<>();
 
         List<IParameter> currentParams = utilities.helpers.analyzeRequest(resp).getParameters();
@@ -98,14 +98,14 @@ public class Keysmith {
         return output;
     }
 
-    static HashSet<String> getWords(String body) {
+    public static HashSet<String> getWords(String body) {
         HashSet<String> longWords = new HashSet<>(Arrays.asList(body.split("[^.a-zA-Z0-9_-]")));
         longWords.addAll(Arrays.asList(body.split("[^a-zA-Z0-9]")));
         return longWords;
     }
 
 
-    static ArrayList<String> getHtmlKeys(String body) {
+    public static ArrayList<String> getHtmlKeys(String body) {
         HashSet<String> params = new HashSet<>();
         Document doc = Jsoup.parse(body);
         Elements links = doc.select("a[href]");
@@ -212,7 +212,7 @@ public class Keysmith {
     }
 
 
-    static String[] parseKey(String entry) {
+    public static String[] parseKey(String entry) {
         int keyStart = entry.lastIndexOf(':');
         String prefix;
         String key;
@@ -240,11 +240,11 @@ public class Keysmith {
         return param;
     }
 
-    static String permute(String fullparam) {
+    public static String permute(String fullparam) {
         return permute(fullparam, false);
     }
 
-    static String permute(String fullparam, boolean allowValueChange) {
+    public static String permute(String fullparam, boolean allowValueChange) {
         String[] params = fullparam.split("[|]");
         ArrayList<String> out = new ArrayList<>();
         for (String eachparam: params) {

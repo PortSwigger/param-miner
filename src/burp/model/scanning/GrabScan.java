@@ -4,7 +4,7 @@ import burp.IHttpRequestResponse;
 import burp.IScanIssue;
 import burp.IScannerCheck;
 import burp.IScannerInsertionPoint;
-import burp.ParamGrabber;
+import burp.model.param.ParamGrabber;
 import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;

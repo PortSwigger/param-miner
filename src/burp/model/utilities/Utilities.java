@@ -9,7 +9,7 @@ import burp.IRequestInfo;
 import burp.IResponseInfo;
 import burp.IScanIssue;
 import burp.IScannerInsertionPoint;
-import burp.PartialParam;
+import burp.model.param.PartialParam;
 import burp.Probe;
 import burp.albinowaxUtils.Attack;
 import burp.view.ConfigurableSettings;

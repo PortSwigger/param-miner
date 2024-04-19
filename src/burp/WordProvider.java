@@ -5,16 +5,16 @@ import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
 import java.util.Scanner;
 
-class WordProvider {
+public class WordProvider {
 
     private Scanner currentSource;
     private ArrayDeque<String> sources = new ArrayDeque<>();
 
-    void addSource(String source) {
+    public void addSource(String source) {
         sources.add(source);
     }
 
-    String getNext() {
+    public String getNext() {
         getNextSource();
         if (currentSource == null || !currentSource.hasNextLine()){
             return null;

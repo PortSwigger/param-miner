@@ -5,7 +5,7 @@ import java.util.List;
 import burp.BurpExtender;
 import burp.IHttpRequestResponse;
 import burp.IScanIssue;
-import burp.ParamGuesser;
+import burp.model.param.ParamGuesser;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
 import burp.model.utilities.Utilities;

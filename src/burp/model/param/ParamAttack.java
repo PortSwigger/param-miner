@@ -1,5 +1,9 @@
-package burp;
+package burp.model.param;
 
+import burp.IHttpRequestResponse;
+import burp.IParameter;
+import burp.Keysmith;
+import burp.WordProvider;
 import burp.albinowaxUtils.Attack;
 import burp.model.insertionPoints.HeaderNameInsertionPoint;
 import burp.model.insertionPoints.JsonParamNameInsertionPoint;
@@ -25,12 +29,12 @@ class ParamAttack {
     int seed = -1;
     boolean started;
 
-    private WordProvider bonusParams;
+    private WordProvider            bonusParams;
     private HashMap<String, String> requestParams;
     private ParamHolder paramBuckets;
-    private int bucketSize = 1;
-    private IHttpRequestResponse baseRequestResponse;
-    private PayloadInjector      injector;
+    private int                     bucketSize = 1;
+    private IHttpRequestResponse    baseRequestResponse;
+    private PayloadInjector         injector;
     private String               attackID;
     private Attack base;
     private String targetURL;

@@ -1,4 +1,4 @@
-package burp;
+package burp.model.param;
 
 import burp.model.utilities.Utilities;
 

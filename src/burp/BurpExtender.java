@@ -2,6 +2,8 @@ package burp;
 
 import burp.model.header.HeaderMutationScan;
 import burp.model.header.HeaderPoison;
+import burp.model.param.OfferParamGuess;
+import burp.model.param.ParamGrabber;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.GrabScan;
