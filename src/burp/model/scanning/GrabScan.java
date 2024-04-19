@@ -1,5 +1,10 @@
-package burp;
+package burp.model.scanning;
 
+import burp.IHttpRequestResponse;
+import burp.IScanIssue;
+import burp.IScannerCheck;
+import burp.IScannerInsertionPoint;
+import burp.ParamGrabber;
 import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;
@@ -9,9 +14,9 @@ public class GrabScan implements IScannerCheck {
 
     private ParamGrabber paramGrabber;
 
-    GrabScan(ParamGrabber paramGrabber, Utilities utilites) {
-        this.paramGrabber = paramGrabber;
-        this.utilites     = utilites;
+    public GrabScan(ParamGrabber paramGrabber, Utilities utilities) {
+      this.paramGrabber = paramGrabber;
+      this.utilities    = utilities;
     }
 
     @Override
@@ -21,7 +26,7 @@ public class GrabScan implements IScannerCheck {
 
     @Override
     public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
-        if (utilites.globalSettings.getBoolean("learn observed words")) {
+        if (utilities.globalSettings.getBoolean("learn observed words")) {
             paramGrabber.saveParams(baseRequestResponse);
         }
         return new ArrayList<>();
@@ -34,5 +39,5 @@ public class GrabScan implements IScannerCheck {
         else return 0;
     }
 
-private final Utilities utilites;
+    private final Utilities utilities;
 }

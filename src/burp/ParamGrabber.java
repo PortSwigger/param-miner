@@ -53,7 +53,7 @@ private       Set<IHttpRequestResponse> savedJson = ConcurrentHashMap.newKeySet(
         return savedWords;
     }
 
-    void saveParams(IHttpRequestResponse baseRequestResponse) {
+    public void saveParams(IHttpRequestResponse baseRequestResponse) {
         // todo also use observed requests
         String body = utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {

@@ -4,6 +4,7 @@ import burp.model.header.HeaderMutationScan;
 import burp.model.header.HeaderPoison;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
+import burp.model.scanning.GrabScan;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigMenu;
 import burp.albinowaxUtils.ParamInsertionPoint;
