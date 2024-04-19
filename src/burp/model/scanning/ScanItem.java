@@ -6,7 +6,7 @@ import burp.IResponseInfo;
 import burp.IScannerInsertionPoint;
 import burp.model.insertionPoints.ParamInsertionPoint;
 import burp.model.insertionPoints.RawInsertionPoint;
-import burp.albinowaxUtils.Req;
+import burp.model.utilities.Req;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 

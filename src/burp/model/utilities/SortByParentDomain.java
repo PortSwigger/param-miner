@@ -3,11 +3,10 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import java.util.Comparator;
 
-import burp.model.utilities.Utilities;
 import burp.model.scanning.ScanItem;
 import org.apache.commons.lang3.StringUtils;
 

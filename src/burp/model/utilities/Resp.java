@@ -1,9 +1,8 @@
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import burp.IHttpRequestResponse;
 import burp.IResponseInfo;
 import burp.IResponseVariations;
-import burp.model.utilities.Utilities;
 
 import java.util.Arrays;
 

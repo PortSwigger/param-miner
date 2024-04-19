@@ -1,8 +1,8 @@
-package burp;
+package burp.model.utilities;
 
 import java.util.Comparator;
 
-class RandomComparator implements Comparator<Object> {
+public class RandomComparator implements Comparator<Object> {
     @Override
     public int compare(Object o1, Object o2) {
         int h1 = o1.hashCode();

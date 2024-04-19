@@ -1,9 +1,8 @@
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import burp.IHttpService;
 import burp.IParameter;
 import burp.IRequestInfo;
-import burp.model.utilities.Utilities;
 
 import java.net.URL;
 import java.util.Arrays;

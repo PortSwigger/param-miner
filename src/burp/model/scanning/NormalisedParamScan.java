@@ -4,7 +4,7 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScanIssue;
 import burp.IScannerInsertionPoint;
-import burp.albinowaxUtils.Resp;
+import burp.model.utilities.Resp;
 import burp.model.utilities.Utilities;
 
 import java.util.List;

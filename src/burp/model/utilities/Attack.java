@@ -1,10 +1,8 @@
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import burp.IHttpRequestResponse;
 import burp.IResponseKeywords;
 import burp.IResponseVariations;
-import burp.Probe;
-import burp.model.utilities.Utilities;
 
 import java.util.Arrays;
 import java.util.HashMap;

@@ -4,7 +4,7 @@ import java.util.List;
 
 import burp.IHttpService;
 import burp.IScanIssue;
-import burp.albinowaxUtils.Resp;
+import burp.model.utilities.Resp;
 import burp.model.utilities.Utilities;
 
 public class PortDosScan extends Scan {

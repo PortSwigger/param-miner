@@ -1,7 +1,7 @@
 package burp.model.insertionPoints;
 
 import burp.IParameter;
-import burp.Keysmith;
+import burp.model.utilities.Keysmith;
 import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;

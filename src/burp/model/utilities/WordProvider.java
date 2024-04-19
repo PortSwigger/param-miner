@@ -1,4 +1,4 @@
-package burp;
+package burp.model.utilities;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -4,12 +4,12 @@ package burp.controller;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScannerInsertionPoint;
-import burp.albinowaxUtils.Attack;
+import burp.model.utilities.Attack;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
-import burp.albinowaxUtils.PayloadInjector;
+import burp.model.utilities.PayloadInjector;
 import burp.model.insertionPoints.RawInsertionPoint;
-import burp.albinowaxUtils.Resp;
+import burp.model.utilities.Resp;
 import burp.model.scanning.Scan;
 import org.apache.commons.lang3.StringUtils;
 

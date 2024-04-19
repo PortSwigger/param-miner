@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import burp.model.scanning.Scan;
 

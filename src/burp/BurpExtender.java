@@ -13,6 +13,7 @@ import burp.model.scanning.NormalisedPathScan;
 import burp.model.scanning.PortDosScan;
 import burp.model.scanning.RailsUtmScan;
 import burp.model.scanning.UnkeyedParamScan;
+import burp.model.utilities.RandomComparator;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigMenu;
 import burp.api.montoya.BurpExtension;
@@ -26,12 +27,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
-    private static final String name = "Param Miner";
-    private static final String version = "1.4f";
-private       ThreadPoolExecutor taskEngine;
-public static ParamGrabber       paramGrabber;
-static        SettingsBox        configSettings;
-public static SettingsBox guessSettings;
+public static ParamGrabber paramGrabber;
+public static SettingsBox  guessSettings;
 
     @Override
     public void initialize(MontoyaApi montoyaApi) {
@@ -192,18 +189,3 @@ private void loadWordlists() {
         taskEngine.shutdown();
     }
 }
-
-
-
-
-
-class RequestWithOffsets {
-    private byte[] request;
-    private int[] offsets;
-
-    public RequestWithOffsets(byte[] request, int[] offsets) {
-        this.request = request;
-        this.offsets = offsets;
-    }
-}
-

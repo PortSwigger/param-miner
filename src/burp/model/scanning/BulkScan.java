@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.model.utilities.Utilities;
-import burp.albinowaxUtils.SortByParentDomain;
+import burp.model.utilities.SortByParentDomain;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.math.NumberUtils;

@@ -6,7 +6,7 @@ import burp.IRequestInfo;
 import burp.IResponseInfo;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
-import burp.albinowaxUtils.CustomScanIssue;
+import burp.model.utilities.CustomScanIssue;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;

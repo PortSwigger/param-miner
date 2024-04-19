@@ -1,9 +1,8 @@
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.api.montoya.http.message.HttpRequestResponse;
-import burp.model.utilities.Utilities;
 
 public class Req implements IHttpRequestResponse {
 

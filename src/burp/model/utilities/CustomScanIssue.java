@@ -1,4 +1,4 @@
-package burp.albinowaxUtils;
+package burp.model.utilities;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;

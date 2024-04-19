@@ -1,6 +1,6 @@
-package burp;
+package burp.model.utilities;
 
-import burp.model.utilities.Utilities;
+import burp.IParameter;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
