@@ -5,7 +5,7 @@ import burp.albinowaxUtils.Attack;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.PayloadInjector;
-import burp.albinowaxUtils.RawInsertionPoint;
+import burp.model.insertionPoints.RawInsertionPoint;
 import burp.albinowaxUtils.Resp;
 import burp.model.scanning.Scan;
 import org.apache.commons.lang3.StringUtils;

@@ -1,6 +1,7 @@
-package burp;
+package burp.model.insertionPoints;
 
-import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.IParameter;
+import burp.Keysmith;
 import burp.model.utilities.Utilities;
 
 import java.util.ArrayList;
@@ -14,7 +15,9 @@ public class ParamNameInsertionPoint extends ParamInsertionPoint {
     String                  host;
     HashMap<String, String> present;
 
-    ParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID, Utilities utilities) {
+    public ParamNameInsertionPoint(
+      byte[] request, String name, String value, byte type, String attackID, Utilities utilities
+    ) {
         super(request, name, value, type, utilities);
         this.attackID = attackID;
     

@@ -2,14 +2,15 @@ package burp;
 
 import burp.albinowaxUtils.Attack;
 import burp.model.header.HeaderMutationGuesser;
+import burp.model.insertionPoints.ParamNameInsertionPoint;
 import burp.model.scanning.BulkScan;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
 import burp.albinowaxUtils.CustomScanIssue;
-import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.model.insertionPoints.ParamInsertionPoint;
 import burp.model.scanning.ParamScan;
 import burp.albinowaxUtils.PayloadInjector;
-import burp.albinowaxUtils.RawInsertionPoint;
+import burp.model.insertionPoints.RawInsertionPoint;
 import burp.model.scanning.Scan;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 

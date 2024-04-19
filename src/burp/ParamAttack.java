@@ -1,9 +1,12 @@
 package burp;
 
 import burp.albinowaxUtils.Attack;
+import burp.model.insertionPoints.HeaderNameInsertionPoint;
+import burp.model.insertionPoints.JsonParamNameInsertionPoint;
+import burp.model.insertionPoints.ParamNameInsertionPoint;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigurableSettings;
-import burp.albinowaxUtils.ParamInsertionPoint;
+import burp.model.insertionPoints.ParamInsertionPoint;
 import burp.albinowaxUtils.PayloadInjector;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;

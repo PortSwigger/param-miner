@@ -29,7 +29,9 @@ public class Keysmith {
 
     }
 
-    static ArrayList<String> getAllKeys(byte[] resp, HashMap<String, String> witnessedParams, Utilities utilities){
+    public static ArrayList<String> getAllKeys(
+      byte[] resp, HashMap<String, String> witnessedParams, Utilities utilities
+    ){
         if (!"".equals(Utilities.getBody(resp))) {
             try {
                 return getJsonKeys(new JsonParser().parse(Utilities.getBody(resp)), witnessedParams);
@@ -78,7 +80,7 @@ public class Keysmith {
         return parsed.toString().substring(1);
     }
 
-    static String unparseParam(String param) {
+    public static String unparseParam(String param) {
         String[] presplit = param.split("~", 2);
         StringBuilder unparsed = new StringBuilder();
         String[] split = presplit[0].split(":", -1);
