@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class HeaderMutationGuesser {
-    private final ConfigurableSettings config;
     private       byte[]               req;
     private final IHttpService                            service;
     public final  HashMap<String, IHttpRequestResponse[]> evidence;
@@ -29,8 +28,7 @@ public class HeaderMutationGuesser {
       if (Utilities.isHTTP2(this.req)) {
             this.req = Utilities.convertToHttp1(this.req);
         }
-        this.config = config;
-        this.service = req.getHttpService();
+      this.service = req.getHttpService();
         this.evidence = new HashMap<String, IHttpRequestResponse[]>();
 
         this.testHeaders = new String[][]{

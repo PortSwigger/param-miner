@@ -46,7 +46,6 @@ public class ParamGuesser implements Runnable {
 
 private final Utilities            utilities;
 private       IHttpRequestResponse req;
-private       boolean              backend;
 private       byte               type;
 private final ThreadPoolExecutor taskEngine;
 private       int                stop;
@@ -63,7 +62,6 @@ private final byte[]               staticCanary;
     ) {
       this.paramGrabber = paramGrabber;
       this.req          = req;
-      this.backend      = backend;
       this.type         = type;
       this.stop         = stop;
       this.taskEngine   = taskEngine;

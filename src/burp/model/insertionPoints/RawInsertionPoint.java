@@ -25,14 +25,17 @@ public RawInsertionPoint(byte[] req, String name, int start, int end) {
   this.baseValue = new String(Arrays.copyOfRange(req, start, end));
 }
 
+@Override
 public String getInsertionPointName() {
   return this.name;
 }
 
+@Override
 public String getBaseValue() {
   return this.baseValue;
 }
 
+@Override
 public byte[] buildRequest(byte[] payload) {
   ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
   
@@ -46,10 +49,12 @@ public byte[] buildRequest(byte[] payload) {
   return Utilities.fixContentLength(outputStream.toByteArray());
 }
 
+@Override
 public int[] getPayloadOffsets(byte[] payload) {
   return new int[]{this.prefix.length, this.prefix.length + payload.length};
 }
 
+@Override
 public byte getInsertionPointType() {
   return 65;
 }

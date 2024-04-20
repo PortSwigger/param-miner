@@ -64,10 +64,6 @@ public ArrayList<Attack> fuzz(Attack baselineAttack, Probe probe, String mutatio
   }
 }
 
-private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttackSeed, Probe probe, int chosen_escape) {
-  return this.verify(doNotBreakAttackSeed, breakAttackSeed, probe, chosen_escape, null);
-}
-
 private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttackSeed, Probe probe, int chosen_escape, String mutation) {
   ArrayList<Attack> attacks = new ArrayList(2);
   Attack mergedBreakAttack = new Attack(utilities);
@@ -101,10 +97,6 @@ private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttack
     attacks.add(mergedDoNotBreakAttack);
     return attacks;
   }
-}
-
-private Attack buildAttackFromProbe(Probe probe, String payload) {
-  return this.buildAttackFromProbe(probe, payload, null);
 }
 
 private Attack buildAttackFromProbe(Probe probe, String payload, String mutation) {
@@ -183,12 +175,4 @@ public Attack probeAttack(String payload, String mutation) {
   return new Attack(requestResponse, null, null, "", utilities);
 }
 
-Attack buildAttack(String payload, boolean random) {
-  String canary = "";
-  if (random) {
-    canary = Utilities.generateCanary();
-  }
-  
-  return new Attack(this.buildRequest(canary + payload, !random), null, null, canary, utilities);
-}
 }

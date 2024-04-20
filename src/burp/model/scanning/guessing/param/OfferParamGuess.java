@@ -20,13 +20,9 @@ public class OfferParamGuess implements IContextMenuFactory {
 private final Utilities              utilities;
 private final ParamGrabber           paramGrabber;
 private final ThreadPoolExecutor     taskEngine;
-private final IBurpExtenderCallbacks callbacks;
 
-    public OfferParamGuess(final IBurpExtenderCallbacks callbacks, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
-                           Utilities utilities
-    ) {
+public OfferParamGuess(ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine, Utilities utilities) {
       this.taskEngine   = taskEngine;
-      this.callbacks    = callbacks;
       this.paramGrabber = paramGrabber;
       this.utilities    = utilities;
     }

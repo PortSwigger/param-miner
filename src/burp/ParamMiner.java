@@ -278,7 +278,7 @@ private void setupTaskEngine() {
 //-----------------------------------------------------------------------------
 private void setupParamGrabber(IBurpExtenderCallbacks callbacks) {
   paramGrabber = new ParamGrabber(taskEngine, utilities);
-  callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine, utilities));
+  callbacks.registerContextMenuFactory(new OfferParamGuess(paramGrabber, taskEngine, utilities));
   
   if(utilities.isBurpPro()) {
     callbacks.registerScannerCheck(new GrabScan(paramGrabber, utilities));

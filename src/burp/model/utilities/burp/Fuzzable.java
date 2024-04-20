@@ -6,7 +6,6 @@ import burp.model.utilities.misc.Utilities;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class Fuzzable extends CustomScanIssue {
-private static final String REMEDIATION = "This issue does not necessarily indicate a vulnerability; it is merely highlighting behaviour worthy of manual investigation. Try to determine the root cause of the observed behaviour.Refer to <a href='http://blog.portswigger.net/2016/11/backslash-powered-scanning-hunting.html'>Backslash Powered Scanning</a> for further details and guidance interpreting results. ";
 
 public Fuzzable(
   IHttpRequestResponse[] requests, IHttpRequestResponse baseRequestResponse, String title, String detail,

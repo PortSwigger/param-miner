@@ -10,7 +10,6 @@ public class Req implements IHttpRequestResponse {
 private byte[]       req;
 private byte[]       resp;
 private IHttpService service;
-private Utilities    utilities;
 
 public Req(byte[] req, byte[] resp, IHttpService service) {
   this.req = req;
@@ -20,7 +19,6 @@ public Req(byte[] req, byte[] resp, IHttpService service) {
 
 Req(HttpRequestResponse resp, Utilities utilities) {
   this.req       = resp.request().toByteArray().getBytes();
-  this.utilities = utilities;
   if (resp.response() != null) {
     this.resp = resp.response().toByteArray().getBytes();
   }

@@ -11,8 +11,6 @@ import burp.model.scanning.ScanItem;
 import org.apache.commons.lang3.StringUtils;
 
 public class SortByParentDomain implements Comparator<ScanItem> {
-public SortByParentDomain() {
-}
 
 @Override
 public int compare(ScanItem o1, ScanItem o2) {

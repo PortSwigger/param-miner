@@ -20,10 +20,6 @@ public void register(String name, Object value, String description) {
   utilities.globalSettings.registerSetting(name, value, description);
 }
 
-public boolean contains(String key) {
-  return this.settings.contains(key);
-}
-
 public void importSettings(SettingsBox newSettings) {
   this.settings.addAll(newSettings.getSettings());
 }

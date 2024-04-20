@@ -2,38 +2,32 @@ package burp.model.utilities.scan;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * Created by james on 24/11/2016.
  */
 public class Probe {
-    public static final byte APPEND  = 0;
-    public static final byte PREPEND = 1;
-    public static final byte REPLACE = 2;
+public static final byte APPEND  = 0;
+public static final byte PREPEND = 1;
+public static final byte REPLACE = 2;
 
-    private       String base = "'";
-    private final String name;
+private final String              name;
+private final int                 severity;
+private final ArrayList<String>   breakStrings;
+private final ArrayList<String[]> escapeStrings             = new ArrayList<>();
+private final boolean             requireConsistentEvidence = false;
 
-    private       String            tip = "";
-    private final int                 severity;
-    private final ArrayList<String>   breakStrings;
-    private final ArrayList<String[]> escapeStrings = new ArrayList<>();
-    private       byte                prefix        = APPEND;
-    private boolean randomAnchor = true;
-    private boolean useCacheBuster = false;
-    private int nextBreak = -1;
-    private int nextEscape = -1;
+private String  tip            = "";
+private byte    prefix         = APPEND;
+private boolean randomAnchor   = true;
+private boolean useCacheBuster = false;
+private int     nextBreak      = -1;
+private int     nextEscape     = -1;
+
 
     public boolean getRequireConsistentEvidence() {
         return requireConsistentEvidence;
     }
-
-    public void setRequireConsistentEvidence(boolean requireConsistentEvidence) {
-        this.requireConsistentEvidence = requireConsistentEvidence;
-    }
-
-    private boolean requireConsistentEvidence = false;
 
 
     public boolean useCacheBuster() {
@@ -73,28 +67,13 @@ public class Probe {
         useCacheBuster = !randomAnchor;
     }
 
-    public void setUseCacheBuster(boolean useCacheBuster) {
-        this.useCacheBuster = useCacheBuster;
-    }
-
-
-    public String getBase() {
-        return base;
-    }
-
     public void setBase(String base) {
-        this.base = base;
     }
 
     public void setEscapeStrings(String... args) {
         for (String arg : args) {
             escapeStrings.add(new String[]{arg});
         }
-    }
-
-    // args is a list of alternatives
-    public void addEscapePair(String... args) {
-        escapeStrings.add(args);
     }
 
     public String getNextBreak() {
@@ -114,9 +93,5 @@ public class Probe {
     public int getSeverity() {
         return severity;
     }
-
-    static class ProbeResults {
-        public HashSet<String> interesting = new HashSet<>();
-        public HashSet<String> boring = new HashSet<>();
-    }
+  
 }

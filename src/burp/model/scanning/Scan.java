@@ -57,10 +57,6 @@ public Scan(String name, Utilities utilities, BulkScanLauncher launcher) {
   this.scanSettings.register("include path in cachebusters", false);
 }
 
-public List<String> getSettings() {
-  return this.scanSettings.getSettings();
-}
-
 public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
   throw new RuntimeException("doScan(byte[] baseReq, IHttpService service) invoked but not implemented");
 }
@@ -153,13 +149,8 @@ public static Resp request(IHttpService service, byte[] req, int maxRetries, Uti
   return request(service, req, maxRetries, false, utilities);
 }
 
-public static Resp request(IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, Utilities utilities) {
-  return request(service, req, maxRetries, forceHTTP1, null, utilities);
-}
-
 public static Resp request(
-  IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, HashMap<String, Boolean> config,
-  Utilities utilities
+  IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, Utilities utilities
 ) {
   if (utilities.unloaded.get()) {
     throw new RuntimeException("Aborting due to extension unload");

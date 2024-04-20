@@ -230,16 +230,6 @@ public class Keysmith {
         return parsed;
     }
 
-    static String getKey(String param) {
-        String[] keys = param.split(":");
-        for (int i=keys.length-1; i>=0; i--) {
-            if (Utilities.parseArrayIndex(keys[i]) == -1) {
-                return keys[i];
-            }
-        }
-        return param;
-    }
-
     public static String permute(String fullparam) {
         return permute(fullparam, false);
     }
