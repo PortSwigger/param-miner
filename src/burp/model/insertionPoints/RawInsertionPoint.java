@@ -13,10 +13,10 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class RawInsertionPoint implements IScannerInsertionPoint {
-private byte[] prefix;
-private byte[] suffix;
-private String baseValue;
-private String name;
+private final byte[] prefix;
+private final byte[] suffix;
+private final String baseValue;
+private final String name;
 
 public RawInsertionPoint(byte[] req, String name, int start, int end) {
   this.name = name;

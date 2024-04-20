@@ -18,9 +18,9 @@ import java.awt.event.ActionListener;
 
 public class TriggerBulkScan implements ActionListener {
 private IHttpRequestResponse[] reqs;
-private       IScanIssue[]     issues;
-private       Scan             scan;
-private final Utilities        utilities;
+private       IScanIssue[] issues;
+private final Scan         scan;
+private final Utilities    utilities;
 private final BulkScanLauncher luancher;
 
 public TriggerBulkScan(Scan scan, IHttpRequestResponse[] reqs, Utilities utilities, BulkScanLauncher luancher) {

@@ -8,18 +8,18 @@ import java.util.HashSet;
  * Created by james on 24/11/2016.
  */
 public class Probe {
-    public static byte APPEND = 0;
-    public static byte PREPEND = 1;
-    public static byte REPLACE = 2;
+    public static final byte APPEND  = 0;
+    public static final byte PREPEND = 1;
+    public static final byte REPLACE = 2;
 
-    private String base = "'";
-    private String name;
+    private       String base = "'";
+    private final String name;
 
-    private String tip = "";
-    private int severity;
-    private ArrayList<String> breakStrings = new ArrayList<>();
-    private ArrayList<String[]> escapeStrings = new ArrayList<>();
-    private byte prefix = APPEND;
+    private       String            tip = "";
+    private final int               severity;
+    private       ArrayList<String> breakStrings  = new ArrayList<>();
+    private final ArrayList<String[]> escapeStrings = new ArrayList<>();
+    private       byte                prefix        = APPEND;
     private boolean randomAnchor = true;
     private boolean useCacheBuster = false;
     private int nextBreak = -1;

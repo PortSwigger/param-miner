@@ -33,5 +33,5 @@ public ArrayList<String> getSettings() {
 }
 
 private final LinkedHashSet<String> settings = new LinkedHashSet<>();
-private Utilities             utilities;
+private final Utilities             utilities;
 }

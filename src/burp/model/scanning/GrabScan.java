@@ -12,7 +12,7 @@ import java.util.List;
 
 public class GrabScan implements IScannerCheck {
 
-    private ParamGrabber paramGrabber;
+    private final ParamGrabber paramGrabber;
 
     public GrabScan(ParamGrabber paramGrabber, Utilities utilities) {
       this.paramGrabber = paramGrabber;

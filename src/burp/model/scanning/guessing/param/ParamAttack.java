@@ -22,28 +22,28 @@ import static java.lang.Math.min;
 
 class ParamAttack {
 
-    CircularFifoQueue<String> recentParams;
-    HashSet<String> alreadyReported;
+final CircularFifoQueue<String> recentParams;
+final HashSet<String>           alreadyReported;
     ArrayList<String> params;
     ArrayList<String> valueParams;
     int seed = -1;
     boolean started;
 
-    private WordProvider            bonusParams;
-    private HashMap<String, String> requestParams;
-    private ParamHolder paramBuckets;
-    private int                     bucketSize = 1;
-    private IHttpRequestResponse    baseRequestResponse;
-    private PayloadInjector         injector;
-    private String               attackID;
-    private Attack base;
-    private String targetURL;
-    private Attack altBase;
+    private       WordProvider            bonusParams;
+    private final HashMap<String, String> requestParams;
+    private final ParamHolder             paramBuckets;
+    private       int                     bucketSize = 1;
+    private final IHttpRequestResponse baseRequestResponse;
+    private final PayloadInjector      injector;
+    private final String               attackID;
+    private       Attack          base;
+    private final String targetURL;
+    private       Attack altBase;
     private boolean tryMethodFlip;
     private final ParamInsertionPoint insertionPoint;
-    final   byte                 type;
-    private ConfigurableSettings config;
-    private       ArrayList<String> headerMutations;
+    final         byte                 type;
+    private final ConfigurableSettings config;
+    private       ArrayList<String>    headerMutations;
     private final Utilities         utilities;
     
     int getStop() {

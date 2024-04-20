@@ -7,8 +7,8 @@ import java.util.Scanner;
 
 public class WordProvider {
 
-    private Scanner currentSource;
-    private ArrayDeque<String> sources = new ArrayDeque<>();
+    private       Scanner            currentSource;
+    private final ArrayDeque<String> sources = new ArrayDeque<>();
 
     public void addSource(String source) {
         sources.add(source);

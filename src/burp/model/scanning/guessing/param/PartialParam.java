@@ -4,9 +4,10 @@ import burp.IParameter;
 
 public class PartialParam implements IParameter {
 
-    private int valueStart, valueEnd;
-    private String name;
-    private byte type;
+    private final int valueStart;
+private final     int valueEnd;
+    private final String name;
+    private final byte   type;
 
     public PartialParam(String name, int valueStart, int valueEnd) {
         this(name, valueStart, valueEnd, IParameter.PARAM_COOKIE);

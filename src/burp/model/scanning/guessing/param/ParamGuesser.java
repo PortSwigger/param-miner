@@ -47,14 +47,14 @@ public class ParamGuesser implements Runnable {
 private final Utilities            utilities;
 private       IHttpRequestResponse req;
 private       boolean              backend;
-private       byte                 type;
-private       ThreadPoolExecutor   taskEngine;
-private       int                  stop;
+private       byte               type;
+private final ThreadPoolExecutor taskEngine;
+private       int                stop;
 private       ParamGrabber         paramGrabber;
 private       ParamAttack          attack;
-private       ConfigurableSettings config;
-private       boolean              forceHttp1;
-private       byte[]               staticCanary;
+private final ConfigurableSettings config;
+private final boolean              forceHttp1;
+private final byte[]               staticCanary;
 
     public ParamGuesser(
       IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,

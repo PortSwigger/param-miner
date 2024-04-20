@@ -18,8 +18,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 class OfferBulkScan implements IContextMenuFactory {
-private       List<Scan>       scans;
-private final Utilities        utilities;
+private final List<Scan> scans;
+private final Utilities  utilities;
 private final BulkScanLauncher launcher;
 
 OfferBulkScan(List<Scan> scans, Utilities utilities, BulkScanLauncher launcher) {

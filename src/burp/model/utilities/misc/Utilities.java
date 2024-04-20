@@ -46,12 +46,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Utilities {
-public AtomicInteger requestCount = new AtomicInteger(0);
-public final  String        version      = "1.03";
-public String                 name = "uninitialised";
-public IBurpExtenderCallbacks callbacks;
-public IExtensionHelpers      helpers;
-public ConfigurableSettings   globalSettings;
+public final AtomicInteger requestCount = new AtomicInteger(0);
+public final String        version      = "1.03";
+public       String                 name = "uninitialised";
+public final IBurpExtenderCallbacks callbacks;
+public final IExtensionHelpers      helpers;
+public       ConfigurableSettings   globalSettings;
 
 public static int indexOf(byte[] data, byte[] pattern, boolean caseSensitive, int from, int to) {
   for(int i = from; i < to - pattern.length + 1; ++i) {
@@ -346,19 +346,19 @@ public static byte[] setHeader(byte[] request, String header, String value, bool
 }
 
 public static final byte                    PARAM_HEADER        = 7;
-public static       boolean                 chopNestedResponses = false;
-public static       HashSet<String>         phpFunctions        = new HashSet();
-public static       ArrayList<String>       paramNames          = new ArrayList();
-public static       HashSet<String>         boringHeaders       = new HashSet();
-public static       Set<String>             reportedParams      = ConcurrentHashMap.newKeySet();
-public              boolean                 supportsHTTP2       = true;
-public              AtomicBoolean           unloaded            = new AtomicBoolean(false);
-static final        byte                    CONFIRMATIONS       = 5;
-static              CircularFifoQueue<Long> requestTimes        = new CircularFifoQueue(100);
-static              Random                  rnd                 = new Random();
-static              ThreadLocal<Integer>    goAcceleratorPort   = new ThreadLocal();
-static              AtomicInteger           nextPort            = new AtomicInteger(1901);
-final               boolean                 DEBUG               = false;
+public static       boolean           chopNestedResponses = false;
+public static final HashSet<String>   phpFunctions        = new HashSet();
+public static final ArrayList<String> paramNames          = new ArrayList();
+public static final HashSet<String>   boringHeaders = new HashSet();
+public static final Set<String>       reportedParams = ConcurrentHashMap.newKeySet();
+public              boolean         supportsHTTP2  = true;
+public final AtomicBoolean unloaded      = new AtomicBoolean(false);
+static final byte          CONFIRMATIONS = 5;
+static       CircularFifoQueue<Long> requestTimes      = new CircularFifoQueue(100);
+static final Random                  rnd               = new Random();
+static final ThreadLocal<Integer>    goAcceleratorPort = new ThreadLocal();
+static final AtomicInteger        nextPort          = new AtomicInteger(1901);
+final        boolean              DEBUG             = false;
 
 public Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> settings, String name) {
   this.name      = name;
@@ -1478,9 +1478,9 @@ IScanIssue reportReflectionIssue(Attack[] attacks, IHttpRequestResponse baseRequ
   return reportReflectionIssue(attacks, baseRequestResponse, title, "");
 }
 private final String                  CHARSET             = "0123456789abcdefghijklmnopqrstuvwxyz";
-private final String                  START_CHARSET       = "ghijklmnopqrstuvwxyz";
-private       PrintWriter             stdout;
-private       PrintWriter stderr;
+private final String      START_CHARSET       = "ghijklmnopqrstuvwxyz";
+private final PrintWriter stdout;
+private final PrintWriter stderr;
 private final char[]      DIGITS = new char[] {
   '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
   'w', 'x', 'y', 'z'

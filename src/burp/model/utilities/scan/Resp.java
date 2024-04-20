@@ -8,8 +8,8 @@ import burp.model.utilities.misc.Utilities;
 import java.util.Arrays;
 
 public class Resp {
-private IHttpRequestResponse req;
-private IResponseInfo        info;
+private final IHttpRequestResponse req;
+private       IResponseInfo        info;
 private IResponseVariations  attributes;
 private long                 timestamp;
 private long responseTime;

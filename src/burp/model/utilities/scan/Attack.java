@@ -17,15 +17,15 @@ static final int                     INCALCULABLE = -3;
 private      IHttpRequestResponse    firstRequest;
 private      HashMap<String, Object> firstFingerprint;
 private HashMap<String, Object> lastPrint;
-private IHttpRequestResponse lastRequest;
-private String[] keys;
-public        String    payload;
+private       IHttpRequestResponse lastRequest;
+private final String[]             keys;
+public        String               payload;
 private       Probe     probe;
 private       String    anchor;
-private HashMap<String, Object> fingerprint;
-private IResponseKeywords       responseKeywords;
-private IResponseVariations     responseDetails;
-private       int       responseReflections;
+private       HashMap<String, Object> fingerprint;
+private final IResponseKeywords       responseKeywords;
+private final IResponseVariations     responseDetails;
+private       int                 responseReflections;
 private final Utilities utilities;
 
 public HashMap<String, Object> getLastPrint() {

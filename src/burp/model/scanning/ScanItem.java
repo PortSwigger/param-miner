@@ -14,12 +14,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class ScanItem {
-private final Utilities utilities;
-private       Scan      scan;
-public  IHttpRequestResponse req;
-public  String               host;
-private ConfigurableSettings config;
-private boolean              prepared = false;
+private final Utilities            utilities;
+private final Scan                 scan;
+public        IHttpRequestResponse req;
+public final  String               host;
+private final ConfigurableSettings config;
+private       boolean              prepared = false;
 IScannerInsertionPoint insertionPoint;
 private IParameter param;
 private String     key = null;

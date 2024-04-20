@@ -15,12 +15,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class HeaderMutationGuesser {
-    private ConfigurableSettings config;
-    private byte[]                                  req;
-    private IHttpService                            service;
-    public  HashMap<String, IHttpRequestResponse[]> evidence;
-    private String[][]                              testHeaders;
-    private URL url;
+    private final ConfigurableSettings config;
+    private       byte[]               req;
+    private final IHttpService                            service;
+    public final  HashMap<String, IHttpRequestResponse[]> evidence;
+    private final String[][]                              testHeaders;
+    private final URL                                     url;
 
     public HeaderMutationGuesser(IHttpRequestResponse req, ConfigurableSettings config, Utilities utilities) {
       this.url       = Utilities.getURL(req);

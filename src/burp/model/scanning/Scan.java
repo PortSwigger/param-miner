@@ -24,8 +24,8 @@ import org.apache.commons.lang3.NotImplementedException;
 
 public abstract class Scan implements IScannerCheck {
 String      name = "";
-public          SettingsBox      scanSettings;
-protected final Utilities        utilities;
+public final    SettingsBox scanSettings;
+protected final Utilities   utilities;
 protected final BulkScanLauncher launcher;
 
 public Scan(String name, Utilities utilities, BulkScanLauncher launcher) {

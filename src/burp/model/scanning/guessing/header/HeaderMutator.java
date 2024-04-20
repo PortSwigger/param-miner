@@ -16,7 +16,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 public class HeaderMutator {
-public ArrayList<String> mutations = new ArrayList();
+public final ArrayList<String> mutations = new ArrayList();
 
 public HeaderMutator(Utilities utilities) {
   this.utilities = utilities;

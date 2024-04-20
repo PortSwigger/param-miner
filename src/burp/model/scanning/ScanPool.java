@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ScanPool extends ThreadPoolExecutor implements IExtensionStateListener {
-public AtomicInteger candidates = new AtomicInteger(0);
-AtomicInteger findings = new AtomicInteger(0);
+public final AtomicInteger candidates = new AtomicInteger(0);
+final        AtomicInteger findings   = new AtomicInteger(0);
 
 ScanPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue,
          Utilities utilities

@@ -22,12 +22,12 @@ import static org.apache.commons.lang3.math.NumberUtils.max;
 public class TriggerParamGuesser implements ActionListener, Runnable {
 
 private final Utilities              utilities;
-private       IHttpRequestResponse[] reqs;
-private       boolean                backend;
-private       byte                   type;
-private       ParamGrabber           paramGrabber;
-private       ThreadPoolExecutor     taskEngine;
-private       ConfigurableSettings   config;
+private final IHttpRequestResponse[] reqs;
+private final boolean                backend;
+private final byte                   type;
+private final ParamGrabber paramGrabber;
+private final ThreadPoolExecutor taskEngine;
+private       ConfigurableSettings config;
     
     public TriggerParamGuesser(
       IHttpRequestResponse[] reqs, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,

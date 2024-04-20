@@ -19,11 +19,11 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.math.NumberUtils;
 
 public class BulkScan implements Runnable {
-private       IHttpRequestResponse[]    reqs;
-private       Scan                 scan;
-private       ConfigurableSettings config;
-public static List<Scan>           scans = new ArrayList();
-public static ConcurrentHashMap<String, Boolean> hostsToSkip = new ConcurrentHashMap();
+private final IHttpRequestResponse[] reqs;
+private final Scan                   scan;
+private final ConfigurableSettings   config;
+public static final List<Scan>           scans       = new ArrayList();
+public static final ConcurrentHashMap<String, Boolean> hostsToSkip = new ConcurrentHashMap();
 
 public BulkScan(
   Scan scan, IHttpRequestResponse[] reqs, ConfigurableSettings config, Utilities utilities,
@@ -190,7 +190,7 @@ label124:
   
 }
 
-private Utilities utilities;
+private final Utilities        utilities;
 private final BulkScanLauncher luancher;
 }
 

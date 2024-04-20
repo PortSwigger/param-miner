@@ -13,11 +13,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 public class JsonParamNameInsertionPoint extends ParamInsertionPoint {
-byte[]      headers;
-byte[]      body;
-String      baseInput;
-String      attackID;
-JsonElement root;
+final byte[] headers;
+final byte[] body;
+final String baseInput;
+final String attackID;
+final JsonElement root;
 
 public JsonParamNameInsertionPoint(
   byte[] request, String name, String value, byte type, String attackID, Utilities utilities

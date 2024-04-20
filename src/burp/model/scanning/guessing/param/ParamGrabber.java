@@ -25,13 +25,13 @@ import static burp.model.utilities.misc.Keysmith.getWords;
 
 public class ParamGrabber implements IProxyListener, IHttpListener {
 
-private final Utilities                 utilities;
-private       Set<IHttpRequestResponse> savedJson      = ConcurrentHashMap.newKeySet();
-    private HashSet<ArrayList<String>>  done           = new HashSet<>();
-    private Set<String>                 savedGET       = ConcurrentHashMap.newKeySet();
-    private Set<String>                 savedWords     = ConcurrentHashMap.newKeySet();
-    private HashSet<String>             alreadyScanned = new HashSet<>();
-    private ThreadPoolExecutor          taskEngine;
+private final     Utilities                  utilities;
+private final     Set<IHttpRequestResponse>  savedJson = ConcurrentHashMap.newKeySet();
+    private final HashSet<ArrayList<String>> done      = new HashSet<>();
+    private final Set<String>                savedGET  = ConcurrentHashMap.newKeySet();
+    private final Set<String>                savedWords = ConcurrentHashMap.newKeySet();
+    private final HashSet<String> alreadyScanned = new HashSet<>();
+    private final ThreadPoolExecutor taskEngine;
 
     public ParamGrabber(ThreadPoolExecutor taskEngine, Utilities utilities) {
       this.taskEngine = taskEngine;

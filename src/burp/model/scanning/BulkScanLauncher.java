@@ -9,7 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class BulkScanLauncher {
-private       ScanPool  taskEngine;
+private final ScanPool  taskEngine;
 private final Utilities utilities;
 
 public BulkScanLauncher(List<Scan> scans, Utilities utilities) {

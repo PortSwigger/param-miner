@@ -54,7 +54,7 @@ public int getBodyOffset() {
 public byte getContentType() {
   throw new RuntimeException("getContentType is not implemented");
 }
-byte[]       request;
+final byte[] request;
 List<String> headers = null;
 String       method  = null;
 URL          url     = null;

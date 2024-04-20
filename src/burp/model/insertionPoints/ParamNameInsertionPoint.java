@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Map;
 
 public class ParamNameInsertionPoint extends ParamInsertionPoint {
-    String                  attackID;
-    String                  defaultPrefix;
+final String attackID;
+final String defaultPrefix;
     String                  host;
-    HashMap<String, String> present;
+final HashMap<String, String> present;
 
     public ParamNameInsertionPoint(
       byte[] request, String name, String value, byte type, String attackID, Utilities utilities

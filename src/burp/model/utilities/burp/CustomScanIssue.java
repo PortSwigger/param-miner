@@ -7,14 +7,14 @@ import burp.IScanIssue;
 import java.net.URL;
 
 public class CustomScanIssue implements IScanIssue {
-private IHttpService           httpService;
-private URL                    url;
-private IHttpRequestResponse[] httpMessages;
-private String                 name;
-private String                 detail;
-private String                 severity;
-private String                 confidence;
-private String                 remediation;
+private final IHttpService httpService;
+private final URL          url;
+private final IHttpRequestResponse[] httpMessages;
+private final String                 name;
+private final String                 detail;
+private final String severity;
+private final String confidence;
+private final String remediation;
 
 public CustomScanIssue(
   IHttpService httpService, URL url, IHttpRequestResponse[] httpMessages, String name, String detail, String severity,

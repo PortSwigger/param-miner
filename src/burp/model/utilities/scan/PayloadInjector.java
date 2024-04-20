@@ -15,10 +15,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class PayloadInjector {
-private final Utilities    utilities;
-private       IHttpService service;
-private IScannerInsertionPoint insertionPoint;
-private IHttpRequestResponse   base;
+private final Utilities              utilities;
+private final IHttpService           service;
+private final IScannerInsertionPoint insertionPoint;
+private final IHttpRequestResponse   base;
 
 public IHttpService getService() {
   return this.service;

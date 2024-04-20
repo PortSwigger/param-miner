@@ -10,11 +10,11 @@ import burp.IScannerInsertionPoint;
 import burp.model.utilities.misc.Utilities;
 
 public class ParamInsertionPoint implements IScannerInsertionPoint {
-public byte[] request;
-String name;
-public String    value;
-public byte      type;
-public Utilities utilities;
+public final byte[] request;
+final        String name;
+public final String value;
+public final byte   type;
+public final Utilities utilities;
 
 public ParamInsertionPoint(byte[] request, IParameter param, Utilities utilities) {
   this.request = request;
