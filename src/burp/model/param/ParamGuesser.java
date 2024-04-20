@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 //    }
 //
 //    public void extensionUnloaded() {
-//        utilities.log("Aborting param bruteforce");
+//        utilities.out("Aborting param bruteforce");
 //        utilities.unloaded.set(true);
 //    }
 //
@@ -44,17 +44,17 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 public class ParamGuesser implements Runnable {
 
-    private IHttpRequestResponse req;
-    private boolean              backend;
-    private byte type;
-    private ThreadPoolExecutor taskEngine;
-    private int stop;
-    private ParamGrabber paramGrabber;
-    private ParamAttack          attack;
-    private ConfigurableSettings config;
-    private       boolean   forceHttp1;
-    private final Utilities utilities;
-    private       byte[]    staticCanary;
+private final Utilities            utilities;
+private       IHttpRequestResponse req;
+private       boolean              backend;
+private       byte                 type;
+private       ThreadPoolExecutor   taskEngine;
+private       int                  stop;
+private       ParamGrabber         paramGrabber;
+private       ParamAttack          attack;
+private       ConfigurableSettings config;
+private       boolean              forceHttp1;
+private       byte[]               staticCanary;
 
     public ParamGuesser(
       IHttpRequestResponse req, boolean backend, byte type, ParamGrabber paramGrabber, ThreadPoolExecutor taskEngine,
@@ -89,7 +89,7 @@ public class ParamGuesser implements Runnable {
         try {
             if (this.attack == null) {
                 if (req.getResponse() == null) {
-                    utilities.log("Baserequest has no response - fetching...");
+                    utilities.out("Baserequest has no response - fetching...");
                     try {
                         req = utilities.callbacks.makeHttpRequest(req.getHttpService(), req.getRequest(), this.forceHttp1);
                     } catch (RuntimeException e) {
@@ -276,11 +276,11 @@ public class ParamGuesser implements Runnable {
 
                     if (!utilities.similar(localBase, confirmParamGuess)) {
                         if (candidates.size() > 1) {
-                            utilities.log("Splitting " + submission);
+                            utilities.out("Splitting " + submission);
                             ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
-                            utilities.log("Got " + String.join("|", left));
+                            utilities.out("Got " + String.join("|", left));
                             ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2, candidates.size()));
-                            utilities.log("Got " + String.join("|", right));
+                            utilities.out("Got " + String.join("|", right));
                             paramBuckets.push(left);
                             paramBuckets.push(right);
                         } else {
@@ -334,7 +334,7 @@ public class ParamGuesser implements Runnable {
                             }
                         }
                     } else{
-                        utilities.log(targetURL + " couldn't replicate: " + candidates);
+                        utilities.out(targetURL + " couldn't replicate: " + candidates);
                         base.addAttack(paramGuess);
                     }
 
@@ -349,7 +349,7 @@ public class ParamGuesser implements Runnable {
                     findPersistent(baseRequestResponse, paramGrab, attackID, state.recentParams, null, state.alreadyReported);
 
                     if (!utilities.similar(altBase, paramGrab)) {
-                        utilities.log("Potential GETbase param: " + candidates);
+                        utilities.out("Potential GETbase param: " + candidates);
                         injector.probeAttack(Keysmith.permute(submission), mutation);
                         altBase.addAttack(new Attack(utilities.callbacks.makeHttpRequest(service, invertedBase), utilities));
                         injector.probeAttack(submission, mutation);
@@ -358,7 +358,7 @@ public class ParamGuesser implements Runnable {
                         if (!utilities.similar(altBase, paramGrab)) {
 
                             if (candidates.size() > 1) {
-                                utilities.log("Splitting " + submission);
+                                utilities.out("Splitting " + submission);
                                 ArrayList<String> left = new ArrayList<>(candidates.subList(0, candidates.size() / 2));
                                 ArrayList<String> right = new ArrayList<>(candidates.subList(candidates.size() / 2 + 1, candidates.size()));
                                 paramBuckets.push(left);
@@ -476,7 +476,7 @@ public class ParamGuesser implements Runnable {
                 }
             }
 
-            utilities.log("Dedicated: "+attackDedication);
+            utilities.out("Dedicated: "+attackDedication);
             for (int i = 1; i < attackDedication; i++) {
 
                 if (reflectPoisonMightWork) {
@@ -498,7 +498,7 @@ public class ParamGuesser implements Runnable {
                 }
             }
 
-            utilities.log("Failed cache poisoning check");
+            utilities.out("Failed cache poisoning check");
         }
         catch (java.lang.Exception e) {
             utilities.err(e.getMessage()+"\n\n"+e.getStackTrace()[0]);
@@ -609,7 +609,7 @@ public class ParamGuesser implements Runnable {
 //            short getPoison200Code = utilities.helpers.analyzeResponse(getPoison200.getResponse()).getStatusCode();
 //
 //            if (getPoison200Code != get404Code) {
-//                utilities.log("Successful cache poisoning check");
+//                utilities.out("Successful cache poisoning check");
 //                utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison200.getHttpService(), utilities.getURL(getPoison200), getPoison200, "Dubious cache poisoning "+i, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming", "High", "Tentative", "Investigate"));
 //                return true;
 //            }
@@ -630,7 +630,7 @@ public class ParamGuesser implements Runnable {
         for (int j = attackDedication - i; j < attackDedication; j += 3) {
             IHttpRequestResponse getPoison = utilities.attemptRequest(service, utilities.appendToPath(utilities.addCacheBuster(base.getRequest(), cacheBuster), pathSuffix));
             if (utilities.containsBytes(getPoison.getResponse(), staticCanary)) {
-                utilities.log("Successful cache poisoning check");
+                utilities.out("Successful cache poisoning check");
                 String title = "Cache poisoning";
 
                 byte[] headerSplitReq = utilities.appendToPath(injector.getInsertionPoint().buildRequest(utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
@@ -671,7 +671,7 @@ public class ParamGuesser implements Runnable {
         for (String key : keys) {
             String[] parsed = Keysmith.parseKey(key);
             if (!(state.valueParams.contains(key) || state.params.contains(key) || candidates.contains(parsed[1]) || candidates.contains(key))) { // || params.contains(parsed[1])
-                utilities.log("Found new key: " + key);
+                utilities.out("Found new key: " + key);
                 state.valueParams.add(key);
                 discoveredParams.add(key); // fixme probably adds the key in the wrong format
                 paramGrabber.saveParams(paramGuess.getFirstRequest());
@@ -766,7 +766,7 @@ public class ParamGuesser implements Runnable {
 //        String baseValue = insertionPoint.getBaseValue();
 //        PayloadInjector injector = new PayloadInjector(baseRequestResponse, insertionPoint);
 //        String targetURL = baseRequestResponse.getHttpService().getHost();
-//        utilities.log("Initiating parameter name bruteforce on " + targetURL);
+//        utilities.out("Initiating parameter name bruteforce on " + targetURL);
 //
 //        final String breaker = "=%3c%61%60%27%22%24%7b%7b%5c";
 //        Attack base = injector.buildAttack(baseValue+"&"+utilities.randomString(6)+ breaker, false);
@@ -798,10 +798,10 @@ public class ParamGuesser implements Runnable {
 //                }
 //
 //            }
-//            utilities.log("Parameter name bruteforce complete: "+targetURL);
+//            utilities.out("Parameter name bruteforce complete: "+targetURL);
 //        }
 //        catch (RuntimeException e) {
-//            utilities.log("Parameter name bruteforce aborted: "+targetURL);
+//            utilities.out("Parameter name bruteforce aborted: "+targetURL);
 //        }
 //
 //        return attacks;

@@ -181,7 +181,7 @@ class ParamAttack {
         // calculateBucketSize(type, longest); was here
 
         recentParams = new CircularFifoQueue<>(bucketSize *3);
-        utilities.log("Selected bucket size: "+ bucketSize + " for "+ targetURL);
+        utilities.out("Selected bucket size: "+ bucketSize + " for "+ targetURL);
 
         if(baseRequestResponse.getRequest()[0] != 'G') {
             invertedBase = utilities.helpers.toggleRequestMethod(baseRequestResponse.getRequest());
@@ -205,7 +205,7 @@ class ParamAttack {
         }
 
         alreadyReported = getBlacklist(type);
-        //utilities.log("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
+        //utilities.out("Trying " + (valueParams.size()+ params.size()) + " params in ~"+ paramBuckets.size() + " requests. Going from "+start + " to "+stop);
     }
 
     private void calculateBucketSize(byte type, int longest) {
@@ -228,7 +228,7 @@ class ParamAttack {
         }
 
         while (true) {
-            utilities.log("Trying bucket size: "+ bucketSize);
+            utilities.out("Trying bucket size: "+ bucketSize);
             long start = System.currentTimeMillis();
             StringBuilder trialPayload = new StringBuilder();
             trialPayload.append(utilities.randomString(longest));
@@ -328,7 +328,7 @@ class ParamAttack {
         HashMap<String, String> requestParams = new HashMap<>();
         for (String entry: Keysmith.getAllKeys(baseRequestResponse.getRequest(), new HashMap<>(), utilities)) { // todo give precedence to shallower keys
             String[] parsed = Keysmith.parseKey(entry);
-            utilities.log("Request param: " +parsed[1]);
+            utilities.out("Request param: " +parsed[1]);
             requestParams.putIfAbsent(parsed[1], parsed[0]);
         }
 
@@ -393,14 +393,14 @@ class ParamAttack {
         final TreeSet<Integer> sorted = new TreeSet<>(Collections.reverseOrder());
         sorted.addAll(responses.keySet());
         for(Integer key: sorted) {
-            utilities.log("Loading keys with "+key+" matches");
+            utilities.out("Loading keys with "+key+" matches");
             ArrayList<String> sortedByLength = new ArrayList<>(responses.get(key));
             sortedByLength.sort(new LengthCompare());
             params.addAll(sortedByLength);
         }
 
         if (params.size() > 0) {
-            utilities.log("Loaded " + new HashSet<>(params).size() + " params from response");
+            utilities.out("Loaded " + new HashSet<>(params).size() + " params from response");
         }
 
         params.addAll(Keysmith.getWords(utilities.helpers.bytesToString(baseRequestResponse.getResponse())));

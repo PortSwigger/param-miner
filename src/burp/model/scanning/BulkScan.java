@@ -56,7 +56,7 @@ public void run() {
     long     start      = System.currentTimeMillis();
     ScanPool taskEngine = luancher.getTaskEngine();
     int      queueSize  = taskEngine.getQueue().size();
-    utilities.log("Adding " + this.reqs.length + " tasks to queue of " + queueSize);
+    utilities.out("Adding " + this.reqs.length + " tasks to queue of " + queueSize);
     queueSize += this.reqs.length;
     int                    thread_count = taskEngine.getCorePoolSize();
     ArrayList<ScanItem>    reqlist      = new ArrayList();
@@ -123,7 +123,7 @@ label124:
             if (applyRespFilter) {
               resp = req.req.getResponse();
               if (resp == null || !utilities.containsBytes(resp, respFilter.getBytes())) {
-                utilities.log("Skipping request due to response filter");
+                utilities.out("Skipping request due to response filter");
                 left.remove();
                 continue;
               }
@@ -171,7 +171,7 @@ label124:
                 left.remove();
               }
               
-              utilities.log("Adding request on " + host + " to queue");
+              utilities.out("Adding request on " + host + " to queue");
               ++queued;
               taskEngine.execute(new BulkScanItem(this.scan, req, start, utilities, luancher));
             }

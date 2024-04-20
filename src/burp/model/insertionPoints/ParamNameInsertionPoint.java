@@ -47,7 +47,7 @@ public class ParamNameInsertionPoint extends ParamInsertionPoint {
             utilities.out("Selected default key: "+maxKey);
         }
         else {
-            utilities.log("No default key available");
+            utilities.out("No default key available");
         }
 
         present = new HashMap<>();

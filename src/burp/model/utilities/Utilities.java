@@ -339,20 +339,21 @@ public static byte[] setHeader(byte[] request, String header, String value, bool
     }
   }
 }
-final         boolean                 DEBUG               = false;
-static final        byte    CONFIRMATIONS       = 5;
-public static final byte    PARAM_HEADER        = 7;
-public static       boolean chopNestedResponses = false;
-public        boolean supportsHTTP2       = true;
-public        AtomicBoolean     unloaded     = new AtomicBoolean(false);
-public static HashSet<String>   phpFunctions  = new HashSet();
-public static ArrayList<String> paramNames     = new ArrayList();
-public static HashSet<String>         boringHeaders  = new HashSet();
-public static Set<String>             reportedParams = ConcurrentHashMap.newKeySet();
-static        CircularFifoQueue<Long> requestTimes   = new CircularFifoQueue(100);
-static               Random                  rnd                 = new Random();
-static               ThreadLocal<Integer>    goAcceleratorPort   = new ThreadLocal();
-static               AtomicInteger           nextPort            = new AtomicInteger(1901);
+
+public static final byte                    PARAM_HEADER        = 7;
+public static       boolean                 chopNestedResponses = false;
+public static       HashSet<String>         phpFunctions        = new HashSet();
+public static       ArrayList<String>       paramNames          = new ArrayList();
+public static       HashSet<String>         boringHeaders       = new HashSet();
+public static       Set<String>             reportedParams      = ConcurrentHashMap.newKeySet();
+public              boolean                 supportsHTTP2       = true;
+public              AtomicBoolean           unloaded            = new AtomicBoolean(false);
+static final        byte                    CONFIRMATIONS       = 5;
+static              CircularFifoQueue<Long> requestTimes        = new CircularFifoQueue(100);
+static              Random                  rnd                 = new Random();
+static              ThreadLocal<Integer>    goAcceleratorPort   = new ThreadLocal();
+static              AtomicInteger           nextPort            = new AtomicInteger(1901);
+final               boolean                 DEBUG               = false;
 
 public Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> settings, String name) {
   this.name      = name;
@@ -580,13 +581,13 @@ public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req, boo
       }
       catch(RuntimeException var13) {
         RuntimeException e = var13;
-        log(e.toString());
-        log("Critical request error, retrying...");
+        err(e.toString());
+        err("Critical request error, retrying...");
         continue;
       }
       
       if(result.getResponse() == null) {
-        log("Req failed, retrying...");
+        err("Req failed, retrying...");
       }
       else {
         if(expectNestedResponse) {
@@ -614,15 +615,12 @@ public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req, boo
         out("Failed to get a nested response after " + maxAttempts + " retries. Continuing with null response.");
       }
       else {
-        log("Req failed multiple times, giving up");
+        out("Req failed multiple times, giving up");
       }
     }
     
     return result;
   }
-}
-
-public void log(String message) {
 }
 
 public String getHeader(byte[] request, String header) {

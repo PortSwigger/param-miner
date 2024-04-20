@@ -45,14 +45,13 @@ private       ConfigurableSettings   config;
         ConfigurableSettings config = utilities.globalSettings.showSettings();
         if (config != null) {
             this.config = config;
-            //Runnable runnable = new TriggerParamGuesser(reqs, backend, type, paramGrabber, taskEngine, config);
             (new Thread(this)).start();
         }
     }
 
     public void run() {
         int queueSize = taskEngine.getQueue().size();
-        utilities.log("Adding "+reqs.length+" tasks to queue of "+queueSize);
+        utilities.out("Adding "+reqs.length+" tasks to queue of "+queueSize);
         queueSize += reqs.length;
         int thread_count = taskEngine.getCorePoolSize();
 
@@ -106,7 +105,7 @@ private       ConfigurableSettings   config;
         int queued = 0;
         // every pass adds at least one item from every host
         while(!reqlist.isEmpty()) {
-            utilities.log("Loop "+i++);
+            utilities.out("Loop "+i++);
             Iterator<IHttpRequestResponse> left = reqlist.iterator();
             while (left.hasNext()) {
                 IHttpRequestResponse req = left.next();
@@ -131,7 +130,7 @@ private       ConfigurableSettings   config;
                     cache.add(host);
                     keyCache.add(key);
                     left.remove();
-                    utilities.log("Adding request on "+host+" to queue");
+                    utilities.out("Adding request on "+host+" to queue");
                     queued++;
                     taskEngine.execute(new ParamGuesser(utilities.callbacks.saveBuffersToTempFiles(req), backend, type, paramGrabber, taskEngine, stop, config, utilities));
                 } else {
@@ -157,6 +156,5 @@ private       ConfigurableSettings   config;
         }
 
         utilities.out("Queued " + queued + " attacks");
-
     }
 }

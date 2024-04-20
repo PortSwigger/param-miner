@@ -59,7 +59,7 @@ public class Keysmith {
             String parsedParam = parseParam(param.getName().replace(':', ';'));
             if(types.isEmpty() || types.contains(param.getType())) {
                 keys.add(parsedParam);
-                utilities.log(parsedParam);
+                utilities.out(parsedParam);
             }
         }
         return keys;

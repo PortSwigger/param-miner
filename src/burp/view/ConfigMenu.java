@@ -44,7 +44,7 @@ public void run() {
     burpMenuBar.add(this.menuButton);
     burpMenuBar.repaint();
   } catch (NullPointerException var2) {
-    utilities.log("Couldn't find Burp menu bar - probably running headless/enterprise");
+    utilities.out("Couldn't find Burp menu bar - probably running headless/enterprise");
   }
   
 }
