@@ -369,7 +369,7 @@ private       byte[]               staticCanary;
                                 evidence[0] = altBase.getFirstRequest();
                                 evidence[1] = paramGuess.getFirstRequest();
                                 evidence[2] = paramGrab.getFirstRequest();
-                                utilities.callbacks.addScanIssue(new CustomScanIssue(service, utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '" + candidates + "'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
+                                utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(baseRequestResponse), evidence, "Secret parameter", "Parameter name: '" + candidates + "'. Review the three requests attached in chronological order.", "Medium", "Tentative", "Investigate"));
 
                                 altBase = new Attack(utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1), utilities);
                                 altBase.addAttack(new Attack(utilities.callbacks.makeHttpRequest(service, invertedBase, this.forceHttp1), utilities));
@@ -412,7 +412,7 @@ private       byte[]               staticCanary;
             }
 
             byte[] testReq = injector.getInsertionPoint().buildRequest(utilities.helpers.stringToBytes(param));
-            testReq = utilities.addCacheBuster(testReq, utilities.generateCanary());
+            testReq = utilities.addCacheBuster(testReq, Utilities.generateCanary());
 
             int attackDedication;
             if (canSeeCache(base.getResponse())) {
@@ -432,7 +432,7 @@ private       byte[]               staticCanary;
 
 
 
-            String pathCacheBuster = utilities.generateCanary() + ".jpg";
+            String pathCacheBuster = Utilities.generateCanary() + ".jpg";
 
             //String path = utilities.getPathFromRequest(base.getRequest());
             //byte[] base404 = utilities.replaceFirst(base.getRequest(), path.getBytes(), (path+pathCacheBuster).getBytes());
@@ -519,7 +519,7 @@ private       byte[]               staticCanary;
     }
 
     private boolean tryDiffCache(PayloadInjector injector, String param, int attackDedication) {
-        String canary = utilities.generateCanary()+".jpg";
+        String canary = Utilities.generateCanary()+".jpg";
         byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(utilities.helpers.stringToBytes(param));
         setPoison200Req = utilities.appendToPath(setPoison200Req, canary);
         for(int j=0; j<attackDedication; j++) {
@@ -538,7 +538,7 @@ private       byte[]               staticCanary;
         for(int i=0; i<10; i++) {
             diffed.clear();
             diff = false;
-            byte[] fakePoisonReq =  utilities.appendToPath(getPoisonReq, utilities.generateCanary()+".jpg");
+            byte[] fakePoisonReq =  utilities.appendToPath(getPoisonReq, Utilities.generateCanary()+".jpg");
             resp = utilities.attemptRequest(injector.getService(), fakePoisonReq);
             baseline.updateWith(resp.getResponse());
             for (String attribute: baseline.getInvariantAttributes()) {
@@ -556,7 +556,7 @@ private       byte[]               staticCanary;
             IHttpRequestResponse[] attachedRequests = new IHttpRequestResponse[2];
             attachedRequests[0] = resp;
             attachedRequests[1] = getPoisoned;
-            utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), utilities.getURL(getPoisoned), attachedRequests, "Attribute-diff cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
+            utilities.callbacks.addScanIssue(new CustomScanIssue(getPoisoned.getHttpService(), Utilities.getURL(getPoisoned), attachedRequests, "Attribute-diff cache poisoning: "+param, "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming "+diffed, "High", "Tentative", "Investigate"));
             return true;
         }
 
@@ -564,7 +564,7 @@ private       byte[]               staticCanary;
     }
 
     private boolean tryStatusCache(PayloadInjector injector, String param, int attackDedication, short get404Code) {
-        String canary = utilities.generateCanary()+".jpg";
+        String canary = Utilities.generateCanary()+".jpg";
         byte[] setPoison200Req = injector.getInsertionPoint().buildRequest(utilities.helpers.stringToBytes(addStatusPayload(param)));
         setPoison200Req = utilities.appendToPath(setPoison200Req, canary);
 
@@ -582,7 +582,7 @@ private       byte[]               staticCanary;
                 utilities.callbacks.addScanIssue(
                   new CustomScanIssue(
                     getPoison200.getHttpService(),
-                    utilities.getURL(getPoison200),
+                    Utilities.getURL(getPoison200),
                     new IHttpRequestResponse[] {getPoison200}, "Status-code cache poisoning " + j,
                     "Cache poisoning: '" + param + "'. Diff based cache poisoning. Good luck confirming",
                     "High", "Tentative",
@@ -621,7 +621,7 @@ private       byte[]               staticCanary;
         IHttpService service = injector.getService();
         byte[] setPoisonReq = utilities.appendToPath(injector.getInsertionPoint().buildRequest(utilities.helpers.stringToBytes(param)), pathSuffix);
 
-        String cacheBuster = utilities.generateCanary();
+        String cacheBuster = Utilities.generateCanary();
         setPoisonReq = utilities.addCacheBuster(setPoisonReq, cacheBuster);
         for (int j = attackDedication - i; j < attackDedication; j++) {
             utilities.attemptRequest(service, setPoisonReq);
@@ -634,14 +634,14 @@ private       byte[]               staticCanary;
                 String title = "Cache poisoning";
 
                 byte[] headerSplitReq = utilities.appendToPath(injector.getInsertionPoint().buildRequest(utilities.helpers.stringToBytes(param + "~zxcv\rvcz")), pathSuffix);
-                cacheBuster = utilities.generateCanary();
+                cacheBuster = Utilities.generateCanary();
                 byte[] headerSplitResp = utilities.attemptRequest(service, utilities.addCacheBuster(headerSplitReq, cacheBuster)).getResponse();
-                if (utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
+                if (utilities.containsBytes(Arrays.copyOfRange(headerSplitResp, 0, Utilities.getBodyStart(headerSplitReq)), "zxcv\rvcz".getBytes())) {
                     title = "Severe cache poisoning";
                 }
 
                 title = title + " "+i;
-                utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), utilities.getURL(getPoison),
+                utilities.callbacks.addScanIssue(new CustomScanIssue(getPoison.getHttpService(), Utilities.getURL(getPoison),
                   new IHttpRequestResponse[] {getPoison}, title, "Cache poisoning: '" + param + "'. Disregard the request and look for "+config.getString("canary")+" in the response", "High", "Firm", "Investigate"));
                 return true;
             }
@@ -656,7 +656,7 @@ private       byte[]               staticCanary;
         }
         String[] headers = new String[]{"Age", "X-Cache", "Cache", "X-Cache-Hits", "X-Varnish-Cache", "X-Drupal-Cache", "X-Varnish", "CF-Cache-Status", "CF-RAY"};
         for(String header: headers) {
-            if(utilities.getHeaderOffsets(response, header) != null) {
+            if(Utilities.getHeaderOffsets(response, header) != null) {
                 return true;
             }
         }
@@ -749,9 +749,9 @@ private       byte[]               staticCanary;
 
             byte[] canary = utilities.helpers.stringToBytes(utilities.toCanary(param.split("~", 2)[0]) + attackID);
             if (utilities.containsBytes(failResp, canary) && !utilities.containsBytes(req, canary)){
-                utilities.out("Identified persistent parameter on "+utilities.getURL(baseRequestResponse) + ":" + param);
+                utilities.out("Identified persistent parameter on "+ Utilities.getURL(baseRequestResponse) + ":" + param);
                 params.remove();
-                utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), utilities.getURL(baseRequestResponse),
+                utilities.callbacks.addScanIssue(new CustomScanIssue(baseRequestResponse.getHttpService(), Utilities.getURL(baseRequestResponse),
                   new IHttpRequestResponse[] {paramGuess.getFirstRequest()}, "Secret parameter", "Found persistent parameter: '"+param+"'. Disregard the request and look for " + utilities.helpers.bytesToString(canary) + " in the response", "High", "Firm", "Investigate"));
                 alreadyReported.add(param);
                 return true;

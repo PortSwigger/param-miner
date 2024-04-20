@@ -64,7 +64,7 @@ private       Set<IHttpRequestResponse> savedJson      = ConcurrentHashMap.newKe
 
     public void saveParams(IHttpRequestResponse baseRequestResponse) {
         // todo also use observed requests
-        String body = utilities.getBody(baseRequestResponse.getResponse());
+        String body = Utilities.getBody(baseRequestResponse.getResponse());
         if (!body.equals("")) {
             savedWords.addAll(getWords(utilities.helpers.bytesToString(baseRequestResponse.getResponse())));
             savedGET.addAll(getHtmlKeys(body));
@@ -85,16 +85,17 @@ private       Set<IHttpRequestResponse> savedJson      = ConcurrentHashMap.newKe
 
     private void addCacheBusters(IHttpRequestResponse messageInfo) {
         byte[] placeHolder = utilities.helpers.stringToBytes("$randomplz");
-        if (utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
+        if (Utilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
             messageInfo.setRequest(
-                    utilities.fixContentLength(utilities.replace(messageInfo.getRequest(), placeHolder, utilities.helpers.stringToBytes(utilities.generateCanary())))
+                    Utilities.fixContentLength(utilities.replace(messageInfo.getRequest(), placeHolder, utilities.helpers.stringToBytes(
+                      Utilities.generateCanary())))
             );
         }
 
         byte[] req = messageInfo.getRequest();
         String cacheBuster = null;
         if (utilities.globalSettings.getBoolean("Add dynamic cachebuster")) {
-            cacheBuster = utilities.generateCanary();
+            cacheBuster = Utilities.generateCanary();
         }
         else if (utilities.globalSettings.getBoolean("Add 'fcbz' cachebuster")) {
             cacheBuster = "fcbz";

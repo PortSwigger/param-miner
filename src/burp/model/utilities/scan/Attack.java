@@ -124,7 +124,7 @@ private Attack add(byte[] response, String anchor) {
   if (anchor.equals("")) {
     this.responseReflections = -3;
   } else {
-    int reflections = utilities.countMatches(response, anchor.getBytes());
+    int reflections = Utilities.countMatches(response, anchor.getBytes());
     if (this.responseReflections == -1) {
       this.responseReflections = reflections;
     } else if (this.responseReflections != reflections && this.responseReflections != -3) {

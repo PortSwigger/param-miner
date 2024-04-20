@@ -98,7 +98,7 @@ public class ParamNameInsertionPoint extends ParamInsertionPoint {
         String replaceKey = "TCZqBcS13SA8QRCpW";
         IParameter newParam = utilities.helpers.buildParameter(replaceKey, "", type);
         byte[] built = utilities.helpers.updateParameter(request, newParam);
-        return utilities.fixContentLength(utilities.replace(built, utilities.helpers.stringToBytes(replaceKey+"="), utilities.helpers.stringToBytes(merged)));
+        return Utilities.fixContentLength(utilities.replace(built, utilities.helpers.stringToBytes(replaceKey+"="), utilities.helpers.stringToBytes(merged)));
     }
 
     String prepBulkParams(ArrayList<String> params) {
@@ -145,7 +145,7 @@ public class ParamNameInsertionPoint extends ParamInsertionPoint {
             String[] parts = name.split("~", 2);
             parts[1] = parts[1].replace("%s", calculateValue(name));
             parts[1] = parts[1].replace("%h", host);
-            return new String[]{parts[0], String.valueOf(utilities.invert(parts[1]))};
+            return new String[]{parts[0], String.valueOf(Utilities.invert(parts[1]))};
         }
         else {
             return new String[]{name, calculateValue(name)};

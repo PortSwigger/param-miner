@@ -17,7 +17,7 @@ public class NormalisedPathScan extends Scan {
 
     @Override
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        baseReq = Utilities.appendToQuery(baseReq, "cb="+utilities.generateCanary());
+        baseReq = Utilities.appendToQuery(baseReq, "cb="+ Utilities.generateCanary());
 
         Resp  base     = request(service, Utilities.appendToQuery(baseReq, "cbx=zxcv"), utilities);
         short baseCode = base.getStatus();

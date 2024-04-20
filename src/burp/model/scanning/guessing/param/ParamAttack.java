@@ -231,10 +231,10 @@ class ParamAttack {
             utilities.out("Trying bucket size: "+ bucketSize);
             long start = System.currentTimeMillis();
             StringBuilder trialPayload = new StringBuilder();
-            trialPayload.append(utilities.randomString(longest));
+            trialPayload.append(Utilities.randomString(longest));
             for (int i = 0; i < bucketSize; i++) {
                 trialPayload.append("|");
-                trialPayload.append(utilities.randomString(longest));
+                trialPayload.append(Utilities.randomString(longest));
             }
 
             Attack trial = injector.probeAttack(trialPayload.toString());
@@ -299,12 +299,12 @@ class ParamAttack {
     }
 
     Attack updateBaseline() {
-        this.base = this.injector.probeAttack(utilities.randomString(6));
+        this.base = this.injector.probeAttack(Utilities.randomString(6));
         for(int i=0; i<4; i++) {
-            base.addAttack(this.injector.probeAttack(utilities.randomString((i+1)*(i+1))));
+            base.addAttack(this.injector.probeAttack(Utilities.randomString((i+1)*(i+1))));
         }
         if (bucketSize > 1) {
-            base.addAttack(this.injector.probeAttack(utilities.randomString(6) + "|" + utilities.randomString(12)));
+            base.addAttack(this.injector.probeAttack(Utilities.randomString(6) + "|" + Utilities.randomString(12)));
         }
         return base;
     }
@@ -357,7 +357,7 @@ class ParamAttack {
             }
 
             JsonParser parser = new JsonParser();
-            JsonElement json = parser.parse(utilities.getBody(resp.getResponse()));
+            JsonElement json = parser.parse(Utilities.getBody(resp.getResponse()));
             HashSet<String> keys = new HashSet<>(Keysmith.getJsonKeys(json, requestParams));
             int matches = 0;
             for (String requestKey: keys) {
@@ -373,7 +373,7 @@ class ParamAttack {
                 HashSet<String> filteredKeys = new HashSet<>();
                 for(String key: keys) {
                     String lastKey = Keysmith.parseKey(key)[1];
-                    if (utilities.parseArrayIndex(lastKey) < 3) {
+                    if (Utilities.parseArrayIndex(lastKey) < 3) {
                         filteredKeys.add(Keysmith.parseKey(key)[1]);
                     }
                 }

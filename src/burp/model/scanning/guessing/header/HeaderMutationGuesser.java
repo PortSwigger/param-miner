@@ -23,11 +23,11 @@ public class HeaderMutationGuesser {
     private URL url;
 
     public HeaderMutationGuesser(IHttpRequestResponse req, ConfigurableSettings config, Utilities utilities) {
-      this.url       = utilities.getURL(req);
+      this.url       = Utilities.getURL(req);
       this.req       = req.getRequest();
       this.utilities = utilities;
-      if (utilities.isHTTP2(this.req)) {
-            this.req = utilities.convertToHttp1(this.req);
+      if (Utilities.isHTTP2(this.req)) {
+            this.req = Utilities.convertToHttp1(this.req);
         }
         this.config = config;
         this.service = req.getHttpService();
@@ -139,12 +139,12 @@ private IHttpRequestResponse requestHeader(byte[] baseReq, String header) {
 
     private IHttpRequestResponse requestHeader(byte[] baseReq, byte[] header) {
         byte[] req = this.addHeader(baseReq, header);
-        req = utilities.addCacheBuster(req, utilities.generateCanary());
+        req = utilities.addCacheBuster(req, Utilities.generateCanary());
         return utilities.attemptRequest(this.service, req, true);
     }
 
     private byte[] removeHeader(byte[] req, String headerName) {
-        int[] offsets = utilities.getHeaderOffsets(req, headerName);
+        int[] offsets = Utilities.getHeaderOffsets(req, headerName);
         if (offsets == null) {
             return req;
         }

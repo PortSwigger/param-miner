@@ -24,7 +24,7 @@ public class FatGetScan extends ParamScan {
         }
 
         // set value to canary
-        String canary = utilities.generateCanary();
+        String canary = Utilities.generateCanary();
 
         String fullValue = insertionPoint.getBaseValue()+canary;
         byte[] poison = insertionPoint.buildRequest(fullValue.getBytes());
@@ -60,7 +60,7 @@ public class FatGetScan extends ParamScan {
             //String toReplace = insertionPoint.getInsertionPointName()+"="+fullValue;
             String toReplace = canary;
 
-            byte[] getPoison = utilities.fixContentLength(utilities.replaceFirst(poison, toReplace.getBytes(), "".getBytes()));
+            byte[] getPoison = Utilities.fixContentLength(Utilities.replaceFirst(poison, toReplace.getBytes(), "".getBytes()));
 //            byte[] getPoison = baseRequestResponse.getRequest();
 //            getPoison = utilities.appendToQuery(getPoison, "x="+cacheBuster);
 

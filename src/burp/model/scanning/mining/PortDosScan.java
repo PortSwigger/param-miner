@@ -17,7 +17,7 @@ public class PortDosScan extends Scan {
 
     @Override
     public List<IScanIssue> doScan(byte[] baseReq, IHttpService service) {
-        baseReq = utilities.addCacheBuster(baseReq, utilities.generateCanary());
+        baseReq = utilities.addCacheBuster(baseReq, Utilities.generateCanary());
 
         String canary = "41810";
         byte[] poisonReq = utilities.addOrReplaceHeader(baseReq, "Host", service.getHost()+":"+canary);

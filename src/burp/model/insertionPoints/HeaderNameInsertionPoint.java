@@ -22,7 +22,7 @@ public byte[] buildBulkRequest(ArrayList<String> params) {
   }
   
   if (fooReq || utilities.containsBytes(body, " HTTP/1.1\r\n".getBytes())) {
-    utilities.chopNestedResponses = true;
+    Utilities.chopNestedResponses = true;
     
     boolean usingCorrectContentLength = true;
     

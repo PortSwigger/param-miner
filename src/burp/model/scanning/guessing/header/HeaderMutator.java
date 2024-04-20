@@ -208,7 +208,7 @@ public byte[] mutateRequest(byte[] req, String mutation, String[] headers) throw
       header = header.split("~", 2)[0];
     }
     
-    offs = utilities.getHeaderOffsets(req, header);
+    offs = Utilities.getHeaderOffsets(req, header);
     if (offs != null) {
       offsets.add(offs);
     }

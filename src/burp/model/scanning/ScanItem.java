@@ -61,7 +61,7 @@ boolean prepared() {
 
 ArrayList<ScanItem> prepare() {
   ArrayList<ScanItem> items = new ArrayList();
-  this.method = utilities.getMethod(this.req.getRequest());
+  this.method = Utilities.getMethod(this.req.getRequest());
   this.prepared = true;
   if (utilities.containsBytes(this.req.getResponse(), "HTTP/2".getBytes())) {
     byte[] updated;
@@ -87,7 +87,7 @@ ArrayList<ScanItem> prepare() {
   
   boolean cookiesToScan = utilities.globalSettings.getBoolean("params: cookie") && !"".equals(
     utilities.getHeader(this.req.getRequest(), "Cookie"));
-  boolean bodyToScan = utilities.globalSettings.getBoolean("params: body") && !"".equals(utilities.getBody(this.req.getRequest()));
+  boolean bodyToScan = utilities.globalSettings.getBoolean("params: body") && !"".equals(Utilities.getBody(this.req.getRequest()));
   ArrayList params;
   Iterator var5;
   IParameter param;
@@ -125,11 +125,12 @@ label70:
   
   if (!utilities.globalSettings.getBoolean("params: query")) {
     return items;
-  } else if (!utilities.getPathFromRequest(this.req.getRequest()).contains("=") && !utilities.globalSettings.getBoolean("params: dummy")) {
+  } else if (!Utilities.getPathFromRequest(this.req.getRequest()).contains("=") && !utilities.globalSettings.getBoolean("params: dummy")) {
     return items;
   } else {
     if (utilities.globalSettings.getBoolean("params: dummy")) {
-      this.req = new Req(utilities.appendToQuery(this.req.getRequest(), utilities.globalSettings.getString("dummy param name") + "=z"), this.req.getResponse(), this.req.getHttpService());
+      this.req = new Req(
+        Utilities.appendToQuery(this.req.getRequest(), utilities.globalSettings.getString("dummy param name") + "=z"), this.req.getResponse(), this.req.getHttpService());
     }
     
     params = utilities.getQueryParams(this.req.getRequest());
@@ -148,7 +149,7 @@ label70:
 
 String getKey() {
   if (this.method == null) {
-    this.method = utilities.getMethod(this.req.getRequest());
+    this.method = Utilities.getMethod(this.req.getRequest());
   }
   
   if (this.key != null) {
@@ -170,7 +171,7 @@ String getKey() {
     }
     
     if (this.config.getBoolean("key path")) {
-      key.append(utilities.getPathFromRequest(this.req.getRequest()).split("[?]", 1)[0]);
+      key.append(Utilities.getPathFromRequest(this.req.getRequest()).split("[?]", 1)[0]);
     }
     
     if (this.req.getResponse() == null && this.config.getBoolean("key content-type")) {

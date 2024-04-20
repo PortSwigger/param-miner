@@ -112,7 +112,7 @@ private Attack buildAttackFromProbe(Probe probe, String payload, String mutation
   byte prefix = probe.getPrefix();
   String anchor = "";
   if (randomAnchor) {
-    anchor = utilities.generateCanary();
+    anchor = Utilities.generateCanary();
   }
   
   String base_payload = payload;
@@ -139,7 +139,7 @@ public IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster
 IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster, String mutation) {
   byte[] request = this.insertionPoint.buildRequest(payload.getBytes());
   if (needCacheBuster) {
-    request = utilities.addCacheBuster(request, utilities.generateCanary());
+    request = utilities.addCacheBuster(request, Utilities.generateCanary());
   }
   
   boolean forceHttp1 = false;
@@ -166,7 +166,7 @@ public Attack probeAttack(String payload) {
 
 public Attack probeAttack(String payload, String mutation) {
   byte[] request = this.insertionPoint.buildRequest(payload.getBytes());
-  request = utilities.addCacheBuster(request, utilities.generateCanary());
+  request = utilities.addCacheBuster(request, Utilities.generateCanary());
   boolean forceHttp1 = false;
   if (mutation != null) {
     forceHttp1 = true;
@@ -186,7 +186,7 @@ public Attack probeAttack(String payload, String mutation) {
 Attack buildAttack(String payload, boolean random) {
   String canary = "";
   if (random) {
-    canary = utilities.generateCanary();
+    canary = Utilities.generateCanary();
   }
   
   return new Attack(this.buildRequest(canary + payload, !random), null, null, canary, utilities);

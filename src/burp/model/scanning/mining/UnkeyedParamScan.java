@@ -34,7 +34,7 @@ public class UnkeyedParamScan extends ParamScan {
 
         // set value to canary
         String canary = "akzldka";
-        String cacheBuster = utilities.generateCanary();
+        String cacheBuster = Utilities.generateCanary();
 
         byte[] poison = insertionPoint.buildRequest(canary.getBytes());
 

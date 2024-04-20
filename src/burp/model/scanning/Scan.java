@@ -116,7 +116,7 @@ public static  void report(String title, String detail, byte[] baseBytes, Utilit
     }
     
     if (utilities.isBurpPro()) {
-      utilities.callbacks.addScanIssue(new CustomScanIssue(service, utilities.getURL(base.getRequest(), service),
+      utilities.callbacks.addScanIssue(new CustomScanIssue(service, Utilities.getURL(base.getRequest(), service),
         reqsToReport.toArray(new IHttpRequestResponse[0]), title, detail, "High", "Tentative", "."));
     } else {
       StringBuilder serialisedIssue = new StringBuilder();

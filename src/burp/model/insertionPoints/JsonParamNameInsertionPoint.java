@@ -61,14 +61,14 @@ public byte[] buildRequest(byte[] payload) throws RuntimeException {
       if (unparsed.contains("~")) {
         String[] parts = unparsed.split("~", 2);
         unparsed = parts[0];
-        paramValue = utilities.invert(parts[1]);
+        paramValue = Utilities.invert(parts[1]);
       } else {
         paramValue = calculateValue(unparsed);
       }
       
       ArrayList<String> keys = new ArrayList<>(Arrays.asList(unparsed.split(":")));
       
-      boolean isArray = utilities.parseArrayIndex(keys.get(0)) != -1;
+      boolean isArray = Utilities.parseArrayIndex(keys.get(0)) != -1;
       Object base;
       if (isArray) {
         try {
@@ -93,12 +93,12 @@ public byte[] buildRequest(byte[] payload) throws RuntimeException {
           String key = keys.get(i);
           boolean setValue = i + 1 == keys.size();
           
-          int index = utilities.parseArrayIndex(key);
+          int index = Utilities.parseArrayIndex(key);
           if (index != -1) {
             ArrayList injectionPoint = (ArrayList) next;
             if (injectionPoint.size() < index + 1) {
               for (int k = injectionPoint.size(); k < index; k++) {
-                injectionPoint.add(utilities.generateCanary());
+                injectionPoint.add(Utilities.generateCanary());
               }
               injectionPoint.add(makeNode(keys, i, paramValue));
             } else if (injectionPoint.get(index) == null || setValue) {
@@ -123,7 +123,7 @@ public byte[] buildRequest(byte[] payload) throws RuntimeException {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     outputStream.write(headers);
     outputStream.write(utilities.helpers.stringToBytes(lastBuild));
-    return utilities.fixContentLength(outputStream.toByteArray());
+    return Utilities.fixContentLength(outputStream.toByteArray());
   } catch (Exception e) {
     utilities.out("Error with " + String.join(":", params));
     e.printStackTrace(new PrintStream(utilities.callbacks.getStdout()));
