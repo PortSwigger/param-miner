@@ -366,7 +366,6 @@ public Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> set
   stdout         = new PrintWriter(callbacks.getStdout(), true);
   stderr         = new PrintWriter(callbacks.getStderr(), true);
   helpers        = callbacks.getHelpers();
-  out("Using albinowaxUtils v1.03");
   out(
     "This extension should be run on the latest version of Burp Suite. Using an older version of Burp may cause " +
       "impaired functionality.");
