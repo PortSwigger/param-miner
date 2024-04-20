@@ -39,8 +39,8 @@ public IHttpRequestResponse getLastRequest() {
 public Attack(IHttpRequestResponse req, Probe probe, String payload, String anchor, Utilities utilities) {
   this.utilities           = utilities;
   this.keys                = new String[]{utilities.globalSettings.getString("canary"), "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
-  this.responseKeywords    = utilities.helpers.analyzeResponseKeywords(Arrays.asList(this.keys), new byte[0][]);
-  this.responseDetails     = utilities.helpers.analyzeResponseVariations(new byte[0][]);
+  this.responseKeywords    = utilities.helpers.analyzeResponseKeywords(Arrays.asList(this.keys));
+  this.responseDetails     = utilities.helpers.analyzeResponseVariations();
   this.responseReflections = -1;
   this.firstRequest        = req;
   this.lastRequest         = req;
@@ -55,8 +55,8 @@ public Attack(IHttpRequestResponse req, Probe probe, String payload, String anch
 public Attack(IHttpRequestResponse req, Utilities utilities) {
   this.utilities           = utilities;
   this.keys                = new String[]{utilities.globalSettings.getString("canary"), "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
-  this.responseKeywords    = utilities.helpers.analyzeResponseKeywords(Arrays.asList(this.keys), new byte[0][]);
-  this.responseDetails     = utilities.helpers.analyzeResponseVariations(new byte[0][]);
+  this.responseKeywords    = utilities.helpers.analyzeResponseKeywords(Arrays.asList(this.keys));
+  this.responseDetails     = utilities.helpers.analyzeResponseVariations();
   this.responseReflections = -1;
   this.firstRequest        = req;
   this.lastRequest         = req;
@@ -68,8 +68,8 @@ public Attack(IHttpRequestResponse req, Utilities utilities) {
 public Attack(Utilities utilities) {
   this.utilities           = utilities;
   this.keys                = new String[]{utilities.globalSettings.getString("canary"), "\",\"", "true", "false", "\"\"", "[]", "</html>", "error", "exception", "invalid", "warning", "stack", "sql syntax", "divisor", "divide", "ora-", "division", "infinity", "<script", "<div"};
-  this.responseKeywords    = utilities.helpers.analyzeResponseKeywords(Arrays.asList(this.keys), new byte[0][]);
-  this.responseDetails     = utilities.helpers.analyzeResponseVariations(new byte[0][]);
+  this.responseKeywords    = utilities.helpers.analyzeResponseKeywords(Arrays.asList(this.keys));
+  this.responseDetails     = utilities.helpers.analyzeResponseVariations();
   this.responseReflections = -1;
 }
 

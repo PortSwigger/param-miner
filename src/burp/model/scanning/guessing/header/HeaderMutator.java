@@ -163,7 +163,7 @@ public byte[] mutate(String header, String mutation) {
       retStr = retStr + c;
     }
     
-    return (byte[])(ret == null && retStr != null ? retStr.getBytes(StandardCharsets.UTF_8) : ret);
+    return ret == null && retStr != null ? retStr.getBytes(StandardCharsets.UTF_8) : ret;
   case "headerStartLF":
     retStr = "Foo: Bar\n" + header;
     break;
@@ -193,7 +193,7 @@ public byte[] mutate(String header, String mutation) {
     retStr = header;
   }
   
-  return (byte[])(ret == null && retStr != null ? retStr.getBytes(StandardCharsets.UTF_8) : ret);
+  return ret == null && retStr != null ? retStr.getBytes(StandardCharsets.UTF_8) : ret;
 }
 
 public byte[] mutateRequest(byte[] req, String mutation, String[] headers) throws IOException {
@@ -223,7 +223,7 @@ public byte[] mutateRequest(byte[] req, String mutation, String[] headers) throw
   Iterator<int[]> iterator = offsets.iterator();
   
   while(iterator.hasNext()) {
-    offs = (int[])iterator.next();
+    offs = iterator.next();
     int headerStart = offs[0];
     int headerEnd = offs[2];
     if (offset >= headerStart) {

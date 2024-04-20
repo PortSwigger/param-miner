@@ -40,7 +40,7 @@ public PayloadInjector(IHttpRequestResponse baseRequestResponse, IScannerInserti
 }
 
 public ArrayList<Attack> fuzz(Attack baselineAttack, Probe probe) {
-  return this.fuzz(baselineAttack, probe, (String)null);
+  return this.fuzz(baselineAttack, probe, null);
 }
 
 public ArrayList<Attack> fuzz(Attack baselineAttack, Probe probe, String mutation) {
@@ -65,7 +65,7 @@ public ArrayList<Attack> fuzz(Attack baselineAttack, Probe probe, String mutatio
 }
 
 private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttackSeed, Probe probe, int chosen_escape) {
-  return this.verify(doNotBreakAttackSeed, breakAttackSeed, probe, chosen_escape, (String)null);
+  return this.verify(doNotBreakAttackSeed, breakAttackSeed, probe, chosen_escape, null);
 }
 
 private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttackSeed, Probe probe, int chosen_escape, String mutation) {
@@ -104,7 +104,7 @@ private ArrayList<Attack> verify(Attack doNotBreakAttackSeed, Attack breakAttack
 }
 
 private Attack buildAttackFromProbe(Probe probe, String payload) {
-  return this.buildAttackFromProbe(probe, payload, (String)null);
+  return this.buildAttackFromProbe(probe, payload, null);
 }
 
 private Attack buildAttackFromProbe(Probe probe, String payload, String mutation) {
@@ -133,7 +133,7 @@ private Attack buildAttackFromProbe(Probe probe, String payload, String mutation
 }
 
 public IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster) {
-  return this.buildRequest(payload, needCacheBuster, (String)null);
+  return this.buildRequest(payload, needCacheBuster, null);
 }
 
 IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster, String mutation) {
@@ -161,7 +161,7 @@ IHttpRequestResponse buildRequest(String payload, boolean needCacheBuster, Strin
 }
 
 public Attack probeAttack(String payload) {
-  return this.probeAttack(payload, (String)null);
+  return this.probeAttack(payload, null);
 }
 
 public Attack probeAttack(String payload, String mutation) {
@@ -180,7 +180,7 @@ public Attack probeAttack(String payload, String mutation) {
   }
   
   IHttpRequestResponse requestResponse = utilities.attemptRequest(this.service, request, forceHttp1);
-  return new Attack(requestResponse, (Probe)null, (String)null, "", utilities);
+  return new Attack(requestResponse, null, null, "", utilities);
 }
 
 Attack buildAttack(String payload, boolean random) {
@@ -189,6 +189,6 @@ Attack buildAttack(String payload, boolean random) {
     canary = utilities.generateCanary();
   }
   
-  return new Attack(this.buildRequest(canary + payload, !random), (Probe)null, (String)null, canary, utilities);
+  return new Attack(this.buildRequest(canary + payload, !random), null, null, canary, utilities);
 }
 }

@@ -89,7 +89,8 @@ public void run() {
     boolean applyMimeFilter = !"".equals(mimeFilter);
 
 label124:
-    for(boolean applySchemeFilter = this.config.getBoolean("filter HTTP"); !reqlist.isEmpty(); cache = new CircularFifoQueue(NumberUtils.max(new int[]{Math.min(remainingHosts.size() - 1, thread_count), 1}))) {
+    for(boolean applySchemeFilter = this.config.getBoolean("filter HTTP"); !reqlist.isEmpty(); cache = new CircularFifoQueue<>(NumberUtils.max(
+      Math.min(remainingHosts.size() - 1, thread_count), 1))) {
       utilities.out("Loop " + i++);
       ListIterator<ScanItem> left = reqlist.listIterator();
       
@@ -100,7 +101,7 @@ label124:
           }
           
           boolean remove = true;
-          ScanItem req = (ScanItem)left.next();
+          ScanItem req = left.next();
           if (applySchemeFilter && "http".equals(req.req.getHttpService().getProtocol())) {
             left.remove();
           } else if (applyFilter && !utilities.containsBytes(req.req.getRequest(), filter.getBytes())) {
@@ -142,7 +143,7 @@ label124:
                   continue;
                 }
                 
-                req = (ScanItem)newItems.remove(0);
+                req = newItems.remove(0);
                 Iterator var27 = newItems.iterator();
                 
                 while(var27.hasNext()) {

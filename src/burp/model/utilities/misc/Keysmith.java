@@ -77,7 +77,7 @@ public class Keysmith {
             return "";
         }
 
-        return parsed.toString().substring(1);
+        return parsed.substring(1);
     }
 
     public static String unparseParam(String param) {

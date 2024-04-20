@@ -90,7 +90,7 @@ public void recordCandidateFound() {
 }
 
 public static void report(String title, String detail, Utilities utilities, Resp... requests) {
-  report(title, detail, (byte[])null, utilities, requests);
+  report(title, detail, null, utilities, requests);
 }
 
 public static  void report(String title, String detail, byte[] baseBytes, Utilities utilities, Resp... requests) {
@@ -103,7 +103,7 @@ public static  void report(String title, String detail, byte[] baseBytes, Utilit
     }
     
     if (baseBytes != null) {
-      Resp baseReq = new Resp(new Req(baseBytes, (byte[])null, service), utilities);
+      Resp baseReq = new Resp(new Req(baseBytes, null, service), utilities);
       reqsToReport.add(baseReq.getReq());
     }
     
@@ -116,7 +116,8 @@ public static  void report(String title, String detail, byte[] baseBytes, Utilit
     }
     
     if (utilities.isBurpPro()) {
-      utilities.callbacks.addScanIssue(new CustomScanIssue(service, utilities.getURL(base.getRequest(), service), (IHttpRequestResponse[])reqsToReport.toArray(new IHttpRequestResponse[0]), title, detail, "High", "Tentative", "."));
+      utilities.callbacks.addScanIssue(new CustomScanIssue(service, utilities.getURL(base.getRequest(), service),
+        reqsToReport.toArray(new IHttpRequestResponse[0]), title, detail, "High", "Tentative", "."));
     } else {
       StringBuilder serialisedIssue = new StringBuilder();
       serialisedIssue.append("Found issue: ");
@@ -153,7 +154,7 @@ public static Resp request(IHttpService service, byte[] req, int maxRetries, Uti
 }
 
 public static Resp request(IHttpService service, byte[] req, int maxRetries, boolean forceHTTP1, Utilities utilities) {
-  return request(service, req, maxRetries, forceHTTP1, (HashMap)null, utilities);
+  return request(service, req, maxRetries, forceHTTP1, null, utilities);
 }
 
 public static Resp request(
@@ -190,7 +191,7 @@ public static Resp request(
       } catch (RuntimeException var11) {
         utilities.out("Recovering from request exception: " + service.getHost());
         utilities.err("Recovering from request exception: " + service.getHost());
-        resp = new Req(req, (byte[])null, service);
+        resp = new Req(req, null, service);
       }
       
       ++attempts;

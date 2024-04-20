@@ -702,7 +702,7 @@ private       byte[]               staticCanary;
               
                   for(Scan scan : BulkScan.scans) {
                     if (scan instanceof ParamScan) {
-                        ((ParamScan) scan).doActiveScan(scanBaseAttack, valueInsertionPoint);
+                        scan.doActiveScan(scanBaseAttack, valueInsertionPoint);
                     }
                 }
             }
