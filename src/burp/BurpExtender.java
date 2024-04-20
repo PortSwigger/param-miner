@@ -49,55 +49,7 @@ public static SettingsBox  guessSettings;
 //-----------------------------------------------------------------------------
 @Override
 public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
-  try {
-    configProps = ResourceLoader.loadPropertyFile("ConfigSettings.properties");
-    guessProps  = ResourceLoader.loadPropertyFile("GuessSettings.properties");
-  }
-  catch(IOException e) {
-    // This kills the extension since the settings couldn't be loaded
-    throw new RuntimeException(e);
-  }
-  
-  utilities      = new Utilities(callbacks, new HashMap<>(), name);
-  configSettings = getConfigSettings(utilities);
-  guessSettings  = getGuessSettings(utilities);
-  
-  loadWordlists();
-  BlockingQueue<Runnable> tasks;
-  if(utilities.globalSettings.getBoolean("enable auto-mine")) {
-    tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
-  }
-  else {
-    tasks = new LinkedBlockingQueue<>();
-  }
-  
-  utilities.globalSettings.registerSetting("thread pool size", 8);
-  taskEngine = new ThreadPoolExecutor(utilities.globalSettings.getInt("thread pool size"),
-    utilities.globalSettings.getInt("thread pool size"), 10, TimeUnit.MINUTES, tasks
-  );
-  utilities.globalSettings.registerListener("thread pool size", value->{
-    utilities.out("Updating active thread pool size to " + value);
-    try {
-      taskEngine.setCorePoolSize(Integer.parseInt(value));
-      taskEngine.setMaximumPoolSize(Integer.parseInt(value));
-    }
-    catch(IllegalArgumentException e) {
-      taskEngine.setMaximumPoolSize(Integer.parseInt(value));
-      taskEngine.setCorePoolSize(Integer.parseInt(value));
-    }
-  });
-  
   callbacks.setExtensionName(name);
-  
-  try {
-    StringUtils.isNumeric("1");
-  }
-  catch(NoClassDefFoundError e) {
-    utilities.out(
-      "Failed to import the Apache Commons Lang library. You can get it from http://commons.apache" +
-        ".org/proper/commons-lang/");
-    throw new NoClassDefFoundError();
-  }
   
   try {
     callbacks.getHelpers().analyzeResponseVariations();
@@ -106,6 +58,28 @@ public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
     utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
     throw new NoSuchMethodError();
   }
+  
+  configProps    = loadConfigProps();
+  utilities      = new Utilities(callbacks, new HashMap<>(), name);
+  configSettings = getConfigSettings(utilities);
+  guessSettings  = getGuessSettings(utilities);
+  loadWordlists();
+  
+  BlockingQueue<Runnable> tasks;
+  if(utilities.globalSettings.getBoolean("enable auto-mine"))
+    tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
+  else
+    tasks = new LinkedBlockingQueue<>();
+  
+  int threadPool = utilities.globalSettings.getInt("thread pool size");
+  taskEngine = new ThreadPoolExecutor(
+    threadPool, threadPool, 10, TimeUnit.MINUTES, tasks);
+  
+  utilities.globalSettings.registerListener("thread pool size", value->{
+    utilities.out("Updating active thread pool size to " + value);
+    taskEngine.setCorePoolSize(Integer.parseInt(value));
+    taskEngine.setMaximumPoolSize(Integer.parseInt(value));
+  });
   
   paramGrabber = new ParamGrabber(taskEngine, utilities);
   callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine, utilities));
@@ -120,7 +94,6 @@ public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
   SwingUtilities.invokeLater(new ConfigMenu(utilities));
   
   BulkScanLauncher launcher = new BulkScanLauncher(BulkScan.scans, utilities);
-  
   new HeaderPoison("Header poison", utilities, launcher);
   new PortDosScan("port-DoS", utilities, launcher);
   //new ValueScan("param-value probe");
@@ -131,12 +104,9 @@ public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
   new RailsUtmScan("rails param cloaking scan", utilities, launcher);
   new HeaderMutationScan("identify header smuggling mutations", utilities, launcher);
   
-  
   utilities.callbacks.registerExtensionStateListener(this);
-  
   utilities.out("Loaded " + name + " v" + version);
 }  //end registerExtenderCallbacks()
-
 
 //-----------------------------------------------------------------------------
 @Override
@@ -184,6 +154,10 @@ private static final String MINE_PARAMS_DCRPT = "auto.mine.params.description";
 private static final String NEST_PARAMS_NAME  = "auto.nest.params.name";
 private static final String NEST_PARAMS_VALUE = "auto.nest.params.value";
 private static final String NEST_PARAMS_DCRPT = "auto.nest.params.description";
+
+private static final String THREAD_POOL_NAME  = "thread.pool.name";
+private static final String THREAD_POOL_VALUE = "thread.pool.value";
+private static final String THREAD_POOL_DCRPT = "thread.pool.description";
 
 private static final String SKIP_BORING_WORDS_NAME = "skip.boring.words.name";
 private static final String SKIP_BORING_WORDS_VALUE = "skip.boring.words.value";
@@ -292,12 +266,22 @@ private static final String MAX_BUCKETSIZE_VALUE = "max.bucketsize.value";
 
 private ThreadPoolExecutor taskEngine;
 private Properties         configProps;
-private Properties         guessProps;
 private SettingsBox        configSettings;
 private Utilities          utilities;
 
 // PRIVATE METHODS
 ///////////////////////////////////////
+//-----------------------------------------------------------------------------
+private Properties loadConfigProps() {
+  try {
+    return ResourceLoader.loadPropertyFile("ConfigSettings.properties");
+  }
+  catch(IOException e) {
+    // This kills the extension since the settings couldn't be loaded
+    throw new RuntimeException(e);
+  }
+}
+
 //-----------------------------------------------------------------------------
 // currently param-guess displays everything
 private SettingsBox getConfigSettings(Utilities utilities) {
@@ -310,6 +294,7 @@ private SettingsBox getConfigSettings(Utilities utilities) {
   register(settings, MINE_COOKIES_NAME, MINE_COOKIES_VALUE, MINE_COOKIES_DCRPT);
   register(settings, MINE_PARAMS_NAME, MINE_PARAMS_VALUE, MINE_PARAMS_DCRPT);
   register(settings, NEST_PARAMS_NAME, NEST_PARAMS_VALUE, NEST_PARAMS_DCRPT);
+  register(settings, THREAD_POOL_NAME, THREAD_POOL_VALUE, THREAD_POOL_DCRPT);
   return settings;
 }
 

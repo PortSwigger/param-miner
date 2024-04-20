@@ -81,18 +81,21 @@ public void registerSetting(String key, Object value, String description) {
 }
 
 private String encode(Object value) {
-  String encoded;
-  if(value instanceof Boolean || "true".equalsIgnoreCase(value.toString().strip()) || "false".equalsIgnoreCase(value.toString().strip())) {
-    encoded = String.valueOf(value);
+  String strVal = value.toString().strip();
+  if(value instanceof Boolean || "true".equalsIgnoreCase(strVal) || "false".equalsIgnoreCase(strVal)) {
+    return String.valueOf(value);
   }
-  else if(value instanceof Integer) {
-    encoded = String.valueOf(value);
+  try {
+    Integer.parseInt(strVal);
+    return String.valueOf(value);
   }
-  else {
-    encoded = "\"" + ((String) value).replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+  catch(NumberFormatException ignored) {
+    return "\"" + escapeBackSlashes(strVal) + "\"";
   }
-  
-  return encoded;
+}
+
+private String escapeBackSlashes(String str) {
+  return str.replace("\\", "\\\\").replace("\"", "\\\"");
 }
 
 private void putRaw(String key, String value) {
