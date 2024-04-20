@@ -30,72 +30,59 @@ public CustomScanIssue(
   this.remediation = remediation;
 }
 
-CustomScanIssue(IHttpService httpService, URL url, IHttpRequestResponse httpMessages, String name, String detail, String severity, String confidence, String remediation) {
-                         this.name = name;
-                         this.detail = detail;
-                         this.severity = severity;
-                         this.httpService = httpService;
-                         this.url = url;
-                         this.httpMessages = new IHttpRequestResponse[1];
-  this.httpMessages[0] = httpMessages;
-                         this.confidence = confidence;
-                         this.remediation = remediation;
-}
-
+@Override
 public URL getUrl() {
   return this.url;
 }
 
+@Override
 public String getIssueName() {
   return this.name;
 }
 
+@Override
 public int getIssueType() {
   return 0;
 }
 
+@Override
 public String getSeverity() {
   return this.severity;
 }
 
+@Override
 public String getConfidence() {
   return this.confidence;
 }
 
+@Override
 public String getIssueBackground() {
   return null;
 }
 
+@Override
 public String getRemediationBackground() {
   return null;
 }
 
+@Override
 public String getIssueDetail() {
   return this.detail;
 }
 
+@Override
 public String getRemediationDetail() {
   return this.remediation;
 }
 
+@Override
 public IHttpRequestResponse[] getHttpMessages() {
   return this.httpMessages;
 }
 
+@Override
 public IHttpService getHttpService() {
   return this.httpService;
 }
 
-public String getHost() {
-  return null;
 }
-
-public int getPort() {
-  return 0;
-}
-
-public String getProtocol() {
-  return null;
-}
-}
-

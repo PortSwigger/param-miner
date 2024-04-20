@@ -36,23 +36,28 @@ public String calculateValue(String unparsed) {
   return unparsed;
 }
 
+@Override
 public String getInsertionPointName() {
   return this.name;
 }
 
+@Override
 public String getBaseValue() {
   return this.value;
 }
 
+@Override
 public byte[] buildRequest(byte[] payload) {
   IParameter newParam = utilities.helpers.buildParameter(this.name, utilities.encodeParam(utilities.helpers.bytesToString(payload)), this.type);
   return utilities.helpers.updateParameter(this.request, newParam);
 }
 
+@Override
 public int[] getPayloadOffsets(byte[] payload) {
   return new int[]{0, 0};
 }
 
+@Override
 public byte getInsertionPointType() {
   return this.type;
 }
