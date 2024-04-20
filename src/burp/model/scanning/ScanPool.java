@@ -19,6 +19,7 @@ ScanPool(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit uni
   utilities.callbacks.registerExtensionStateListener(this);
 }
 
+@Override
 public void extensionUnloaded() {
   this.getQueue().clear();
   this.shutdown();

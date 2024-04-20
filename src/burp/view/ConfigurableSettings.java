@@ -64,7 +64,7 @@ public void registerSetting(String key, Object value) {
 }
 
 public void registerSetting(String key, Object value, String description) {
-  if(description != null && !settingDescriptions.containsKey(key)) {
+  if(description != null && !description.isEmpty() && !settingDescriptions.containsKey(key)) {
     settingDescriptions.put(key, description);
   }
   
@@ -82,7 +82,7 @@ public void registerSetting(String key, Object value, String description) {
 
 private String encode(Object value) {
   String encoded;
-  if(value instanceof Boolean) {
+  if(value instanceof Boolean || "true".equalsIgnoreCase(value.toString().strip()) || "false".equalsIgnoreCase(value.toString().strip())) {
     encoded = String.valueOf(value);
   }
   else if(value instanceof Integer) {

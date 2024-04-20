@@ -58,6 +58,7 @@ public void menuDeselected(MenuEvent e) {
 public void menuCanceled(MenuEvent e) {
 }
 
+@Override
 public void extensionUnloaded() {
   try {
     JMenuBar jMenuBar = utilities.getBurpFrame().getJMenuBar();
