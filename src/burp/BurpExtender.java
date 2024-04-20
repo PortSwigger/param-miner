@@ -113,109 +113,109 @@ private static final String THREAD_POOL_NAME  = "thread.pool.name";
 private static final String THREAD_POOL_VALUE = "thread.pool.value";
 private static final String THREAD_POOL_DCRPT = "thread.pool.description";
 
-private static final String SKIP_BORING_WORDS_NAME = "skip.boring.words.name";
-private static final String SKIP_BORING_WORDS_VALUE = "skip.boring.words.value";
+private static final String SKIP_BORING_WORDS_NAME        = "skip.boring.words.name";
+private static final String SKIP_BORING_WORDS_VALUE       = "skip.boring.words.value";
 private static final String SKIP_BORING_WORDS_DESCRIPTION = "skip.boring.words.description";
 
-private static final String ONLY_REPORT_UNIQUE_PARAMS_NAME = "only.report.unique.params.name";
-private static final String ONLY_REPORT_UNIQUE_PARAMS_VALUE = "only.report.unique.params.value";
+private static final String ONLY_REPORT_UNIQUE_PARAMS_NAME        = "only.report.unique.params.name";
+private static final String ONLY_REPORT_UNIQUE_PARAMS_VALUE       = "only.report.unique.params.value";
 private static final String ONLY_REPORT_UNIQUE_PARAMS_DESCRIPTION = "only.report.unique.params.description";
 
-private static final String RESPONSE_NAME = "response.name";
-private static final String RESPONSE_VALUE = "response.value";
+private static final String RESPONSE_NAME        = "response.name";
+private static final String RESPONSE_VALUE       = "response.value";
 private static final String RESPONSE_DESCRIPTION = "response.description";
 
-private static final String REQUEST_NAME = "request.name";
-private static final String REQUEST_VALUE = "request.value";
+private static final String REQUEST_NAME        = "request.name";
+private static final String REQUEST_VALUE       = "request.value";
 private static final String REQUEST_DESCRIPTION = "request.description";
 
-private static final String USE_BASIC_WORDLIST_NAME = "use.basic.wordlist.name";
-private static final String USE_BASIC_WORDLIST_VALUE = "use.basic.wordlist.value";
+private static final String USE_BASIC_WORDLIST_NAME        = "use.basic.wordlist.name";
+private static final String USE_BASIC_WORDLIST_VALUE       = "use.basic.wordlist.value";
 private static final String USE_BASIC_WORDLIST_DESCRIPTION = "use.basic.wordlist.description";
 
-private static final String USE_BONUS_WORDLIST_NAME = "use.bonus.wordlist.name";
-private static final String USE_BONUS_WORDLIST_VALUE = "use.bonus.wordlist.value";
+private static final String USE_BONUS_WORDLIST_NAME        = "use.bonus.wordlist.name";
+private static final String USE_BONUS_WORDLIST_VALUE       = "use.bonus.wordlist.value";
 private static final String USE_BONUS_WORDLIST_DESCRIPTION = "use.bonus.wordlist.description";
 
-private static final String USE_ASSETNOTE_PARAMS_NAME = "use.assetnote.params.name";
-private static final String USE_ASSETNOTE_PARAMS_VALUE = "use.assetnote.params.value";
+private static final String USE_ASSETNOTE_PARAMS_NAME        = "use.assetnote.params.name";
+private static final String USE_ASSETNOTE_PARAMS_VALUE       = "use.assetnote.params.value";
 private static final String USE_ASSETNOTE_PARAMS_DESCRIPTION = "use.assetnote.params.description";
 
-private static final String USE_CUSTOM_WORDLIST_NAME = "use.custom.wordlist.name";
-private static final String USE_CUSTOM_WORDLIST_VALUE = "use.custom.wordlist.value";
+private static final String USE_CUSTOM_WORDLIST_NAME        = "use.custom.wordlist.name";
+private static final String USE_CUSTOM_WORDLIST_VALUE       = "use.custom.wordlist.value";
 private static final String USE_CUSTOM_WORDLIST_DESCRIPTION = "use.custom.wordlist.description";
 
-private static final String CUSTOM_WORDLIST_PATH_NAME = "custom.wordlist.path.name";
-private static final String CUSTOM_WORDLIST_PATH_VALUE = "custom.wordlist.path.value";
+private static final String CUSTOM_WORDLIST_PATH_NAME        = "custom.wordlist.path.name";
+private static final String CUSTOM_WORDLIST_PATH_VALUE       = "custom.wordlist.path.value";
 private static final String CUSTOM_WORDLIST_PATH_DESCRIPTION = "custom.wordlist.path.description";
 
-private static final String BRUTEFORCE_NAME = "bruteforce.name";
-private static final String BRUTEFORCE_VALUE = "bruteforce.value";
+private static final String BRUTEFORCE_NAME        = "bruteforce.name";
+private static final String BRUTEFORCE_VALUE       = "bruteforce.value";
 private static final String BRUTEFORCE_DESCRIPTION = "bruteforce.description";
 
-private static final String SKIP_UNCACHEABLE_NAME = "skip.uncacheable.name";
-private static final String SKIP_UNCACHEABLE_VALUE = "skip.uncacheable.value";
+private static final String SKIP_UNCACHEABLE_NAME        = "skip.uncacheable.name";
+private static final String SKIP_UNCACHEABLE_VALUE       = "skip.uncacheable.value";
 private static final String SKIP_UNCACHEABLE_DESCRIPTION = "skip.uncacheable.description";
 
-private static final String DYNAMIC_KEYLOAD_NAME = "dynamic.keyload.name";
-private static final String DYNAMIC_KEYLOAD_VALUE = "dynamic.keyload.value";
+private static final String DYNAMIC_KEYLOAD_NAME        = "dynamic.keyload.name";
+private static final String DYNAMIC_KEYLOAD_VALUE       = "dynamic.keyload.value";
 private static final String DYNAMIC_KEYLOAD_DESCRIPTION = "dynamic.keyload.description";
 
-private static final String MAX_ONE_PER_HOST_NAME = "max.one.per.host.name";
+private static final String MAX_ONE_PER_HOST_NAME  = "max.one.per.host.name";
 private static final String MAX_ONE_PER_HOST_VALUE = "max.one.per.host.value";
 
-private static final String MAX_ONE_PER_HOST_STATUS_NAME = "max.one.per.host+status.name";
+private static final String MAX_ONE_PER_HOST_STATUS_NAME  = "max.one.per.host+status.name";
 private static final String MAX_ONE_PER_HOST_STATUS_VALUE = "max.one.per.host+status.value";
 
-private static final String PROBE_IDENTIFIED_PARAMS_NAME = "probe.identified.params.name";
-private static final String PROBE_IDENTIFIED_PARAMS_VALUE = "probe.identified.params.value";
+private static final String PROBE_IDENTIFIED_PARAMS_NAME        = "probe.identified.params.name";
+private static final String PROBE_IDENTIFIED_PARAMS_VALUE       = "probe.identified.params.value";
 private static final String PROBE_IDENTIFIED_PARAMS_DESCRIPTION = "probe.identified.params.description";
 
-private static final String SCAN_IDENTIFIED_PARAMS_NAME = "scan.identified.params.name";
-private static final String SCAN_IDENTIFIED_PARAMS_VALUE = "scan.identified.params.value";
+private static final String SCAN_IDENTIFIED_PARAMS_NAME        = "scan.identified.params.name";
+private static final String SCAN_IDENTIFIED_PARAMS_VALUE       = "scan.identified.params.value";
 private static final String SCAN_IDENTIFIED_PARAMS_DESCRIPTION = "scan.identified.params.description";
 
-private static final String FUZZ_DETECT_NAME = "fuzz.detect.name";
-private static final String FUZZ_DETECT_VALUE = "fuzz.detect.value";
+private static final String FUZZ_DETECT_NAME        = "fuzz.detect.name";
+private static final String FUZZ_DETECT_VALUE       = "fuzz.detect.value";
 private static final String FUZZ_DETECT_DESCRIPTION = "fuzz.detect.description";
 
-private static final String CARPET_BOMB_NAME = "carpet.bomb.name";
-private static final String CARPET_BOMB_VALUE = "carpet.bomb.value";
+private static final String CARPET_BOMB_NAME        = "carpet.bomb.name";
+private static final String CARPET_BOMB_VALUE       = "carpet.bomb.value";
 private static final String CARPET_BOMB_DESCRIPTION = "carpet.bomb.description";
 
-private static final String TRY_CACHE_POISON_NAME = "try.cache.poison.name";
-private static final String TRY_CACHE_POISON_VALUE = "try.cache.poison.value";
+private static final String TRY_CACHE_POISON_NAME        = "try.cache.poison.name";
+private static final String TRY_CACHE_POISON_VALUE       = "try.cache.poison.value";
 private static final String TRY_CACHE_POISON_DESCRIPTION = "try.cache.poison.description";
 
-private static final String TWITCHY_CACHE_POISON_NAME = "twitchy.cache.poison.name";
-private static final String TWITCHY_CACHE_POISON_VALUE = "twitchy.cache.poison.value";
+private static final String TWITCHY_CACHE_POISON_NAME        = "twitchy.cache.poison.name";
+private static final String TWITCHY_CACHE_POISON_VALUE       = "twitchy.cache.poison.value";
 private static final String TWITCHY_CACHE_POISON_DESCRIPTION = "twitchy.cache.poison.description";
 
-private static final String TRY_METHOD_FLIP_NAME = "try.method.flip.name";
-private static final String TRY_METHOD_FLIP_VALUE = "try.method.flip.value";
+private static final String TRY_METHOD_FLIP_NAME        = "try.method.flip.name";
+private static final String TRY_METHOD_FLIP_VALUE       = "try.method.flip.value";
 private static final String TRY_METHOD_FLIP_DESCRIPTION = "try.method.flip.description";
 
-private static final String IDENTIFY_SMUGGLE_MUTATIONS_NAME = "identify.smuggle.mutations.name";
-private static final String IDENTIFY_SMUGGLE_MUTATIONS_VALUE = "identify.smuggle.mutations.value";
+private static final String IDENTIFY_SMUGGLE_MUTATIONS_NAME        = "identify.smuggle.mutations.name";
+private static final String IDENTIFY_SMUGGLE_MUTATIONS_VALUE       = "identify.smuggle.mutations.value";
 private static final String IDENTIFY_SMUGGLE_MUTATIONS_DESCRIPTION = "identify.smuggle.mutations.description";
 
-private static final String TRY_BYPASS_NAME = "try.bypass.name";
-private static final String TRY_BYPASS_VALUE = "try.bypass.value";
+private static final String TRY_BYPASS_NAME        = "try.bypass.name";
+private static final String TRY_BYPASS_VALUE       = "try.bypass.value";
 private static final String TRY_BYPASS_DESCRIPTION = "try.bypass.description";
 
-private static final String ROTATION_INTERVAL_NAME = "rotation.interval.name";
-private static final String ROTATION_INTERVAL_VALUE = "rotation.interval.value";
+private static final String ROTATION_INTERVAL_NAME        = "rotation.interval.name";
+private static final String ROTATION_INTERVAL_VALUE       = "rotation.interval.value";
 private static final String ROTATION_INTERVAL_DESCRIPTION = "rotation.interval.description";
 
-private static final String ROTATION_INCREMENT_NAME = "rotation.increment.name";
-private static final String ROTATION_INCREMENT_VALUE = "rotation.increment.value";
+private static final String ROTATION_INCREMENT_NAME        = "rotation.increment.name";
+private static final String ROTATION_INCREMENT_VALUE       = "rotation.increment.value";
 private static final String ROTATION_INCREMENT_DESCRIPTION = "rotation.increment.description";
 
-private static final String FORCE_BUCKETSIZE_NAME = "force.bucketsize.name";
-private static final String FORCE_BUCKETSIZE_VALUE = "force.bucketsize.value";
+private static final String FORCE_BUCKETSIZE_NAME        = "force.bucketsize.name";
+private static final String FORCE_BUCKETSIZE_VALUE       = "force.bucketsize.value";
 private static final String FORCE_BUCKETSIZE_DESCRIPTION = "force.bucketsize.description";
 
-private static final String MAX_BUCKETSIZE_NAME = "max.bucketsize.name";
+private static final String MAX_BUCKETSIZE_NAME  = "max.bucketsize.name";
 private static final String MAX_BUCKETSIZE_VALUE = "max.bucketsize.value";
 
 private ThreadPoolExecutor taskEngine;
