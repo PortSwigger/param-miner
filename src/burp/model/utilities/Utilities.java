@@ -366,7 +366,7 @@ public Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> set
     "This extension should be run on the latest version of Burp Suite. Using an older version of Burp may cause " +
       "impaired functionality.");
   if(settings != null) {
-    globalSettings = new ConfigurableSettings(settings, this);
+    globalSettings = new ConfigurableSettings(settings, this.callbacks);
   }
   
 }
@@ -375,7 +375,7 @@ public void out(String message) {
   stdout.println(message);
 }
 
-public JFrame getBurpFrame() {
+public static JFrame getBurpFrame() {
   Frame[] var0 = Frame.getFrames();
   int     var1 = var0.length;
   

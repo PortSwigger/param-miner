@@ -5,6 +5,7 @@
 
 package burp.view;
 
+import burp.IBurpExtenderCallbacks;
 import burp.model.utilities.Utilities;
 
 import java.awt.Color;
@@ -31,8 +32,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.text.NumberFormatter;
 
 public class ConfigurableSettings {
-public ConfigurableSettings(HashMap<String, Object> inputSettings, Utilities utilities) {
-  this.utilities = utilities;
+
+public ConfigurableSettings(HashMap<String, Object> inputSettings, IBurpExtenderCallbacks callbacks) {
+  _settings            = new LinkedHashMap<>();
+  _defaultSettings     = new LinkedHashMap<>();
+  _settingDescriptions = new LinkedHashMap<>();
+  _callbacks           = callbacks;
+  _listenerHashMap     = new HashMap<>();
+  
   Iterator var2 = inputSettings.keySet().iterator();
   
   String key;
@@ -41,22 +48,22 @@ public ConfigurableSettings(HashMap<String, Object> inputSettings, Utilities uti
     this.registerSetting(key, inputSettings.get(key));
   }
   
-  var2 = settings.keySet().iterator();
+  var2 = _settings.keySet().iterator();
   
   while(var2.hasNext()) {
     key = (String) var2.next();
-    String value = utilities.callbacks.loadExtensionSetting(key);
-    if(utilities.callbacks.loadExtensionSetting(key) != null) {
+    String value = _callbacks.loadExtensionSetting(key);
+    if(_callbacks.loadExtensionSetting(key) != null) {
       this.putRaw(key, value);
     }
   }
   
   NumberFormat format = NumberFormat.getInstance();
-  this.onlyInt = new NumberFormatter(format);
-  this.onlyInt.setValueClass(Integer.class);
-  this.onlyInt.setMinimum(-1);
-  this.onlyInt.setMaximum(Integer.MAX_VALUE);
-  this.onlyInt.setAllowsInvalid(false);
+  this._onlyInt = new NumberFormatter(format);
+  this._onlyInt.setValueClass(Integer.class);
+  this._onlyInt.setMinimum(-1);
+  this._onlyInt.setMaximum(Integer.MAX_VALUE);
+  this._onlyInt.setAllowsInvalid(false);
 }
 
 public void registerSetting(String key, Object value) {
@@ -64,13 +71,13 @@ public void registerSetting(String key, Object value) {
 }
 
 public void registerSetting(String key, Object value, String description) {
-  if(description != null && !description.isEmpty() && !settingDescriptions.containsKey(key)) {
-    settingDescriptions.put(key, description);
+  if(description != null && !description.isEmpty() && !_settingDescriptions.containsKey(key)) {
+    _settingDescriptions.put(key, description);
   }
   
-  if(!settings.containsKey(key)) {
-    defaultSettings.put(key, this.encode(value));
-    String oldValue = utilities.callbacks.loadExtensionSetting(key);
+  if(!_settings.containsKey(key)) {
+    _defaultSettings.put(key, this.encode(value));
+    String oldValue = _callbacks.loadExtensionSetting(key);
     if(oldValue != null) {
       this.putRaw(key, oldValue);
     }
@@ -99,8 +106,8 @@ private String escapeBackSlashes(String str) {
 }
 
 private void putRaw(String key, String value) {
-  settings.put(key, value);
-  ConfigListener callback = this.callbacks.getOrDefault(key, null);
+  _settings.put(key, value);
+  ConfigListener callback = this._listenerHashMap.getOrDefault(key, null);
   if(callback != null) {
     callback.valueUpdated(value);
   }
@@ -108,21 +115,11 @@ private void putRaw(String key, String value) {
 }
 
 public void registerListener(String key, ConfigListener listener) {
-  this.callbacks.put(key, listener);
-}
-
-public void printSettings() {
-  Iterator var1 = settings.keySet().iterator();
-  
-  while(var1.hasNext()) {
-    String key = (String) var1.next();
-    utilities.out(key + ": " + settings.get(key));
-  }
-  
+  this._listenerHashMap.put(key, listener);
 }
 
 public ConfigurableSettings showSettings() {
-  return this.showSettings(new ArrayList<>(settings.keySet()));
+  return this.showSettings(new ArrayList<>(_settings.keySet()));
 }
 
 public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow) {
@@ -138,11 +135,11 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
     key = (String) var5.next();
     String keyType = this.getType(key);
     JLabel label = new JLabel("\n" + key + ": ");
-    label.setToolTipText(settingDescriptions.getOrDefault(key, "No description available"));
-    if(!settings.containsKey(key))
+    label.setToolTipText(_settingDescriptions.getOrDefault(key, "No description available"));
+    if(!_settings.containsKey(key))
       continue;
     
-    if(!settings.get(key).equals(defaultSettings.get(key))) {
+    if(!_settings.get(key).equals(_defaultSettings.get(key))) {
       label.setForeground(Color.magenta);
     }
     
@@ -154,7 +151,7 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
       configured.put(key, box);
     }
     else if(keyType.equals("number")) {
-      JTextField box = new JFormattedTextField(this.onlyInt);
+      JTextField box = new JFormattedTextField(this._onlyInt);
       box.setText(String.valueOf(this.getInt(key)));
       panel.add(box);
       configured.put(key, box);
@@ -173,12 +170,12 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
   panel.add(buttonResetSettings);
   buttonResetSettings.addActionListener(new ActionListener() {
     public void actionPerformed(ActionEvent e) {
-      utilities.out("Discarding settings...");
+      // out("Discarding settings...");
       Iterator var2 = settingsToShow.iterator();
       
       while(var2.hasNext()) {
         String key = (String) var2.next();
-        utilities.callbacks.saveExtensionSetting(key, null);
+        _callbacks.saveExtensionSetting(key, null);
       }
       
       ConfigurableSettings.this.setDefaultSettings();
@@ -187,7 +184,7 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
       win.dispose();
     }
   });
-  int result = JOptionPane.showConfirmDialog(utilities.getBurpFrame(), panel, "Attack Config", 2, -1);
+  int result = JOptionPane.showConfirmDialog(Utilities.getBurpFrame(), panel, "Attack Config", 2, -1);
   if(result == 0) {
     Iterator var12 = configured.keySet().iterator();
     
@@ -205,10 +202,10 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
       }
       
       this.put(key, val);
-      utilities.callbacks.saveExtensionSetting(key, this.encode(val));
+      _callbacks.saveExtensionSetting(key, this.encode(val));
     }
     
-    return new ConfigurableSettings(utilities, this);
+    return this.createCopy();
   }
   else {
     return null;
@@ -216,11 +213,11 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
 }
 
 public void setDefaultSettings() {
-  Iterator var1 = settings.keySet().iterator();
+  Iterator var1 = _settings.keySet().iterator();
   
   while(var1.hasNext()) {
     String key = (String) var1.next();
-    this.putRaw(key, defaultSettings.get(key));
+    this.putRaw(key, _defaultSettings.get(key));
   }
   
 }
@@ -230,22 +227,22 @@ private void put(String key, Object value) {
 }
 
 public String getString(String key) {
-  String decoded = settings.get(key);
+  String decoded = _settings.get(key);
   decoded = decoded.substring(1, decoded.length() - 1).replace("\\\"", "\"").replace("\\\\", "\\");
   return decoded;
 }
 
 public int getInt(String key) {
-  return Integer.parseInt(settings.get(key));
+  return Integer.parseInt(_settings.get(key));
 }
 
 public boolean getBoolean(String key) {
-  String val = settings.get(key);
+  String val = _settings.get(key);
   return "true".equals(val);
 }
 
 private String getType(String key) {
-  String val = settings.get(key);
+  String val = _settings.get(key);
   if(!val.equals("true") && !val.equals("false")) {
     return val.startsWith("\"") ? "string" : "number";
   }
@@ -267,15 +264,31 @@ static JFrame getBurpFrame() {
   
   return null;
 }
-private static final LinkedHashMap<String, String> settings            = new LinkedHashMap<>();
-private static final LinkedHashMap<String, String> settingDescriptions = new LinkedHashMap<>();
-private static final LinkedHashMap<String, String> defaultSettings     = new LinkedHashMap<>();
-private final        Utilities                     utilities;
-private final        NumberFormatter               onlyInt;
-private final HashMap<String, ConfigListener> callbacks = new HashMap();
 
-private ConfigurableSettings(Utilities utilities, ConfigurableSettings base) {
-  this.utilities = utilities;
-  this.onlyInt   = base.onlyInt;
+private final LinkedHashMap<String, String>   _settings;
+private final LinkedHashMap<String, String>   _settingDescriptions;
+private final LinkedHashMap<String, String>   _defaultSettings;
+private final IBurpExtenderCallbacks          _callbacks;
+private final NumberFormatter                 _onlyInt;
+private final HashMap<String, ConfigListener> _listenerHashMap;
+
+
+private ConfigurableSettings createCopy() {
+  return new ConfigurableSettings(_settings, _settingDescriptions, _defaultSettings, _callbacks, _onlyInt, _listenerHashMap);
 }
+
+public ConfigurableSettings(LinkedHashMap<String, String> settings, LinkedHashMap<String, String> settingDescriptions,
+                            LinkedHashMap<String, String> defaultSettings,
+                            IBurpExtenderCallbacks callbacks,
+                            NumberFormatter onlyInt,
+                            HashMap<String, ConfigListener> listenerHashMap
+) {
+  _settings            = settings;
+  _settingDescriptions = settingDescriptions;
+  _defaultSettings     = defaultSettings;
+  _callbacks           = callbacks;
+  _onlyInt             = onlyInt;
+  _listenerHashMap     = listenerHashMap;
+}
+
 }
