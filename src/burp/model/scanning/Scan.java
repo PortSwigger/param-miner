@@ -23,7 +23,7 @@ import burp.view.SettingsBox;
 import org.apache.commons.lang3.NotImplementedException;
 
 public abstract class Scan implements IScannerCheck {
-String      name = "";
+String      name;
 public final    SettingsBox scanSettings;
 protected final Utilities   utilities;
 protected final BulkScanLauncher launcher;

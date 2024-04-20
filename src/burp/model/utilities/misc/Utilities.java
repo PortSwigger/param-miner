@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 public class Utilities {
 public final AtomicInteger requestCount = new AtomicInteger(0);
 public final String        version      = "1.03";
-public       String                 name = "uninitialised";
+public       String                 name;
 public final IBurpExtenderCallbacks callbacks;
 public final IExtensionHelpers      helpers;
 public       ConfigurableSettings   globalSettings;

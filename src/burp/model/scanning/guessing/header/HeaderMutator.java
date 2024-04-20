@@ -65,7 +65,7 @@ private void registerMutation(String name) {
 }
 
 public byte[] mutate(String header, String mutation) {
-  String retStr = null;
+  String retStr;
   byte[] ret = null;
   switch (mutation) {
   case "nospace":

@@ -348,7 +348,7 @@ final HashSet<String>           alreadyReported;
 
         Iterator<IHttpRequestResponse> savedJson = paramGrabber.getSavedJson().iterator();
         while (savedJson.hasNext()) {
-            IHttpRequestResponse resp = null; // todo record resp
+            IHttpRequestResponse resp; // todo record resp
             try {
                 resp = savedJson.next();
             }

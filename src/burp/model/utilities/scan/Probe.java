@@ -16,8 +16,8 @@ public class Probe {
     private final String name;
 
     private       String            tip = "";
-    private final int               severity;
-    private       ArrayList<String> breakStrings  = new ArrayList<>();
+    private final int                 severity;
+    private final ArrayList<String>   breakStrings;
     private final ArrayList<String[]> escapeStrings = new ArrayList<>();
     private       byte                prefix        = APPEND;
     private boolean randomAnchor = true;

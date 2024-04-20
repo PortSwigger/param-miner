@@ -7,8 +7,8 @@ import java.util.stream.Collectors;
 public class ResourceLoader {
 
 public static String loadFile(String fileName) throws Exception {
-  InputStream inputStream  = null;
-  String      fileContents = "";
+  InputStream inputStream;
+  String      fileContents;
   
   try {
     // load given resource as inputStream
