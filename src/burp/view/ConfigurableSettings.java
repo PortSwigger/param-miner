@@ -184,7 +184,7 @@ public ConfigurableSettings showSettings(final ArrayList<String> settingsToShow)
       win.dispose();
     }
   });
-  int result = JOptionPane.showConfirmDialog(Utilities.getBurpFrame(), panel, "Attack Config", 2, -1);
+  int result = JOptionPane.showConfirmDialog(getBurpFrame(), panel, "Attack Config", 2, -1);
   if(result == 0) {
     Iterator var12 = configured.keySet().iterator();
     

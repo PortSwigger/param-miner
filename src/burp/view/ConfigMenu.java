@@ -40,7 +40,7 @@ public void run() {
       }
     });
     this.menuButton.add(this.menuItem);
-    JMenuBar burpMenuBar = Utilities.getBurpFrame().getJMenuBar();
+    JMenuBar burpMenuBar = ConfigurableSettings.getBurpFrame().getJMenuBar();
     burpMenuBar.add(this.menuButton);
     burpMenuBar.repaint();
   } catch (NullPointerException var2) {
@@ -61,7 +61,7 @@ public void menuCanceled(MenuEvent e) {
 @Override
 public void extensionUnloaded() {
   try {
-    JMenuBar jMenuBar = Utilities.getBurpFrame().getJMenuBar();
+    JMenuBar jMenuBar = ConfigurableSettings.getBurpFrame().getJMenuBar();
     jMenuBar.remove(this.menuButton);
     jMenuBar.repaint();
   } catch (NullPointerException var2) {

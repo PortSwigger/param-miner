@@ -380,20 +380,6 @@ public void out(String message) {
   stdout.println(message);
 }
 
-public static JFrame getBurpFrame() {
-  Frame[] var0 = Frame.getFrames();
-  int     var1 = var0.length;
-  
-  for(int var2 = 0; var2 < var1; ++var2) {
-    Frame f = var0[var2];
-    if(f.isVisible() && f.getTitle().startsWith("Burp Suite")) {
-      return (JFrame) f;
-    }
-  }
-  
-  return null;
-}
-
 public boolean isBurpPro() {
   return callbacks.getBurpVersion()[0].contains("Professional");
 }
