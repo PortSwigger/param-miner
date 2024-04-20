@@ -1,4 +1,4 @@
-package burp.model.param;
+package burp.model.scanning.guessing.param;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
@@ -9,7 +9,7 @@ import burp.model.utilities.Keysmith;
 import burp.model.utilities.Probe;
 import burp.model.utilities.WordProvider;
 import burp.model.utilities.Attack;
-import burp.model.header.HeaderMutationGuesser;
+import burp.model.scanning.guessing.header.HeaderMutationGuesser;
 import burp.model.insertionPoints.ParamNameInsertionPoint;
 import burp.model.scanning.BulkScan;
 import burp.model.utilities.Utilities;

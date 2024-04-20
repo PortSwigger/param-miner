@@ -9,7 +9,7 @@ import burp.IRequestInfo;
 import burp.IResponseInfo;
 import burp.IScanIssue;
 import burp.IScannerInsertionPoint;
-import burp.model.param.PartialParam;
+import burp.model.scanning.guessing.param.PartialParam;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.CharUtils;

@@ -1,4 +1,4 @@
-package burp.model.header;
+package burp.model.scanning.guessing.header;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;

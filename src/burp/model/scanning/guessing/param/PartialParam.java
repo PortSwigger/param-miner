@@ -1,4 +1,4 @@
-package burp.model.param;
+package burp.model.scanning.guessing.param;
 
 import burp.IParameter;
 

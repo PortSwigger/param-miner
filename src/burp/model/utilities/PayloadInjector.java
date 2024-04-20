@@ -8,7 +8,7 @@ package burp.model.utilities;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScannerInsertionPoint;
-import burp.model.header.HeaderMutator;
+import burp.model.scanning.guessing.header.HeaderMutator;
 
 import java.io.IOException;
 import java.util.ArrayList;

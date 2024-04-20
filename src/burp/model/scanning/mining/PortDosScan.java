@@ -1,9 +1,11 @@
-package burp.model.scanning;
+package burp.model.scanning.mining;
 
 import java.util.List;
 
 import burp.IHttpService;
 import burp.IScanIssue;
+import burp.model.scanning.BulkScanLauncher;
+import burp.model.scanning.Scan;
 import burp.model.utilities.Resp;
 import burp.model.utilities.Utilities;
 

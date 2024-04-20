@@ -1,18 +1,18 @@
 package burp;
 
-import burp.model.header.HeaderMutationScan;
-import burp.model.header.HeaderPoison;
-import burp.model.param.OfferParamGuess;
-import burp.model.param.ParamGrabber;
+import burp.model.scanning.mining.HeaderSmugglingMutationScan;
+import burp.model.scanning.mining.HeaderPoison;
+import burp.model.scanning.guessing.param.OfferParamGuess;
+import burp.model.scanning.guessing.param.ParamGrabber;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
-import burp.model.scanning.FatGetScan;
+import burp.model.scanning.mining.FatGetScan;
 import burp.model.scanning.GrabScan;
-import burp.model.scanning.NormalisedParamScan;
-import burp.model.scanning.NormalisedPathScan;
-import burp.model.scanning.PortDosScan;
-import burp.model.scanning.RailsUtmScan;
-import burp.model.scanning.UnkeyedParamScan;
+import burp.model.scanning.mining.NormalisedParamScan;
+import burp.model.scanning.mining.NormalisedPathScan;
+import burp.model.scanning.mining.PortDosScan;
+import burp.model.scanning.mining.RailsUtmScan;
+import burp.model.scanning.mining.UnkeyedParamScan;
 import burp.model.utilities.RandomComparator;
 import burp.model.utilities.ResourceLoader;
 import burp.model.utilities.Utilities;
@@ -409,7 +409,7 @@ private void setupScans() {
   new NormalisedParamScan("normalised param", utilities, launcher);
   new NormalisedPathScan("normalised path", utilities, launcher);
   new RailsUtmScan("rails param cloaking scan", utilities, launcher);
-  new HeaderMutationScan("identify header smuggling mutations", utilities, launcher);
+  new HeaderSmugglingMutationScan("identify header smuggling mutations", utilities, launcher);
 }
 
 }

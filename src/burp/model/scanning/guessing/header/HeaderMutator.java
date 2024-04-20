@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.model.header;
+package burp.model.scanning.guessing.header;
 
 import burp.model.utilities.Utilities;
 

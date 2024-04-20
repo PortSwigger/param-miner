@@ -1,11 +1,11 @@
-package burp.model.header;
+package burp.model.scanning.mining;
 
 import java.util.List;
 
 import burp.IHttpRequestResponse;
 import burp.IScanIssue;
-import burp.model.param.ParamGrabber;
-import burp.model.param.ParamGuesser;
+import burp.model.scanning.guessing.param.ParamGrabber;
+import burp.model.scanning.guessing.param.ParamGuesser;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
 import burp.model.utilities.Utilities;

@@ -1,8 +1,10 @@
-package burp.model.scanning;
+package burp.model.scanning.mining;
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScanIssue;
 import burp.IScannerInsertionPoint;
+import burp.model.scanning.BulkScanLauncher;
+import burp.model.scanning.ParamScan;
 import burp.model.utilities.Resp;
 import burp.model.utilities.Utilities;
 
