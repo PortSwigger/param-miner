@@ -1,7 +1,5 @@
 package burp;
 
-import burp.api.montoya.BurpExtension;
-import burp.api.montoya.MontoyaApi;
 import burp.model.header.HeaderMutationScan;
 import burp.model.header.HeaderPoison;
 import burp.model.param.OfferParamGuess;
@@ -20,7 +18,6 @@ import burp.model.utilities.ResourceLoader;
 import burp.model.utilities.Utilities;
 import burp.view.ConfigMenu;
 import burp.view.SettingsBox;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.SwingUtilities;
 import java.io.IOException;
@@ -50,63 +47,20 @@ public static SettingsBox  guessSettings;
 @Override
 public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
   callbacks.setExtensionName(name);
-  
-  try {
-    callbacks.getHelpers().analyzeResponseVariations();
-  }
-  catch(NoSuchMethodError e) {
-    utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
-    throw new NoSuchMethodError();
-  }
-  
+  verifyExtSupported(callbacks);
   configProps    = loadConfigProps();
   utilities      = new Utilities(callbacks, new HashMap<>(), name);
   configSettings = getConfigSettings(utilities);
   guessSettings  = getGuessSettings(utilities);
   loadWordlists();
-  
-  BlockingQueue<Runnable> tasks;
-  if(utilities.globalSettings.getBoolean("enable auto-mine"))
-    tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
-  else
-    tasks = new LinkedBlockingQueue<>();
-  
-  int threadPool = utilities.globalSettings.getInt("thread pool size");
-  taskEngine = new ThreadPoolExecutor(
-    threadPool, threadPool, 10, TimeUnit.MINUTES, tasks);
-  
-  utilities.globalSettings.registerListener("thread pool size", value->{
-    utilities.out("Updating active thread pool size to " + value);
-    taskEngine.setCorePoolSize(Integer.parseInt(value));
-    taskEngine.setMaximumPoolSize(Integer.parseInt(value));
-  });
-  
-  paramGrabber = new ParamGrabber(taskEngine, utilities);
-  callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine, utilities));
-  
-  if(utilities.isBurpPro()) {
-    callbacks.registerScannerCheck(new GrabScan(paramGrabber, utilities));
-  }
-  
-  callbacks.registerHttpListener(paramGrabber);
-  callbacks.registerProxyListener(paramGrabber);
-  
+  setupTaskEngine();
+  setupParamGrabber(callbacks);
   SwingUtilities.invokeLater(new ConfigMenu(utilities));
-  
-  BulkScanLauncher launcher = new BulkScanLauncher(BulkScan.scans, utilities);
-  new HeaderPoison("Header poison", utilities, launcher);
-  new PortDosScan("port-DoS", utilities, launcher);
-  //new ValueScan("param-value probe");
-  new UnkeyedParamScan("Unkeyed param", utilities, launcher);
-  new FatGetScan("fat GET", utilities, launcher);
-  new NormalisedParamScan("normalised param", utilities, launcher);
-  new NormalisedPathScan("normalised path", utilities, launcher);
-  new RailsUtmScan("rails param cloaking scan", utilities, launcher);
-  new HeaderMutationScan("identify header smuggling mutations", utilities, launcher);
-  
+  setupScans();
   utilities.callbacks.registerExtensionStateListener(this);
   utilities.out("Loaded " + name + " v" + version);
-}  //end registerExtenderCallbacks()
+}
+
 
 //-----------------------------------------------------------------------------
 @Override
@@ -120,8 +74,8 @@ public void extensionUnloaded() {
 
 // PRIVATE FIELDS
 ///////////////////////////////////////
-private static final String             name    = "Param Miner";
-private static final String             version = "1.4f";
+private static final String name    = "Param Miner";
+private static final String version = "1.4f";
 
 private static final String STATIC_BUSTER_NAME  = "add.static.cache.buster.name";
 private static final String STATIC_BUSTER_VALUE = "add.static.cache.buster.value";
@@ -268,9 +222,54 @@ private ThreadPoolExecutor taskEngine;
 private Properties         configProps;
 private SettingsBox        configSettings;
 private Utilities          utilities;
+private BulkScanLauncher   launcher;
 
 // PRIVATE METHODS
 ///////////////////////////////////////
+//-----------------------------------------------------------------------------
+private void setupTaskEngine() {
+  BlockingQueue<Runnable> tasks;
+  if(utilities.globalSettings.getBoolean("enable auto-mine"))
+    tasks = new PriorityBlockingQueue<>(1000, new RandomComparator());
+  else
+    tasks = new LinkedBlockingQueue<>();
+  
+  int threadPool = utilities.globalSettings.getInt("thread pool size");
+  taskEngine = new ThreadPoolExecutor(
+    threadPool, threadPool, 10, TimeUnit.MINUTES, tasks);
+  
+  utilities.globalSettings.registerListener("thread pool size", value->{
+    utilities.out("Updating active thread pool size to " + value);
+    taskEngine.setCorePoolSize(Integer.parseInt(value));
+    taskEngine.setMaximumPoolSize(Integer.parseInt(value));
+  });
+}
+
+//-----------------------------------------------------------------------------
+private void setupParamGrabber(IBurpExtenderCallbacks callbacks) {
+  paramGrabber = new ParamGrabber(taskEngine, utilities);
+  callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine, utilities));
+  
+  if(utilities.isBurpPro()) {
+    callbacks.registerScannerCheck(new GrabScan(paramGrabber, utilities));
+  }
+  
+  callbacks.registerHttpListener(paramGrabber);
+  callbacks.registerProxyListener(paramGrabber);
+}
+
+
+//-----------------------------------------------------------------------------
+private void verifyExtSupported(IBurpExtenderCallbacks callbacks) {
+  try {
+    callbacks.getHelpers().analyzeResponseVariations();
+  }
+  catch(NoSuchMethodError e) {
+    utilities.out("This extension requires Burp Suite Pro 1.7.10 or later");
+    throw new NoSuchMethodError();
+  }
+}
+
 //-----------------------------------------------------------------------------
 private Properties loadConfigProps() {
   try {
@@ -360,6 +359,20 @@ private void loadWordlists() {
       Utilities.boringHeaders.add(headers.next().toLowerCase());
   }
 } // end loadWordlists()
+
+//-----------------------------------------------------------------------------
+private void setupScans() {
+  launcher = new BulkScanLauncher(BulkScan.scans, utilities);
+  new HeaderPoison("Header poison", utilities, launcher);
+  new PortDosScan("port-DoS", utilities, launcher);
+  //new ValueScan("param-value probe");
+  new UnkeyedParamScan("Unkeyed param", utilities, launcher);
+  new FatGetScan("fat GET", utilities, launcher);
+  new NormalisedParamScan("normalised param", utilities, launcher);
+  new NormalisedPathScan("normalised path", utilities, launcher);
+  new RailsUtmScan("rails param cloaking scan", utilities, launcher);
+  new HeaderMutationScan("identify header smuggling mutations", utilities, launcher);
+}
 
 }
 ///////////////////////////////////////
