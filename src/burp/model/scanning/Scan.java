@@ -18,13 +18,11 @@ import burp.IScannerInsertionPoint;
 import burp.model.utilities.burp.CustomScanIssue;
 import burp.model.utilities.burp.Req;
 import burp.model.utilities.scan.Resp;
-import burp.model.utilities.misc.ZgrabLoader;
 import burp.model.utilities.misc.Utilities;
 import burp.view.SettingsBox;
 import org.apache.commons.lang3.NotImplementedException;
 
 public abstract class Scan implements IScannerCheck {
-static ZgrabLoader loader = null;
 String      name = "";
 public          SettingsBox      scanSettings;
 protected final Utilities        utilities;
@@ -77,10 +75,6 @@ public boolean shouldScan(IHttpRequestResponse baseRequestResponse) {
 
 public List<IScanIssue> doActiveScan(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
   return this.doScan(baseRequestResponse.getRequest(), baseRequestResponse.getHttpService());
-}
-
-public void setRequestMethod(ZgrabLoader loader) {
-  Scan.loader = loader;
 }
 
 public List<IScanIssue> doPassiveScan(IHttpRequestResponse baseRequestResponse) {
@@ -172,41 +166,37 @@ public static Resp request(
     IHttpRequestResponse resp = null;
     utilities.requestCount.incrementAndGet();
     long startTime = System.currentTimeMillis();
-    if (loader != null) {
-      throw new NotImplementedException("hmm");
-    } else {
-      int attempts = 0;
+    int attempts = 0;
+    
+    while((resp == null || resp.getResponse() == null) && attempts <= maxRetries) {
+      startTime = System.currentTimeMillis();
       
-      while((resp == null || resp.getResponse() == null) && attempts <= maxRetries) {
-        startTime = System.currentTimeMillis();
-        
-        try {
-          if (forceHTTP1 || !utilities.supportsHTTP2) {
-            req = utilities.replaceFirst(req, "HTTP/2\r\n", "HTTP/1.1\r\n");
-          }
-          
-          byte[] responseBytes;
-          if (utilities.supportsHTTP2) {
-            responseBytes = utilities.callbacks.makeHttpRequest(service, req, forceHTTP1).getResponse();
-          } else {
-            responseBytes = utilities.callbacks.makeHttpRequest(service, req).getResponse();
-          }
-          
-          resp = new Req(req, responseBytes, service);
-        } catch (NoSuchMethodError var10) {
-          utilities.supportsHTTP2 = false;
-          continue;
-        } catch (RuntimeException var11) {
-          utilities.out("Recovering from request exception: " + service.getHost());
-          utilities.err("Recovering from request exception: " + service.getHost());
-          resp = new Req(req, (byte[])null, service);
+      try {
+        if (forceHTTP1 || !utilities.supportsHTTP2) {
+          req = utilities.replaceFirst(req, "HTTP/2\r\n", "HTTP/1.1\r\n");
         }
         
-        ++attempts;
+        byte[] responseBytes;
+        if (utilities.supportsHTTP2) {
+          responseBytes = utilities.callbacks.makeHttpRequest(service, req, forceHTTP1).getResponse();
+        } else {
+          responseBytes = utilities.callbacks.makeHttpRequest(service, req).getResponse();
+        }
+        
+        resp = new Req(req, responseBytes, service);
+      } catch (NoSuchMethodError var10) {
+        utilities.supportsHTTP2 = false;
+        continue;
+      } catch (RuntimeException var11) {
+        utilities.out("Recovering from request exception: " + service.getHost());
+        utilities.err("Recovering from request exception: " + service.getHost());
+        resp = new Req(req, (byte[])null, service);
       }
       
-      return new Resp(resp, startTime, utilities);
+      ++attempts;
     }
+    
+    return new Resp(resp, startTime, utilities);
   }
 }
 }
