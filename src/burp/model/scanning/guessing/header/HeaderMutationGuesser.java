@@ -4,9 +4,9 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IRequestInfo;
 import burp.IResponseInfo;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 import burp.view.ConfigurableSettings;
-import burp.model.utilities.CustomScanIssue;
+import burp.model.utilities.burp.CustomScanIssue;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;

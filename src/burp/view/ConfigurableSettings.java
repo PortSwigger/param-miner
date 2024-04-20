@@ -6,7 +6,7 @@
 package burp.view;
 
 import burp.IBurpExtenderCallbacks;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.awt.Color;
 import java.awt.Frame;

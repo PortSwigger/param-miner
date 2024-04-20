@@ -6,7 +6,7 @@
 package burp.model.insertionPoints;
 
 import burp.IScannerInsertionPoint;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

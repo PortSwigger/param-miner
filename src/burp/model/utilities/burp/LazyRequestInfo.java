@@ -1,8 +1,9 @@
-package burp.model.utilities;
+package burp.model.utilities.burp;
 
 import burp.IHttpService;
 import burp.IParameter;
 import burp.IRequestInfo;
+import burp.model.utilities.misc.Utilities;
 
 import java.net.URL;
 import java.util.Arrays;

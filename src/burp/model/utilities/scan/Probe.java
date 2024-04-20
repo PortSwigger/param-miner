@@ -1,4 +1,4 @@
-package burp.model.utilities;
+package burp.model.utilities.scan;
 
 import java.util.ArrayList;
 import java.util.Arrays;

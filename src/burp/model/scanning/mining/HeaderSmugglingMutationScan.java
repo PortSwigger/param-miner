@@ -8,7 +8,7 @@ import burp.IScanIssue;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
 import burp.model.scanning.guessing.header.HeaderMutationGuesser;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 public class HeaderSmugglingMutationScan extends Scan {
     public HeaderSmugglingMutationScan(String name, Utilities utilities, BulkScanLauncher launcher) {

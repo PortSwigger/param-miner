@@ -6,7 +6,7 @@
 package burp.view;
 
 import burp.IExtensionStateListener;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;

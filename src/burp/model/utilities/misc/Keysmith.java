@@ -1,4 +1,4 @@
-package burp.model.utilities;
+package burp.model.utilities.misc;
 
 import burp.IParameter;
 import com.google.gson.JsonArray;

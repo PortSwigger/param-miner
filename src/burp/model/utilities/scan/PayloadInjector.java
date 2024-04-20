@@ -3,12 +3,13 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.model.utilities;
+package burp.model.utilities.scan;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScannerInsertionPoint;
 import burp.model.scanning.guessing.header.HeaderMutator;
+import burp.model.utilities.misc.Utilities;
 
 import java.io.IOException;
 import java.util.ArrayList;

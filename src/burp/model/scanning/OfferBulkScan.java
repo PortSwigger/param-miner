@@ -9,7 +9,7 @@ import burp.IContextMenuFactory;
 import burp.IContextMenuInvocation;
 import burp.IHttpRequestResponse;
 import burp.controller.TriggerBulkScan;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.ArrayList;
 import java.util.Iterator;

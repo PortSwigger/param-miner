@@ -1,4 +1,4 @@
-package burp.model.utilities;
+package burp.model.utilities.burp;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;

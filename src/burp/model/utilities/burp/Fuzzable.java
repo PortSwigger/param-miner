@@ -1,7 +1,8 @@
-package burp.model.utilities;
+package burp.model.utilities.burp;
 
 import burp.IHttpRequestResponse;
 
+import burp.model.utilities.misc.Utilities;
 import org.apache.commons.lang3.ArrayUtils;
 
 public class Fuzzable extends CustomScanIssue {

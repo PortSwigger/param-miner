@@ -7,7 +7,7 @@ package burp.model.insertionPoints;
 
 import burp.IParameter;
 import burp.IScannerInsertionPoint;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 public class ParamInsertionPoint implements IScannerInsertionPoint {
 public byte[] request;

@@ -1,6 +1,6 @@
 package burp.model.insertionPoints;
 
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.ArrayList;
 import java.util.Iterator;

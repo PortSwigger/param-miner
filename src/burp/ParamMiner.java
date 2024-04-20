@@ -13,9 +13,9 @@ import burp.model.scanning.mining.NormalisedPathScan;
 import burp.model.scanning.mining.PortDosScan;
 import burp.model.scanning.mining.RailsUtmScan;
 import burp.model.scanning.mining.UnkeyedParamScan;
-import burp.model.utilities.RandomComparator;
-import burp.model.utilities.ResourceLoader;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.RandomComparator;
+import burp.model.utilities.misc.ResourceLoader;
+import burp.model.utilities.misc.Utilities;
 import burp.view.ConfigMenu;
 import burp.view.SettingsBox;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 ///////////////////////////////////////
 // CLASS BurpExtender
 ///////////////////////////////////////
-public class BurpExtender implements IBurpExtender, IExtensionStateListener {
+public class ParamMiner implements IBurpExtender, IExtensionStateListener {
 
 // PUBLIC METHODS
 ///////////////////////////////////////

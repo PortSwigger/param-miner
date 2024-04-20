@@ -15,11 +15,11 @@ import burp.IHttpService;
 import burp.IScanIssue;
 import burp.IScannerCheck;
 import burp.IScannerInsertionPoint;
-import burp.model.utilities.CustomScanIssue;
-import burp.model.utilities.Req;
-import burp.model.utilities.Resp;
-import burp.model.utilities.ZgrabLoader;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.burp.CustomScanIssue;
+import burp.model.utilities.burp.Req;
+import burp.model.utilities.scan.Resp;
+import burp.model.utilities.misc.ZgrabLoader;
+import burp.model.utilities.misc.Utilities;
 import burp.view.SettingsBox;
 import org.apache.commons.lang3.NotImplementedException;
 

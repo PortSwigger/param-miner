@@ -6,8 +6,8 @@ import burp.IResponseInfo;
 import burp.IScannerInsertionPoint;
 import burp.model.insertionPoints.ParamInsertionPoint;
 import burp.model.insertionPoints.RawInsertionPoint;
-import burp.model.utilities.Req;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.burp.Req;
+import burp.model.utilities.misc.Utilities;
 import burp.view.ConfigurableSettings;
 
 import java.util.ArrayList;

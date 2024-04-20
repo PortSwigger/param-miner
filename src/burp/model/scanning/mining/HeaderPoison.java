@@ -8,7 +8,7 @@ import burp.model.scanning.guessing.param.ParamGrabber;
 import burp.model.scanning.guessing.param.ParamGuesser;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 import burp.view.SettingsBox;
 
 public class HeaderPoison extends Scan {

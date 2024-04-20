@@ -1,8 +1,9 @@
-package burp.model.utilities;
+package burp.model.utilities.scan;
 
 import burp.IHttpRequestResponse;
 import burp.IResponseInfo;
 import burp.IResponseVariations;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.Arrays;
 
@@ -15,7 +16,7 @@ private long responseTime;
 private short status;
 private boolean timedOut;
 private boolean failed;
-private boolean early;
+private       boolean   early;
 private final Utilities utilities;
 
 public long getTimestamp() {

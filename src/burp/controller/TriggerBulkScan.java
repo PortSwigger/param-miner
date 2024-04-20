@@ -10,7 +10,7 @@ import burp.IScanIssue;
 import burp.model.scanning.BulkScan;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 import burp.view.ConfigurableSettings;
 
 import java.awt.event.ActionEvent;

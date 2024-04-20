@@ -1,6 +1,6 @@
 package burp.model.scanning.guessing.param;
 
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

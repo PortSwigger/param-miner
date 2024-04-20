@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.model.utilities;
+package burp.model.utilities.misc;
 
 import java.util.Comparator;
 
@@ -14,6 +14,7 @@ public class SortByParentDomain implements Comparator<ScanItem> {
 public SortByParentDomain() {
 }
 
+@Override
 public int compare(ScanItem o1, ScanItem o2) {
   int dot1 = StringUtils.countMatches(o1.host, ".");
   int dot2 = StringUtils.countMatches(o2.host, ".");

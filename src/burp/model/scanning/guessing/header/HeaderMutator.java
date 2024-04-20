@@ -5,7 +5,7 @@
 
 package burp.model.scanning.guessing.header;
 
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

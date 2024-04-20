@@ -1,6 +1,6 @@
 package burp.model.insertionPoints;
 
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;

@@ -8,7 +8,7 @@ import burp.IParameter;
 import burp.IRequestInfo;
 import burp.IScanIssue;
 import burp.controller.TriggerParamGuesser;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import javax.swing.*;
 import java.util.ArrayList;

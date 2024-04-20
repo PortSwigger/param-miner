@@ -7,8 +7,8 @@ import burp.IScannerInsertionPoint;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.ParamScan;
 import burp.model.scanning.Scan;
-import burp.model.utilities.Resp;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.scan.Resp;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.List;
 

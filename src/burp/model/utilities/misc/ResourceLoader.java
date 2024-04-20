@@ -1,4 +1,4 @@
-package burp.model.utilities;
+package burp.model.utilities.misc;
 
 import java.io.*;
 import java.util.Properties;

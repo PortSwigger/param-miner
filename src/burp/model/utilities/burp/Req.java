@@ -1,8 +1,9 @@
-package burp.model.utilities;
+package burp.model.utilities.burp;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.model.utilities.misc.Utilities;
 
 public class Req implements IHttpRequestResponse {
 

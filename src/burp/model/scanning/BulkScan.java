@@ -12,8 +12,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import burp.IHttpRequestResponse;
 import burp.IHttpService;
-import burp.model.utilities.Utilities;
-import burp.model.utilities.SortByParentDomain;
+import burp.model.utilities.misc.Utilities;
+import burp.model.utilities.misc.SortByParentDomain;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -73,7 +73,7 @@ public void run() {
     }
     
     Collections.shuffle(reqlist);
-    Collections.sort(reqlist, new SortByParentDomain());
+    reqlist.sort(new SortByParentDomain());
     Set<String> keyCache = new HashSet();
     Queue<String> cache = new CircularFifoQueue(queueSize);
     HashSet<String> remainingHosts = new HashSet();

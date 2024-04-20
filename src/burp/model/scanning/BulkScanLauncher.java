@@ -1,7 +1,7 @@
 package burp.model.scanning;
 
 
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.List;
 import java.util.concurrent.BlockingQueue;

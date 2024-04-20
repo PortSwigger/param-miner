@@ -1,8 +1,9 @@
-package burp.model.utilities;
+package burp.model.utilities.scan;
 
 import burp.IHttpRequestResponse;
 import burp.IResponseKeywords;
 import burp.IResponseVariations;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,13 +19,13 @@ private      HashMap<String, Object> firstFingerprint;
 private HashMap<String, Object> lastPrint;
 private IHttpRequestResponse lastRequest;
 private String[] keys;
-public  String   payload;
-private Probe    probe;
-private String                  anchor;
+public        String    payload;
+private       Probe     probe;
+private       String    anchor;
 private HashMap<String, Object> fingerprint;
 private IResponseKeywords       responseKeywords;
 private IResponseVariations     responseDetails;
-private int                     responseReflections;
+private       int       responseReflections;
 private final Utilities utilities;
 
 public HashMap<String, Object> getLastPrint() {

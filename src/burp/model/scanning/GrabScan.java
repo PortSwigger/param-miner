@@ -5,7 +5,7 @@ import burp.IScanIssue;
 import burp.IScannerCheck;
 import burp.IScannerInsertionPoint;
 import burp.model.scanning.guessing.param.ParamGrabber;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.ArrayList;
 import java.util.List;

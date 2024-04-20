@@ -1,4 +1,4 @@
-package burp.model.utilities;
+package burp.model.utilities.misc;
 
 import burp.IBurpExtenderCallbacks;
 import burp.IExtensionHelpers;
@@ -10,6 +10,11 @@ import burp.IResponseInfo;
 import burp.IScanIssue;
 import burp.IScannerInsertionPoint;
 import burp.model.scanning.guessing.param.PartialParam;
+import burp.model.utilities.burp.Fuzzable;
+import burp.model.utilities.burp.LazyRequestInfo;
+import burp.model.utilities.scan.Attack;
+import burp.model.utilities.scan.Probe;
+import burp.model.utilities.scan.Resp;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.lang3.CharUtils;

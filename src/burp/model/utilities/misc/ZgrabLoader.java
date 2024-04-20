@@ -3,7 +3,7 @@
 // (powered by FernFlower decompiler)
 //
 
-package burp.model.utilities;
+package burp.model.utilities.misc;
 
 import burp.model.scanning.Scan;
 

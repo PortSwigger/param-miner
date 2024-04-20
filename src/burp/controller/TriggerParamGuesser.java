@@ -6,7 +6,7 @@ import burp.IParameter;
 import burp.IResponseInfo;
 import burp.model.scanning.guessing.param.ParamGrabber;
 import burp.model.scanning.guessing.param.ParamGuesser;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 import burp.view.ConfigurableSettings;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 

@@ -9,7 +9,7 @@ import burp.IHttpRequestResponse;
 import burp.IHttpService;
 import burp.IScanIssue;
 import burp.IScannerInsertionPoint;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Utilities;
 
 import java.util.List;
 

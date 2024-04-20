@@ -8,8 +8,8 @@ import burp.IParameter;
 import burp.IProxyListener;
 import burp.IRequestInfo;
 import burp.IResponseInfo;
-import burp.model.utilities.Keysmith;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.misc.Keysmith;
+import burp.model.utilities.misc.Utilities;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
-import static burp.model.utilities.Keysmith.getHtmlKeys;
-import static burp.model.utilities.Keysmith.getWords;
+import static burp.model.utilities.misc.Keysmith.getHtmlKeys;
+import static burp.model.utilities.misc.Keysmith.getWords;
 
 
 public class ParamGrabber implements IProxyListener, IHttpListener {

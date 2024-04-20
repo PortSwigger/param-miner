@@ -6,8 +6,8 @@ import burp.IHttpService;
 import burp.IScanIssue;
 import burp.model.scanning.BulkScanLauncher;
 import burp.model.scanning.Scan;
-import burp.model.utilities.Resp;
-import burp.model.utilities.Utilities;
+import burp.model.utilities.scan.Resp;
+import burp.model.utilities.misc.Utilities;
 
 public class NormalisedPathScan extends Scan {
 
