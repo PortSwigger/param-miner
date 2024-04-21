@@ -953,23 +953,24 @@ public IScanIssue reportReflectionIssue(
   String reportedSeverity = "High";
   int    evidenceCount    = 0;
   
+  StringBuilder detailBuilder = new StringBuilder(detail);
   for(int i = 0; i < attacks.length; ++i) {
     requests[i] = attacks[i].getLastRequest();
     if(i % 2 == 0) {
-      detail =
-        detail + " &#160;  &#160; <table><tr><td><b>" + StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName()) +
-          " &#160;  &#160; </b></td><td><b>" + StringEscapeUtils.escapeHtml4(attacks[i].payload) +
-          " &#160; </b></td><td><b>";
+      detailBuilder.append(" &#160;  &#160; <table><tr><td><b>")
+        .append(StringEscapeUtils.escapeHtml4(attacks[i].getProbe().getName()))
+        .append(" &#160;  &#160; </b></td><td><b>").append(StringEscapeUtils.escapeHtml4(attacks[i].payload))
+        .append(" &#160; </b></td><td><b>");
     }
     else {
-      detail = detail + StringEscapeUtils.escapeHtml4(attacks[i].payload) + "</b></td></tr>\n";
+      detailBuilder.append(StringEscapeUtils.escapeHtml4(attacks[i].payload)).append("</b></td></tr>\n");
       HashMap<String, Object> workedPrint           = attacks[i].getLastPrint();
       HashMap<String, Object> consistentWorkedPrint = attacks[i].getPrint();
       HashMap<String, Object> breakPrint            = attacks[i - 1].getLastPrint();
       HashMap<String, Object> consistentBreakPrint  = attacks[i - 1].getPrint();
       Set<String>             allKeys               = new HashSet<>(consistentWorkedPrint.keySet());
       allKeys.addAll(consistentBreakPrint.keySet());
-      String           boringDetail = "";
+      StringBuilder    boringDetail = new StringBuilder();
       Iterator<String> var16        = allKeys.iterator();
 
 label73:
@@ -980,11 +981,11 @@ label73:
           String workedResult;
           do {
             if(!var16.hasNext()) {
-              detail = detail + boringDetail;
-              detail = detail + "</table>\n";
+              detailBuilder.append(boringDetail);
+              detailBuilder.append("</table>\n");
               String tip = attacks[i].getProbe().getTip();
               if(!"".equals(tip)) {
-                detail = detail + "&nbsp;<i>" + tip + "</i>";
+                detailBuilder.append("&nbsp;<i>").append(tip).append("</i>");
               }
               break label73;
             }
@@ -1011,20 +1012,17 @@ label73:
           }
           
           if(consistentBreakPrint.containsKey(mark) && consistentWorkedPrint.containsKey(mark)) {
-            detail   =
-              detail + "<tr><td>" + StringEscapeUtils.escapeHtml4(mark) + "</td><td>" + brokeResult + " </td><td>" +
-                workedResult + "</td></tr>\n";
+            detailBuilder.append("<tr><td>").append(StringEscapeUtils.escapeHtml4(mark)).append("</td><td>")
+              .append(brokeResult).append(" </td><td>").append(workedResult).append("</td></tr>\n");
             reliable = true;
           }
           else if(consistentBreakPrint.containsKey(mark)) {
-            boringDetail =
-              boringDetail + "<tr><td><i>" + StringEscapeUtils.escapeHtml4(mark) + "</i></td><td><i>" + brokeResult +
-                "</i></td><td><i> *" + workedResult + "*</i></td></tr>\n";
+            boringDetail.append("<tr><td><i>").append(StringEscapeUtils.escapeHtml4(mark)).append("</i></td><td><i>")
+              .append(brokeResult).append("</i></td><td><i> *").append(workedResult).append("*</i></td></tr>\n");
           }
           else {
-            boringDetail =
-              boringDetail + "<tr><td><i>" + StringEscapeUtils.escapeHtml4(mark) + "</i></td><td><i>*" + brokeResult +
-                "*</i></td><td><i>" + workedResult + "</i></td></tr>\n";
+            boringDetail.append("<tr><td><i>").append(StringEscapeUtils.escapeHtml4(mark)).append("</i></td><td><i>*")
+              .append(brokeResult).append("*</i></td><td><i>").append(workedResult).append("</i></td></tr>\n");
           }
         }
       }
@@ -1041,6 +1039,7 @@ label73:
       }
     }
   }
+  detail = detailBuilder.toString();
   
   if(evidenceCount == 1) {
     reportedSeverity = "Information";
