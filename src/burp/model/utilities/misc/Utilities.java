@@ -169,24 +169,20 @@ public static byte[] setHeader(byte[] request, String header, String value, bool
 
 //-----------------------------------------------------------------------------
 public static int[] getHeaderOffsets(byte[] request, String header) {
-  int i   = 0;
+  int i = 0;
   int end = request.length;
   
-  while(i < end) {
+  while (i < end) {
     int lineStart = i++;
     
-    int spaceIndex = indexOf(request, (byte) 32, i, end);
-    if (spaceIndex == -1) break; // Exit if space not found
+    int colonIdx = indexOf(request, (byte) 58, lineStart, end);
+    if (colonIdx == -1) break; // Exit if space not found
     
-    byte[] headerName      = Arrays.copyOfRange(request, lineStart, i - 2);
-    int    headerValueStart = spaceIndex + i; //skip space character
+    byte[] headerName = Arrays.copyOfRange(request, lineStart, colonIdx);
+    int headerValueStart = colonIdx + 1; // skip space character
     
     int lineEnd = indexOf(request, (byte) 10, headerValueStart, end); // Find end of line
     if (lineEnd == -1) break; // Exit if end of line not found
-    
-    if(i == end) {
-      break;
-    }
     
     String headerStr = new String(headerName);
     if (header.equals(headerStr)) {
