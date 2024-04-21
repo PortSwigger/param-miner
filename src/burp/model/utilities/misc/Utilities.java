@@ -64,9 +64,9 @@ public boolean              supportsHTTP2 = true;
 // PUBLIC FUNCTIONS
 /////////////////////////////
 //-----------------------------------------------------------------------------
-public Utilities(IBurpExtenderCallbacks incallbacks, HashMap<String, Object> settings, String name) {
+public Utilities(IBurpExtenderCallbacks iCallbacks, HashMap<String, Object> settings, String name) {
   this.name = name;
-  callbacks = incallbacks;
+  callbacks = iCallbacks;
   stdout    = new PrintWriter(callbacks.getStdout(), true);
   stderr    = new PrintWriter(callbacks.getStderr(), true);
   helpers   = callbacks.getHelpers();
@@ -208,21 +208,16 @@ public static int[] getHeaderOffsets(byte[] request, String header) {
 //-----------------------------------------------------------------------------
 public static int countMatches(byte[] response, byte[] match) {
   int matches = 0;
-  if(match.length < 4) {
-    return matches;
-  }
-  else {
+  if(match.length >= 4) {
     for(int start = 0; start < response.length; start += match.length) {
       start = Utilities.indexOf(response, match, true, start, response.length);
-      if(start == -1) {
+      if(start == -1)
         break;
-      }
       
       ++matches;
     }
-    
-    return matches;
   }
+  return matches;
 }
 
 //-----------------------------------------------------------------------------
@@ -252,7 +247,7 @@ public static int indexOf(byte[] array, byte value, int start, int end) {
 }
 
 //-----------------------------------------------------------------------------
-public static boolean invertable(String value) {
+public static boolean invertible(String value) {
   return !value.equals(invert(value));
 }
 
@@ -303,8 +298,7 @@ public static int parseArrayIndex(String key) {
       return Integer.parseInt(key.substring(1, key.length() - 1));
     }
   }
-  catch(NumberFormatException var2) {
-  }
+  catch(NumberFormatException ignored) {}
   
   return -1;
 }
@@ -402,7 +396,7 @@ public static byte[] replace(byte[] request, byte[] find, byte[] replace, int li
     matches = matches.subList(0, limit);
   }
   
-  if(matches.size() == 0) {
+  if(matches.isEmpty()) {
     return request;
   }
   else {
@@ -493,19 +487,15 @@ public byte[] filterResponse(byte[] response) {
 
 //-----------------------------------------------------------------------------
 public byte[] setMethod(byte[] request, String newMethod) {
-  int i = 0;
-  
-  do {
-    ++i;
-  }while(request[i] != 32);
-  
+  int spaceIdx = indexOf(request, (byte) 32);
   ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
   
   try {
     outputStream.write(newMethod.getBytes());
-    outputStream.write(Arrays.copyOfRange(request, i, request.length));
+    outputStream.write(Arrays.copyOfRange(request, spaceIdx, request.length));
   }
   catch(IOException var5) {
+    throw new RuntimeException(var5);
   }
   
   return outputStream.toByteArray();
@@ -525,10 +515,7 @@ public byte[] appendToHeader(byte[] request, String header, String value) {
 //-----------------------------------------------------------------------------
 public ArrayList<PartialParam> getQueryParams(byte[] request) {
   ArrayList<PartialParam> params = new ArrayList<>();
-  if(request.length == 0) {
-    return params;
-  }
-  else {
+  if(request.length != 0) {
     int i = 0;
     
     while(request[i] != 63) {
@@ -572,8 +559,8 @@ public ArrayList<PartialParam> getQueryParams(byte[] request) {
       }
     }
     
-    return params;
   }
+  return params;
 }
 
 //-----------------------------------------------------------------------------
@@ -606,23 +593,14 @@ public boolean isBurpPro() {
 
 //-----------------------------------------------------------------------------
 public String getNameFromType(byte type) {
-  switch(type) {
-  case 0:
-    return "url";
-  case 1:
-    return "body";
-  case 2:
-    return "cookie";
-  case 3:
-  case 4:
-  case 5:
-  default:
-    return "unknown";
-  case 6:
-    return "json";
-  case 7:
-    return "header";
-  }
+  return switch(type) {
+    case 0 -> "url";
+    case 1 -> "body";
+    case 2 -> "cookie";
+    case 6 -> "json";
+    case 7 -> "header";
+    default -> "unknown";
+  };
 }
 
 //-----------------------------------------------------------------------------
@@ -660,14 +638,14 @@ public boolean similarIsh(Attack noBreakGroup, Attack breakGroup, Attack noBreak
             return true;
           }
           
-          key = (String) var4.next();
+          key = var4.next();
         }while(noBreakGroup.getPrint().containsKey(key) ||
           breakGroup.getPrint().get(key).equals(noBreak.getPrint().get(key)));
         
         return false;
       }
       
-      key        = (String) var4.next();
+      key        = var4.next();
       noBreakVal = noBreakGroup.getPrint().get(key);
     }while(key.equals("input_reflections") && noBreakVal.equals(-3));
     
@@ -692,7 +670,7 @@ public boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttac
       return true;
     }
     
-    key = (String) var2.next();
+    key = var2.next();
     if(!individualBreakAttack.getPrint().containsKey(key)) {
       return false;
     }
@@ -990,7 +968,7 @@ label73:
               break label73;
             }
             
-            mark         = (String) var16.next();
+            mark         = var16.next();
             brokeResult  = breakPrint.get(mark).toString();
             workedResult = workedPrint.get(mark).toString();
           }while(brokeResult.equals(workedResult));

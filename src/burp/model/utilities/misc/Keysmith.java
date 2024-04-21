@@ -117,7 +117,7 @@ public class Keysmith {
                 for (String chunk: chunks) {
                     String[] keyvalue = chunk.split("=", 2);
                     String key = keyvalue[0];
-                    if (keyvalue.length > 1 && Utilities.invertable(keyvalue[1])) {
+                    if (keyvalue.length > 1 && Utilities.invertible(keyvalue[1])) {
                         key = key + "~" + keyvalue[1];
                     }
                     params.add(key);
@@ -128,7 +128,7 @@ public class Keysmith {
         Elements inputs = doc.select("input[name]");
         for(Element input: inputs) {
             String key= input.attr("name");
-            if (Utilities.invertable(input.attr("value"))) {
+            if (Utilities.invertible(input.attr("value"))) {
                 key = key + "~" + input.attr("value");
             }
             params.add(key);
@@ -195,7 +195,7 @@ public class Keysmith {
                 try {
                     if (!json.getAsJsonPrimitive().isJsonNull()) {
                         String val = json.getAsString();
-                        if (Utilities.invertable(val)) {
+                        if (Utilities.invertible(val)) {
                             prefix = prefix + "~" + val;
                         }
                     }
