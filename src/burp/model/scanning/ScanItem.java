@@ -69,19 +69,19 @@ ArrayList<ScanItem> prepare() {
     if (utilities.globalSettings.getBoolean("params: scheme")) {
       updated = utilities.addOrReplaceHeader(this.req.getRequest(), ":scheme", "m838jacxka");
       newReq = new Req(updated, this.req.getResponse(), this.req.getHttpService());
-      items.add(new ScanItem(utilities, newReq, this.config, this.scan, utilities.paramify(updated, "scheme-proto", "m838jacxka", "https")));
+      items.add(new ScanItem(utilities, newReq, this.config, this.scan, utilities.paramify(updated, "scheme-proto", "m838jacxka")));
     }
     
     if (utilities.globalSettings.getBoolean("params: scheme-path")) {
       updated = utilities.addOrReplaceHeader(this.req.getRequest(), ":scheme", "https://" + this.req.getHttpService().getHost() + "/m838jacxka");
       newReq = new Req(updated, this.req.getResponse(), this.req.getHttpService());
-      items.add(new ScanItem(utilities, newReq, this.config, this.scan, utilities.paramify(updated, "scheme-path", "m838jacxka", "m838jacxka")));
+      items.add(new ScanItem(utilities, newReq, this.config, this.scan, utilities.paramify(updated, "scheme-path", "m838jacxka")));
     }
     
     if (utilities.globalSettings.getBoolean("params: scheme-host")) {
       updated = utilities.addOrReplaceHeader(this.req.getRequest(), ":scheme", "https://m838jacxka/");
       newReq = new Req(updated, this.req.getResponse(), this.req.getHttpService());
-      items.add(new ScanItem(utilities, newReq, this.config, this.scan, utilities.paramify(updated, "scheme-host", "m838jacxka", "m838jacxka")));
+      items.add(new ScanItem(utilities, newReq, this.config, this.scan, utilities.paramify(updated, "scheme-host", "m838jacxka")));
     }
   }
   

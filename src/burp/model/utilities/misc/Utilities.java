@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
-import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -50,15 +49,16 @@ public static final HashSet<String>        phpFunctions        = new HashSet<>()
 public static final ArrayList<String>      paramNames          = new ArrayList<>();
 public static final HashSet<String>        boringHeaders       = new HashSet<>();
 public static final Set<String>            reportedParams      = ConcurrentHashMap.newKeySet();
-public static       boolean                chopNestedResponses = false;
-public final        AtomicInteger          requestCount        = new AtomicInteger(0);
-public final        String                 version             = "1.03";
-public final        IBurpExtenderCallbacks callbacks;
-public final        IExtensionHelpers      helpers;
-public final        AtomicBoolean          unloaded            = new AtomicBoolean(false);
-public              String                 name;
-public              ConfigurableSettings   globalSettings;
-public              boolean                supportsHTTP2       = true;
+
+public static boolean                chopNestedResponses = false;
+public final  AtomicInteger          requestCount        = new AtomicInteger(0);
+public final  IBurpExtenderCallbacks callbacks;
+public final  IExtensionHelpers      helpers;
+public final  AtomicBoolean          unloaded            = new AtomicBoolean(false);
+public final  String                 name;
+
+public ConfigurableSettings globalSettings;
+public boolean              supportsHTTP2 = true;
 
 /////////////////////////////
 // PUBLIC FUNCTIONS
@@ -115,11 +115,18 @@ public static int getBodyStart(byte[] response) {
 
 //-----------------------------------------------------------------------------
 public static String getMethod(byte[] request) {
-  int i;
-  for(i = 0; request[i] != 32; ++i) {
+  int spaceIndex = indexOf(request, (byte) 32);
+  return new String(Arrays.copyOfRange(request, 0, spaceIndex));
+}
+
+//-----------------------------------------------------------------------------
+public static int indexOf(byte[] array, byte value) {
+  for (int i = 0; i < array.length; i++) {
+    if (array[i] == value) {
+      return i;
+    }
   }
-  
-  return new String(Arrays.copyOfRange(request, 0, i));
+  return -1; // If the value is not found
 }
 
 //-----------------------------------------------------------------------------
@@ -166,28 +173,31 @@ public static int[] getHeaderOffsets(byte[] request, String header) {
   int end = request.length;
   
   while(i < end) {
-    int line_start = i++;
+    int lineStart = i++;
     
-    while(i < end && request[i++] != 32) {
-    }
+    int spaceIndex = indexOf(request, (byte) 32, i, end);
+    if (spaceIndex == -1) break; // Exit if space not found
     
-    byte[] header_name      = Arrays.copyOfRange(request, line_start, i - 2);
-    int    headerValueStart = i;
+    byte[] headerName      = Arrays.copyOfRange(request, lineStart, i - 2);
+    int    headerValueStart = spaceIndex + i; //skip space character
     
-    while(i < end && request[i++] != 10) {
-    }
+    int lineEnd = indexOf(request, (byte) 10, headerValueStart, end); // Find end of line
+    if (lineEnd == -1) break; // Exit if end of line not found
     
     if(i == end) {
       break;
     }
     
-    String header_str = new String(header_name);
-    if(header.equals(header_str)) {
-      int[] offsets = new int[] {line_start, headerValueStart, i - 2};
-      return offsets;
+    String headerStr = new String(headerName);
+    if (header.equals(headerStr)) {
+      return new int[]{lineStart, headerValueStart, lineEnd - 1}; // Adjust lineEnd to exclude newline character
     }
     
-    if(i + 2 < end && request[i] == 13 && request[i + 1] == 10) {
+    // Move to the next line
+    i = lineEnd + 1;
+    
+    // Check for end of request
+    if (i + 1 < end && request[i] == 13 && request[i + 1] == 10) {
       break;
     }
   }
@@ -232,31 +242,29 @@ public static int indexOf(byte[] data, byte[] pattern, boolean caseSensitive, in
 }
 
 //-----------------------------------------------------------------------------
+public static int indexOf(byte[] array, byte value, int start, int end) {
+  for (int i = start; i < end; i++) {
+    if (array[i] == value) {
+      return i;
+    }
+  }
+  return -1; // If the value is not found
+}
+
+//-----------------------------------------------------------------------------
 public static boolean invertable(String value) {
   return !value.equals(invert(value));
 }
 
 //-----------------------------------------------------------------------------
 public static Object invert(String value) {
-  if(value != null) {
-    if(value.equals("true")) {
-      return false;
-    }
-    
-    if(value.equals("false")) {
-      return true;
-    }
-    
-    if(value.equals("1")) {
-      return 0;
-    }
-    
-    if(value.equals("0")) {
-      return 1;
-    }
-  }
-  
-  return value;
+  return switch(value) {
+    case "true" -> false;
+    case "false" -> true;
+    case "1" -> 0;
+    case "0" -> 1;
+    default -> value;
+  };
 }
 
 //-----------------------------------------------------------------------------
@@ -279,8 +287,7 @@ public static String getBody(byte[] response) {
   }
   else {
     int    bodyStart = getBodyStart(response);
-    String body      = new String(Arrays.copyOfRange(response, bodyStart, response.length));
-    return body;
+    return new String(Arrays.copyOfRange(response, bodyStart, response.length));
   }
 }
 
@@ -304,11 +311,14 @@ public static int parseArrayIndex(String key) {
 
 //-----------------------------------------------------------------------------
 public static boolean isHTTP2(byte[] request) {
-  int i;
-  for(i = 0; i < request.length && request[i] != 13; ++i) {
+  int carriageReturnIndex = indexOf(request, (byte) 13);
+  if (carriageReturnIndex < 6) {
+    // Not enough characters before carriage return or failed to retrieve index
+    return false;
   }
   
-  return i >= 6 && "HTTP/2".equals(new String(Arrays.copyOfRange(request, i - 6, i)));
+  String version = new String(Arrays.copyOfRange(request, carriageReturnIndex - 6, carriageReturnIndex));
+  return "HTTP/2".equals(version);
 }
 
 //-----------------------------------------------------------------------------
@@ -436,8 +446,7 @@ public void out(String message) {
 public String getSetting(String name) {
   int    depth = StringUtils.countMatches(name, ".") + 1;
   String json  = callbacks.saveConfigAsJson(name);
-  String value = json.split("\n")[depth].split(":", 2)[1];
-  return value;
+  return json.split("\n")[depth].split(":", 2)[1];
 }
 
 //-----------------------------------------------------------------------------
@@ -515,7 +524,7 @@ public byte[] appendToHeader(byte[] request, String header, String value) {
 
 //-----------------------------------------------------------------------------
 public ArrayList<PartialParam> getQueryParams(byte[] request) {
-  ArrayList<PartialParam> params = new ArrayList();
+  ArrayList<PartialParam> params = new ArrayList<>();
   if(request.length == 0) {
     return params;
   }
@@ -573,7 +582,7 @@ public byte[] setHeader(byte[] request, String header, String value) {
 }
 
 //-----------------------------------------------------------------------------
-public PartialParam paramify(byte[] request, String name, String target, String fakeBaseValue) {
+public PartialParam paramify(byte[] request, String name, String target) {
   int start = Utilities.indexOf(request, target.getBytes(), true, 0, request.length);
   if(start == -1) {
     throw new RuntimeException("Failed to find target");
@@ -637,7 +646,7 @@ public int generate(int seed, int count, List<String> accumulator) {
 
 //-----------------------------------------------------------------------------
 public boolean similarIsh(Attack noBreakGroup, Attack breakGroup, Attack noBreak, Attack doBreak) {
-  Iterator var4 = noBreakGroup.getPrint().keySet().iterator();
+  Iterator<String> var4 = noBreakGroup.getPrint().keySet().iterator();
   
   while(true) {
     String key;
@@ -675,7 +684,7 @@ public boolean similarIsh(Attack noBreakGroup, Attack breakGroup, Attack noBreak
 
 //-----------------------------------------------------------------------------
 public boolean similar(Attack doNotBreakAttackGroup, Attack individualBreakAttack) {
-  Iterator var2 = doNotBreakAttackGroup.getPrint().keySet().iterator();
+  Iterator<String> var2 = doNotBreakAttackGroup.getPrint().keySet().iterator();
   
   String key;
   do {
@@ -741,30 +750,24 @@ public byte[] setBody(byte[] req, String body) {
 
 //-----------------------------------------------------------------------------
 public byte[] appendToPath(byte[] request, String suffix) {
-  if(suffix != null && !suffix.equals("")) {
-    int i = 0;
-    
-    while(i < request.length && request[i++] != 10) {
+  if (suffix != null && !suffix.isEmpty()) {
+    int lineEndIndex = indexOf(request, (byte) 10); // \n
+    if (lineEndIndex == -1) {
+      return request; // No line end found
     }
     
-    int j = 0;
-    
-    while(j < i && request[j++] != 63) {
-    }
-    
-    if(j >= i) {
+    int queryIndex = indexOf(request, (byte) 63); // ?
+    if (queryIndex == -1 || queryIndex >= lineEndIndex) {
+      // No query string found
       request = replace(request, " HTTP/".getBytes(), (suffix + " HTTP/").getBytes());
-    }
-    else {
+    } else {
+      // Query string found before the line end
       request = replace(request, "?".getBytes(), (suffix + "?").getBytes());
     }
-    
-    return request;
   }
-  else {
-    return request;
-  }
+  return request;
 }
+
 
 //-----------------------------------------------------------------------------
 public String fuzzSuffix() {
@@ -828,19 +831,19 @@ public boolean isHTTPS(IHttpService service) {
 
 //-----------------------------------------------------------------------------
 public IRequestInfo analyzeRequest(byte[] request) {
-  return analyzeRequest(request, null);
+  return new LazyRequestInfo(request);
 }
 
 //-----------------------------------------------------------------------------
 public IHttpRequestResponse highlightRequestResponse(
   IHttpRequestResponse attack, String responseHighlight, String requestHighlight, IScannerInsertionPoint insertionPoint
 ) {
-  List<int[]> requestMarkers = new ArrayList(1);
+  List<int[]> requestMarkers = new ArrayList<>(1);
   if(requestHighlight != null && requestHighlight.length() > 2) {
     requestMarkers.add(insertionPoint.getPayloadOffsets(requestHighlight.getBytes()));
   }
   
-  List<int[]> responseMarkers = new ArrayList(1);
+  List<int[]> responseMarkers = new ArrayList<>(1);
   if(responseHighlight != null) {
     responseMarkers = getMatches(attack.getResponse(), responseHighlight.getBytes(), -1);
   }
@@ -860,10 +863,7 @@ public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req, boo
     throw new RuntimeException("Extension unloaded");
   }
   else {
-    boolean              LOG_PERFORMANCE      = false;
-    boolean              GO_ACCELERATOR       = false;
     IHttpRequestResponse result               = null;
-    long                 start                = 0L;
     int                  maxAttempts          = 3;
     boolean              expectNestedResponse = false;
     if(chopNestedResponses && "1".equals(getHeader(req, "X-Mine-Nested-Request"))) {
@@ -873,21 +873,10 @@ public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req, boo
     
     for(int attempt = 1; attempt < maxAttempts; ++attempt) {
       try {
-        if(LOG_PERFORMANCE) {
-          requestCount.incrementAndGet();
-          start = System.currentTimeMillis();
-        }
-        
-        if(GO_ACCELERATOR) {
-          result = fetchWithGo(service, req);
-        }
-        else {
           result = callbacks.makeHttpRequest(service, req, forceHttp1);
-        }
       }
       catch(RuntimeException var13) {
-        RuntimeException e = var13;
-        err(e.toString());
+        err(var13.toString());
         err("Critical request error, retrying...");
         continue;
       }
@@ -902,11 +891,6 @@ public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req, boo
           if(nestedResponse == null) {
             continue;
           }
-        }
-        
-        if(LOG_PERFORMANCE) {
-          long duration = System.currentTimeMillis() - start;
-          out("Time: " + duration);
         }
         break;
       }
@@ -931,13 +915,10 @@ public IHttpRequestResponse attemptRequest(IHttpService service, byte[] req, boo
 //-----------------------------------------------------------------------------
 public String getHeader(byte[] request, String header) {
   int[] offsets = getHeaderOffsets(request, header);
-  if(offsets == null) {
+  if(offsets == null)
     return "";
-  }
-  else {
-    String value = helpers.bytesToString(Arrays.copyOfRange(request, offsets[1], offsets[2]));
-    return value;
-  }
+  else
+    return new String(Arrays.copyOfRange(request, offsets[1], offsets[2]), StandardCharsets.UTF_8);
 }
 
 //-----------------------------------------------------------------------------
@@ -957,7 +938,7 @@ public boolean containsBytes(byte[] request, byte[] value) {
     return false;
   }
   else {
-    return helpers.indexOf(request, value, false, 0, request.length) != -1;
+    return Utilities.indexOf(request, value, false, 0, request.length) != -1;
   }
 }
 
@@ -986,10 +967,10 @@ public IScanIssue reportReflectionIssue(
       HashMap<String, Object> consistentWorkedPrint = attacks[i].getPrint();
       HashMap<String, Object> breakPrint            = attacks[i - 1].getLastPrint();
       HashMap<String, Object> consistentBreakPrint  = attacks[i - 1].getPrint();
-      Set<String>             allKeys               = new HashSet(consistentWorkedPrint.keySet());
+      Set<String>             allKeys               = new HashSet<>(consistentWorkedPrint.keySet());
       allKeys.addAll(consistentBreakPrint.keySet());
-      String   boringDetail = "";
-      Iterator var16        = allKeys.iterator();
+      String           boringDetail = "";
+      Iterator<String> var16        = allKeys.iterator();
 
 label73:
       while(true) {
@@ -1080,8 +1061,6 @@ private static final char[]               DIGITS            = new char[] {
   'w', 'x', 'y', 'z'
 };
 private static final Random               rnd               = new Random();
-private static final ThreadLocal<Integer> goAcceleratorPort = new ThreadLocal<>();
-private static final AtomicInteger        nextPort          = new AtomicInteger(1901);
 
 private final PrintWriter stdout;
 private final PrintWriter stderr;
@@ -1100,7 +1079,7 @@ private static List<int[]> getMatches(byte[] response, byte[] match, int giveUpA
     throw new RuntimeException("Utilities.getMatches() on the empty string is not allowed)");
   }
   else {
-    List<int[]> matches = new ArrayList();
+    List<int[]> matches = new ArrayList<>();
     
     for(int start = 0; start < giveUpAfter; start += match.length) {
       start = Utilities.indexOf(response, match, true, start, giveUpAfter);
@@ -1158,42 +1137,6 @@ private byte[] getNestedResponse(byte[] response) {
     int nestedRespStart = helpers.indexOf(body, "HTTP/".getBytes(), true, 0, body.length);
     return Arrays.copyOfRange(body, nestedRespStart, body.length);
   }
-}
-
-//-----------------------------------------------------------------------------
-private IHttpRequestResponse fetchWithGo(IHttpService service, byte[] req) {
-  int port = goAcceleratorPort.get();
-  if(port == 0) {
-    goAcceleratorPort.set(nextPort.getAndIncrement());
-  }
-  
-  try {
-    out("Routing request to " + port);
-    Socket sock           = new Socket("127.0.0.1", port);
-    String preppedService = service.getProtocol() + "://" + service.getHost() + ":" + service.getPort();
-    sock.getOutputStream()
-      .write((preppedService + "\u0000|\u0000" + helpers.bytesToString(req) + "\u0000|\u0000").getBytes());
-    byte[]                readBuffer = new byte[4096];
-    ByteArrayOutputStream response   = new ByteArrayOutputStream();
-    
-    while(true) {
-      int read = sock.getInputStream().read(readBuffer);
-      if(read == -1) {
-        throw new RuntimeException("oh dear");
-      }
-      
-      response.write(Arrays.copyOfRange(readBuffer, 0, read));
-    }
-  }
-  catch(Exception var8) {
-    out("oh dear");
-    return null;
-  }
-}
-
-//-----------------------------------------------------------------------------
-private IRequestInfo analyzeRequest(byte[] request, IHttpService service) {
-  return new LazyRequestInfo(request, service);
 }
 
 }

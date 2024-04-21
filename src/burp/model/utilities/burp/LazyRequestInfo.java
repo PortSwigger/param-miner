@@ -10,9 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class LazyRequestInfo implements IRequestInfo {
-public LazyRequestInfo(byte[] request, IHttpService service) {
+public LazyRequestInfo(byte[] request) {
   this.request = request;
-  this.service = service;
 }
 
 public String getMethod() {
@@ -54,6 +53,7 @@ public int getBodyOffset() {
 public byte getContentType() {
   throw new RuntimeException("getContentType is not implemented");
 }
+
 final byte[] request;
 List<String> headers = null;
 String       method  = null;
