@@ -8,10 +8,15 @@ import java.util.Scanner;
 class WordProvider {
 
     private Scanner currentSource;
-    private ArrayDeque<String> sources = new ArrayDeque<>();
+    private ArrayDeque<String> fileSources = new ArrayDeque<>();
+    private ArrayDeque<String> sourceWords = new ArrayDeque<>();
 
-    void addSource(String source) {
-        sources.add(source);
+    void addSourceFile(String filename) {
+        fileSources.add(filename);
+    }
+
+    void addSourceWords(String wordlist) {
+        sourceWords.add(wordlist);
     }
 
     String getNext() {
@@ -27,8 +32,8 @@ class WordProvider {
             return;
         }
 
-        while (!sources.isEmpty()) {
-            String filename = sources.removeFirst();
+        while (!fileSources.isEmpty()) {
+            String filename = fileSources.removeFirst();
             try {
                 currentSource = new Scanner(getClass().getResourceAsStream(filename));
                 if (currentSource.hasNextLine()) {
@@ -42,13 +47,15 @@ class WordProvider {
                     }
                 }
                 catch (FileNotFoundException f) {
-                    if (filename.contains("\n")) {
-                        currentSource = new Scanner(filename);
-                        return;
-                    }
-
+                    Utilities.out("Wordlist not foundL "+filename);
                 }
             }
+        }
+
+        if (!sourceWords.isEmpty()) {
+            String words = sourceWords.removeFirst();
+            currentSource = new Scanner(words);
+            return;
         }
 
         currentSource = null;

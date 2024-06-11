@@ -355,16 +355,16 @@ class ParamAttack {
         bonusParams = new WordProvider();
 
         if (config.getBoolean("use custom wordlist")) {
-            bonusParams.addSource(config.getString("custom wordlist path"));
+            bonusParams.addSourceFile(config.getString("custom wordlist path"));
         }
 
         if (config.getBoolean("use assetnote params")) {
-            bonusParams.addSource("/assetnote-params");
+            bonusParams.addSourceFile("/assetnote-params");
         }
 
 
         if (type == BulkUtilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
-            bonusParams.addSource("/headers");
+            bonusParams.addSourceFile("/headers");
         }
 
         if (config.getBoolean("request") || config.getBoolean("response-headers") || config.getBoolean("response-body") ) {
@@ -395,22 +395,22 @@ class ParamAttack {
 
             params.replaceAll(x -> x.substring(0, min(x.length(), config.getInt("max param length"))));
 
-            bonusParams.addSource(String.join("\n", params));
+            bonusParams.addSourceWords(String.join("\n", params));
         }
 
         if (type != BulkUtilities.PARAM_HEADER && config.getBoolean("use basic wordlist")) {
-            bonusParams.addSource("/params");
+            bonusParams.addSourceFile("/params");
         }
 
         if (config.getBoolean("use bonus wordlist")) {
-            bonusParams.addSource("/functions");
+            bonusParams.addSourceFile("/functions");
             if (type != BulkUtilities.PARAM_HEADER) {
-                bonusParams.addSource("/headers");
+                bonusParams.addSourceFile("/headers");
             }
             else {
-                bonusParams.addSource("/params");
+                bonusParams.addSourceFile("/params");
             }
-            bonusParams.addSource("/words");
+            bonusParams.addSourceFile("/words");
         }
 
         // only use keys if the request isn't JSON
