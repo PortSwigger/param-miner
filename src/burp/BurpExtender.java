@@ -1,5 +1,8 @@
 package burp;
 
+import burp.api.montoya.MontoyaApi;
+import burp.api.montoya.BurpExtension;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.gson.JsonElement;
@@ -13,7 +16,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 
-public class BurpExtender implements IBurpExtender, IExtensionStateListener {
+public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
     private static final String name = "Param Miner";
     private static final String version = "1.5";
     private ThreadPoolExecutor taskEngine;
@@ -21,6 +24,11 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
     static SettingsBox configSettings = new SettingsBox();
     static SettingsBox guessSettings = new SettingsBox();
 
+    @Override
+    public void initialize(MontoyaApi api) {
+        Utilities.montoyaApi = api;
+        api.userInterface().registerContextMenuItemsProvider(new OfferHostnameOverride());
+    }
     @Override
     public void registerExtenderCallbacks(final IBurpExtenderCallbacks callbacks) {
 
@@ -138,7 +146,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener {
         new NormalisedPathScan("normalised path");
         new RailsUtmScan("rails param cloaking scan");
         new HeaderMutationScan("identify header smuggling mutations");
-
+        new Lenscrack("Detect open reverse proxy");
+        //new Lensmine("Lenscrack-directMine");
+        new TimeInjector("Time injector");
 
         new BulkScanLauncher(BulkScan.scans);
 
