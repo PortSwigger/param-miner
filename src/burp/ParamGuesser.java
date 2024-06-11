@@ -299,8 +299,8 @@ class ParamGuesser implements Runnable {
                 ArrayList<Attack> confirmed = injector.fuzz(localBase, validParam, mutation);
 
                 if (confirmed.isEmpty()) {
-                    BulkUtilities.out(targetURL + " questionable parameter: " + candidates);
-                    //base.addAttack(confirmParamGuess);
+                    // BulkUtilities.out(targetURL + " questionable parameter: " + candidates);
+                    // base.addAttack(confirmParamGuess);
                     continue;
                 }
 

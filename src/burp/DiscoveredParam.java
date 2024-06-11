@@ -47,12 +47,6 @@ public class DiscoveredParam {
     }
 
     public void explore() {
-        if (BulkUtilities.TIME_ONLY) {
-            ObservedTimes times = (ObservedTimes) evidence.get(0).getLastPrint().get("times");
-            if (times.times.size() < 20) {
-                return;
-            }
-        }
 
         if (type == BulkUtilities.PARAM_HEADER || type == IParameter.PARAM_COOKIE) {
             cachePoisoned = cachePoison(injector, name, failAttack.getFirstRequest());
@@ -105,13 +99,6 @@ public class DiscoveredParam {
     public void report() {
         if (BulkUtilities.globalSettings.getBoolean("poison only")) {
             return;
-        }
-
-        if (BulkUtilities.TIME_ONLY) {
-            ObservedTimes times = (ObservedTimes) evidence.get(0).getLastPrint().get("times");
-            if (times.times.size() < 20) {
-                return;
-            }
         }
 
         String typeName = BulkUtilities.getNameFromType(type);
