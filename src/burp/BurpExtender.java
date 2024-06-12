@@ -124,7 +124,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         }
 
         paramGrabber = new ParamGrabber(taskEngine);
-        callbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
+        //allbacks.registerContextMenuFactory(new OfferParamGuess(callbacks, paramGrabber, taskEngine));
 
         if(BulkUtilities.isBurpPro()) {
             callbacks.registerScannerCheck(new GrabScan(paramGrabber));
@@ -138,6 +138,8 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         new HeaderGuessScan("Guess headers");
         new URLGuessScan("Guess query params");
         new CookieGuessScan("Guess cookies");
+        new BodyGuessScan("Guess body params");
+        new EverythingGuessScan("Guess everything!");
         new PortDOS("port-DoS");
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");

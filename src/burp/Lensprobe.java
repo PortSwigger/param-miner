@@ -137,7 +137,8 @@ public class Lensprobe {
                     mineFindings = Lensmine.doScan(baseReq, service, domainsToCheck);
                     break;
                 case "endswith":
-                    mineForEndsWith();
+                    // mineForEndsWith();
+                    // todo just try a 1-3 char bruteforce
                     break;
                 default:
                     ;
