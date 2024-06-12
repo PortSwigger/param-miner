@@ -1,11 +1,13 @@
 package burp;
 
+import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.http.HttpService;
 import burp.api.montoya.http.message.HttpHeader;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.StatusCodeClass;
 import burp.api.montoya.http.message.requests.HttpRequest;
+import burp.api.montoya.logging.Logging;
 import com.google.common.net.InternetDomainName;
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,19 +21,35 @@ public class Lensmine extends Scan {
     public Lensmine(String name) {
         super(name);
         scanSettings.register("mining: filter 500s", true, "Don't report hostnames that return a 50X status");
-        scanSettings.register("subdomains-basic", true, "");
-        scanSettings.register("subdomains", "", "/path/to/wordlist");
-        scanSettings.register("subdomains-dynamic", "", "/subdomains/$domain");
+        scanSettings.register("subdomains-builtin", true, "");
+        scanSettings.register("subdomains-generic", "", "/path/to/wordlist");
+        scanSettings.register("subdomains-specific", "", "/subdomains/$domain");
+        scanSettings.register("external subdomain lookup", false, "Look up subdomains using columbus.elmasy.com. Warning: this discloses the top-level private domain that you are targeting.");
+        scanSettings.register("I read the docs", false, "Stop nagging me to read the docs.");
     }
 
     static MineFindings mineSubdomains(byte[] req, IHttpService service, String domain, int maxDomainsToCheck) {
-        // DomainProvider subProvider = new DomainProvider(domain);
+        if (!Utilities.globalSettings.getBoolean("I read the docs")) {
+            String message = "To get the most out of Param Miner's proxyable-destination detection, please read the documentation at https://github.com/PortSwigger/param-miner/proxy.md To disable this message, check \"I read the docs\".";
+            Utilities.out(message);
+            Utilities.montoyaApi.logging().raiseInfoEvent(message);
+        }
+
         // todo handle dupes - inside provider or externally?
         WordProvider subdomainProvider = new WordProvider();
+        subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-specific").replace("$domain", domain));
+        if (Utilities.globalSettings.getBoolean("external subdomain lookup")) {
+            try {
+                String url = "https://columbus.elmasy.com/api/lookup/" + domain;
+                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"));
+                subdomainProvider.addSourceWords(apiResp.response().toString());
+            } catch (Exception e) {
+                Utilities.out("External subdomain lookup failed: "+e.toString());
+            }
+        }
 
-        subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains"));
-        subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-dynamic").replace("$domain", domain));
-        if (Utilities.globalSettings.getBoolean("subdomains-basic")) {
+        subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-generic"));
+        if (Utilities.globalSettings.getBoolean("subdomains-builtin")) {
             subdomainProvider.addSourceFile("/fierce-subdomains");
         }
         //subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomain-wordlist"));
