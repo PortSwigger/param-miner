@@ -19,10 +19,23 @@ public class Lensmine extends Scan {
     public Lensmine(String name) {
         super(name);
         scanSettings.register("mining: filter 500s", true, "Don't report hostnames that return a 50X status");
+        scanSettings.register("subdomains-basic", true, "");
+        scanSettings.register("subdomains", "", "/path/to/wordlist");
+        scanSettings.register("subdomains-dynamic", "", "/subdomains/$domain");
     }
 
     static MineFindings mineSubdomains(byte[] req, IHttpService service, String domain, int maxDomainsToCheck) {
-        DomainProvider subProvider = new DomainProvider(domain);
+        // DomainProvider subProvider = new DomainProvider(domain);
+        // todo handle dupes - inside provider or externally?
+        WordProvider subdomainProvider = new WordProvider();
+
+        subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains"));
+        subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-dynamic").replace("$domain", domain));
+        if (Utilities.globalSettings.getBoolean("subdomains-basic")) {
+            subdomainProvider.addSourceFile("/fierce-subdomains");
+        }
+        //subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomain-wordlist"));
+
         String subdomain;
         MineFindings findings = new MineFindings();
 
@@ -36,7 +49,7 @@ public class Lensmine extends Scan {
 
         ArrayList<CustomResponseGroup> validSubGroups = new ArrayList<>();
 
-        while ((subdomain = subProvider.getNextDomain()) != null && !Utilities.unloaded.get()) {
+        while ((subdomain = subdomainProvider.getNext()) != null && !Utilities.unloaded.get()) {
             checked += 1;
             if (checked > maxDomainsToCheck) {
                 Utilities.out("Bailing early on "+domain);
@@ -403,9 +416,10 @@ class MineFindings {
         // todo condense matching responses
 
         detail.append("<table>");
-        detail.append("<tr><td>Host</td><td>Status</td><td>Length</td><td>Diffkeys</td><td>Time</td><td>Data</td><td>Notes</td></tr>");
+        detail.append("<tr><td>Access</td><td>Host</td><td>Status</td><td>Length</td><td>Diffkeys</td><td>Time</td><td>Data</td><td>Notes</td></tr>");
         for (AccessPair finding: findings) {
             detail.append("<tr><td>");
+            detail.append("Proxied</td><td>");
             detail.append(finding.getLeft().request().headerValue(Lenscrack.TARGETHEADER));
             detail.append("</td><td>");
             detail.append(finding.getLeft().response().statusCode());
@@ -425,6 +439,7 @@ class MineFindings {
 
             if (finding.getRight() != null && finding.getRight().hasResponse() ) {
                 detail.append("<tr><td>");
+                detail.append("Direct</td><td>");
                 detail.append(finding.getRight().request().headerValue(Lenscrack.TARGETHEADER));
                 detail.append("</td><td>");
                 detail.append(finding.getRight().response().statusCode());

@@ -80,7 +80,7 @@ public class Lensprobe {
         byte[] randomWithoutSuffix = Utilities.addOrReplaceHeader(baseReq, Lenscrack.TARGETHEADER, permute(template).replace(Lenscrack.INJECT, "$canary"));
         RespPair suffixCheck = new RespPair(randomWithSuffix, randomWithoutSuffix, service);
 
-        boolean anyDetection = false;
+        boolean anyGoodDetection = false;
         // check for suffix validation w/visible caching
         if (suffixCheck.timingDiff || suffixCheck.codeDiff) {
             detectBasic = suffixCheck;
@@ -100,7 +100,7 @@ public class Lensprobe {
             RespPair staticCheck = new RespPair(randomWithSuffix, staticSub, service);
 
             if (staticCheck.timingDiff) {
-                anyDetection = true;
+                anyGoodDetection = true;
                 confirmCache = staticCheck;
                 // Lenscrack.reportPairs("Cached confirmation "+name, "", template, baseReq, staticCheck);
                 domainsToCheck = 1000;
@@ -111,13 +111,13 @@ public class Lensprobe {
             byte[] overlongWithoutSuffix = Utilities.addOrReplaceHeader(baseReq, "Host", pad(permute(template).replace(Lenscrack.INJECT, ""), true));
             RespPair detectOverlong = new RespPair(overlongWithSuffix, overlongWithoutSuffix, service);
             if (detectOverlong.codeDiff || detectOverlong.timingDiff) {
-                anyDetection = true;
+                anyGoodDetection = true;
                 this.detectOverlong = detectOverlong;
                 // Lenscrack.reportPairs("Overlong detection "+name, "", template, baseReq, detectOverlong);
             }
         }
 
-        if (!anyDetection) {
+        if (!anyGoodDetection) {
             return;
         }
 

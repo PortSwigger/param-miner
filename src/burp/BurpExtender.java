@@ -147,7 +147,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         new RailsUtmScan("rails param cloaking scan");
         new HeaderMutationScan("identify header smuggling mutations");
         new Lenscrack("Detect open reverse proxy");
-        //new Lensmine("Lenscrack-directMine");
+        new Lensmine("Identify proxyable subdomains");
         new TimeInjector("Time injector");
 
         new BulkScanLauncher(BulkScan.scans);

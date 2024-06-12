@@ -11,7 +11,12 @@ class WordProvider {
     private ArrayDeque<String> fileSources = new ArrayDeque<>();
     private ArrayDeque<String> sourceWords = new ArrayDeque<>();
 
+
+
     void addSourceFile(String filename) {
+        if ("".equals(filename)) {
+            return;
+        }
         fileSources.add(filename);
     }
 
@@ -24,7 +29,11 @@ class WordProvider {
         if (currentSource == null || !currentSource.hasNextLine()){
             return null;
         }
-        return currentSource.nextLine();
+        String nextWord = currentSource.nextLine();
+        if ("".equals(nextWord)) {
+            return getNext();
+        }
+        return nextWord;
     }
 
     private void getNextSource() {
