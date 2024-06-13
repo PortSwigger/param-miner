@@ -14,7 +14,6 @@ import static burp.Lenscrack.reportPairs;
 public class TimeInjector extends ParamScan {
     TimeInjector(String name) {
         super(name);
-        scanSettings.register("use turbo", false, "Use turbo engine in RespPair");
     }
 
     @Override

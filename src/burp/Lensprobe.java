@@ -131,7 +131,7 @@ public class Lensprobe {
 
         // alternative check for suffix validation, using an overlong label
 
-        if (Utilities.globalSettings.getBoolean("auto-mine for subdomains")) {
+        if (Utilities.globalSettings.getBoolean("auto-scan for proxyable destinations")) {
             switch (name) {
                 case "subdomain":
                     mineFindings = Lensmine.doScan(baseReq, service, domainsToCheck);

@@ -13,9 +13,8 @@ public class Lenscrack extends Scan {
 
     Lenscrack(String name) {
         super(name);
-        scanSettings.register("use turbo", false, "Use turbo engine in RespPair");
-        scanSettings.register("overlong-detection", false, "Use overlong dns labels for detection");
-        scanSettings.register("auto-mine for subdomains", true, "If wildcard-routing is detected, try to enumerate accessible domains");
+        scanSettings.register("overlong-detection", true, "Use overlong dns labels for detection");
+        scanSettings.register("auto-scan for proxyable destinations", false, "If wildcard-routing is detected, try to enumerate accessible domains. To configure related settings, run 'Identify proxyable destinations'");
         scanSettings.register("mining: filter 500s", true, "Don't report hostnames that return a 50X status");
     }
 
