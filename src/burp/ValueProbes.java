@@ -6,6 +6,10 @@ import java.util.List;
 public class ValueProbes
 {
    static boolean triggersPingback(IHttpRequestResponse baseRequestResponse, IScannerInsertionPoint insertionPoint) {
+       if (!BulkUtilities.isBurpPro()) {
+           return false;
+       }
+
        String collab = BasicCollab.getPayload();
        Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest(collab.getBytes()));
        if (BasicCollab.checkPayload(collab.split("[.]")[0])) {

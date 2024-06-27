@@ -14,8 +14,13 @@ public class Lenscrack extends Scan {
     Lenscrack(String name) {
         super(name);
         scanSettings.register("overlong-detection", true, "Use overlong dns labels for detection");
-        scanSettings.register("auto-scan for proxyable destinations", false, "If wildcard-routing is detected, try to enumerate accessible domains. To configure related settings, run 'Identify proxyable destinations'");
+        scanSettings.register("auto-scan for proxyable destinations", true, "If wildcard-routing is detected, try to enumerate accessible domains. To configure related settings, run 'Identify proxyable destinations'");
         scanSettings.register("mining: filter 500s", true, "Don't report hostnames that return a 50X status");
+        scanSettings.register("subdomains-builtin", true, "Use the builtin wordlist to discover interesting proxyable destinations");
+        scanSettings.register("subdomains-generic", "", "/path/to/wordlist");
+        scanSettings.register("subdomains-specific", "", "Format: /subdomains/$domain. Read https://github.com/PortSwigger/param-miner/proxy.md for further info.");
+        scanSettings.register("external subdomain lookup", false, "Look up subdomains using columbus.elmasy.com. Warning: this discloses the top-level private domain that you are targeting.");
+        scanSettings.register("I read the docs", false, "Read the docs at https://github.com/PortSwigger/param-miner/proxy.md then check this box to stop nagging me to read the docs.");
     }
 
     static String TARGETHEADER = "Host";

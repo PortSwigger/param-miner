@@ -5,6 +5,8 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import static burp.Lenscrack.reportPairs;
+
 
 class SimpleScan implements Runnable, IExtensionStateListener {
 
@@ -292,8 +294,9 @@ class ParamGuesser implements Runnable {
                     }
                 }
 
-                
-                Probe validParam = new Probe("Found unlinked param: " + submission, 4, submission);
+                String title = "Found unlinked param: " + submission;
+
+                Probe validParam = new Probe(title, 4, submission);
                 validParam.setEscapeStrings(Keysmith.permute(submission), Keysmith.permute(submission, false));
                 validParam.setRandomAnchor(false);
                 validParam.setPrefix(Probe.REPLACE);
@@ -305,11 +308,21 @@ class ParamGuesser implements Runnable {
                     continue;
                 }
 
+//                // if timing evidence only, double-confirm
+//                if (true) {
+//                    AttackPair pair = new AttackPair(title, submission, submission+"z", true);
+//                    pair.attempt(baseRequestResponse, injector.getInsertionPoint());
+//                    if (pair.valid()) {
+//                        reportPairs("Time-based param detection: "+submission, "", "", baseRequestResponse.getRequest(), pair.result);
+//                    }
+//                }
+
                 state.alreadyReported.add(submission);
                 BulkUtilities.reportedParams.add(submission);
                 state.alreadyReported.add(submission.split("~", 2)[0]);
                 BulkUtilities.reportedParams.add(submission.split("~", 2)[0]);
                 BulkUtilities.out("Identified parameter on " + targetURL + ": " + submission);
+
 
                 DiscoveredParam discoveredParam = new DiscoveredParam(confirmed, injector, submission, failAttack, paramGuess, baseRequestResponse);
                 discoveredParam.exploreAndReport();

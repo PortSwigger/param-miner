@@ -21,11 +21,11 @@ public class Lensmine extends Scan {
     public Lensmine(String name) {
         super(name);
         scanSettings.register("mining: filter 500s", true, "Don't report hostnames that return a 50X status");
-        scanSettings.register("subdomains-builtin", true, "");
+        scanSettings.register("subdomains-builtin", true, "Use the builtin wordlist to discover interesting proxyable destinations");
         scanSettings.register("subdomains-generic", "", "/path/to/wordlist");
-        scanSettings.register("subdomains-specific", "", "/subdomains/$domain");
+        scanSettings.register("subdomains-specific", "", "Format: /subdomains/$domain. Read https://github.com/PortSwigger/param-miner/proxy.md for further info.");
         scanSettings.register("external subdomain lookup", false, "Look up subdomains using columbus.elmasy.com. Warning: this discloses the top-level private domain that you are targeting.");
-        scanSettings.register("I read the docs", false, "Stop nagging me to read the docs.");
+        scanSettings.register("I read the docs", false, "Read the docs at https://github.com/PortSwigger/param-miner/proxy.md then check this box to stop nagging me to read the docs.");
     }
 
     static MineFindings mineSubdomains(byte[] req, IHttpService service, String domain, int maxDomainsToCheck) {

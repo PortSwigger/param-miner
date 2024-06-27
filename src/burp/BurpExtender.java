@@ -47,6 +47,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
 
         // param-guess only
         //guessSettings.importSettings(globalSettings);
+        guessSettings.register("quantitative diff keys", "time", "Use timing info to detect parameters. Disable this to make Param Miner faster."); // this overwrites the setting from bulkScan
         guessSettings.register("learn observed words", false);
         guessSettings.register("skip boring words", true, "When mining headers, don't check for well known and typically not very exciting headers");
         guessSettings.register("only report unique params", false, "Only report a parameter with a given name once, regardless of how many endpoints are scanned");

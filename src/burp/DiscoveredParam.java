@@ -1,5 +1,9 @@
 package burp;
 
+import burp.api.montoya.core.ByteArray;
+import burp.api.montoya.http.message.HttpRequestResponse;
+import burp.api.montoya.http.message.requests.HttpRequest;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,6 +107,8 @@ public class DiscoveredParam {
 
         String typeName = BulkUtilities.getNameFromType(type);
         String title = "Secret input: " + typeName;
+        String detail = "Unlinked parameter identified. ";
+
         if (!cachePoisoned && canSeeCache) {
             title = "Secret uncached input: " + typeName;
         }
@@ -117,13 +123,23 @@ public class DiscoveredParam {
 
         if (dynamicOnly) {
             title += " [dynamic-only]";
+            detail += "This parameter only causes a response difference when using a fresh value. This suggests that it may be included in the server's cache key. Consider trying cache poisoning attacks on the target. ";
         }
 
         if (magicIP) {
             title += " [magic-ip]";
         }
 
-        BulkUtilities.callbacks.addScanIssue(BulkUtilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, "Unlinked parameter identified."));
+        if (!BulkUtilities.isBurpPro()) { //  || Utilities.globalSettings.getBoolean("report to organizer")
+            // todo add some details on the attributes to look at  here
+//            HttpRequest directRequest = HttpRequest.httpRequest(directService, ByteArray.byteArray(evidence.get(0).getFirstRequest().getRequest()));
+//            HttpRequestResponse resp =  Utilities.montoyaApi.http().sendRequest(directRequest);
+//            Scan.reportToOrganiser(title, null, detail, Collections.singletonList(resp));
+            // todo just need one that doesn't have a null response?
+            //Lensmine.sendToOrganiser(Utilities.buildMontoyaResp(evidence.get(0).), detail);
+        }
+
+        BulkUtilities.callbacks.addScanIssue(BulkUtilities.reportReflectionIssue(evidence.toArray(new Attack[2]), baseRequestResponse, title, detail));
     }
 
 

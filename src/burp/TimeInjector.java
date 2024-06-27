@@ -1,11 +1,6 @@
 package burp;
 
-import burp.api.montoya.http.message.params.HttpParameter;
-import burp.api.montoya.http.message.requests.HttpRequest;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 
@@ -26,16 +21,16 @@ public class TimeInjector extends ParamScan {
 
         // todo scan path-params for double URL encoding?
 
-        attacks.creatAttackPair("Rest", baseValue+"%23"+canary, baseValue+"%21"+canary);
+        //attacks.createAttackPair("Rest", baseValue+"%23"+canary, baseValue+"%21"+canary);
         //attacks.creatAttackPair("EL-RCE", baseValue+"${\"x\"}", baseValue+"${\"x\"\"}");
         //attacks.creatAttackPair("URL-v3", baseValue+"#"+canary, baseValue+"$"+canary);
-        attacks.creatAttackPair("Escape-sequence-cb", canary+"\\u0061", canary+"\\v0061");
-        attacks.creatAttackPair("Double-quote", canary+"x\"\\yz", canary+"x\\\"z");
-        attacks.creatAttackPair("Single-quote", canary+"x'\\z", canary+"x\\'z");
-        attacks.creatAttackPair("SQL-apos", canary+"x''z", canary+"x'z'z");
+        attacks.createAttackPair("Escape-sequence-cb", canary+"\\u0061", canary+"\\v0061");
+        attacks.createAttackPair("Double-quote", canary+"x\"\\yz", canary+"x\\\"z");
+        attacks.createAttackPair("Single-quote", canary+"x'\\z", canary+"x\\'z");
+        attacks.createAttackPair("SQL-apos", canary+"x''z", canary+"x'z'z");
 //
 //
-        attacks.creatAttackPair("XML Entity-cb", canary+"&amp;", canary+"&amx;");
+        attacks.createAttackPair("XML Entity-cb", canary+"&amp;", canary+"&amx;");
         //attacks.creatAttackPair("XML quote", "x\" y='", "x'\" y=\"");
         //attacks.creatAttackPair("SQL LIKE", "a%", "Z%");
         //attacks.creatAttackPair("SQL LIKEDUD", "!", "[!]");
@@ -102,7 +97,7 @@ class AttackPairFactory {
     }
     IScannerInsertionPoint iScannerInsertionPoint;
 
-    AttackPair creatAttackPair(String title, String left, String right) {
+    AttackPair createAttackPair(String title, String left, String right) {
         AttackPair pair = new AttackPair(title, left, right, true);
         pairs.put(title, pair);
         pair.attempt(baseRequestResponse, iScannerInsertionPoint);
