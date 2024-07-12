@@ -39,7 +39,6 @@ class OfferParamGuess implements IContextMenuFactory {
         JMenu scanMenu = new JMenu("Guess params");
 
         JMenuItem allButton = new JMenuItem("Guess everything!");
-        allButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
         
         JMenuItem probeButton = new JMenuItem("Guess GET parameters");
         probeButton.addActionListener(new TriggerParamGuesser(reqs, false, IParameter.PARAM_URL, paramGrabber, taskEngine));
