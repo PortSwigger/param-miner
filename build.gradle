@@ -1,4 +1,6 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+}
 
 repositories {
     mavenCentral()
@@ -8,7 +10,7 @@ dependencies {
     //implementation 'net.portswigger.burp.extender:burp-extender-api:1.7.13'
     implementation 'net.portswigger.burp.extender:burp-extender-api:2.3'
     implementation 'org.apache.commons:commons-lang3:3.5'
-    implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.1'
+    implementation 'org.apache.commons:commons-collections4:4.1'
     implementation 'com.google.code.gson:gson:2.8.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.0.pr4'
     implementation 'org.jsoup:jsoup:1.8.1'
@@ -26,14 +28,21 @@ sourceSets {
     }
 }
 
-task fatJar(type: Jar) {
+tasks.register('fatJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    baseName = project.name + '-all'
-    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    archiveBaseName.set("${project.name}-all")
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
     with jar
 }
 
-compileJava {
-    targetCompatibility '1.8'
-    sourceCompatibility '1.8'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.compileJava {
+    options.release = 21
 }
