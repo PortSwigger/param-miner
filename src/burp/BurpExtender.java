@@ -141,6 +141,9 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         new CookieGuessScan("Guess cookies");
         new BodyGuessScan("Guess body params");
         new EverythingGuessScan("Guess everything!");
+        new Lenscrack("Detect scoped-SSRF");
+        new Lensmine("Exploit scoped-SSRF");
+        new TimeInjector("Detect server-side injection");
         new PortDOS("port-DoS");
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
@@ -149,9 +152,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         new NormalisedPathScan("normalised path");
         new RailsUtmScan("rails param cloaking scan");
         new HeaderMutationScan("identify header smuggling mutations");
-        new Lenscrack("Detect scoped-SSRF");
-        new Lensmine("Find internal targets");
-        new TimeInjector("Detect server-side injection");
+
 
         new BulkScanLauncher(BulkScan.scans);
 

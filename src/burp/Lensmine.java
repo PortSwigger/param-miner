@@ -3,6 +3,7 @@ package burp;
 import burp.api.montoya.MontoyaApi;
 import burp.api.montoya.core.ByteArray;
 import burp.api.montoya.http.HttpService;
+import burp.api.montoya.http.RequestOptions;
 import burp.api.montoya.http.message.HttpHeader;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.StatusCodeClass;
@@ -41,7 +42,7 @@ public class Lensmine extends Scan {
         if (Utilities.globalSettings.getBoolean("external subdomain lookup")) {
             try {
                 String url = "https://columbus.elmasy.com/api/lookup/" + domain;
-                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"));
+                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
                 subdomainProvider.addSourceWords(apiResp.response().toString());
             } catch (Exception e) {
                 Utilities.out("External subdomain lookup failed: "+e.toString());
@@ -70,7 +71,7 @@ public class Lensmine extends Scan {
         while ((subdomain = subdomainProvider.getNext()) != null && !Utilities.unloaded.get()) {
             checked += 1;
             if (checked > maxDomainsToCheck) {
-                Utilities.out("Bailing early on "+domain);
+                //Utilities.out("Bailing early on "+domain);
                 break;
             }
 

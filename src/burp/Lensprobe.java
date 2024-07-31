@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import static burp.Lenscrack.INJECT;
+import static burp.Scan.request;
 
 public class Lensprobe {
 
@@ -130,11 +131,19 @@ public class Lensprobe {
         }
 
         // alternative check for suffix validation, using an overlong label
+        report();
 
         if (Utilities.globalSettings.getBoolean("auto-scan for proxyable destinations")) {
             switch (name) {
                 case "subdomain":
-                    mineFindings = Lensmine.doScan(baseReq, service, domainsToCheck);
+                    try {
+                        mineFindings = Lensmine.doScan(baseReq, service, domainsToCheck);
+                        String report = mineFindings.findingsToString();
+                        Resp req = request(service, baseReq);
+                        Lenscrack.report("Proxyable destinations: "+mineFindings.getTitle(), report, baseReq, req);
+                    } catch (Exception e) {
+                        Utilities.out("Error during scan for proxyable destinations: "+e.getMessage());
+                    }
                     break;
                 case "endswith":
                     // mineForEndsWith();
@@ -144,8 +153,6 @@ public class Lensprobe {
                     ;
             }
         }
-
-        report();
     }
 
     void mineForEndsWith() {

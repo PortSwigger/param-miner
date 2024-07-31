@@ -1,6 +1,7 @@
 package burp;
 
 import burp.Utilities;
+import burp.api.montoya.http.RequestOptions;
 import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.requests.HttpRequest;
 
@@ -66,7 +67,7 @@ class DomainProvider {
         switch (type) {
             case SUBDOMAIN -> {
                 String url =  "https://columbus.elmasy.com/api/lookup/"+domain;
-                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"));
+                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
                 PrintWriter out = null;
                 try {
                     out = new PrintWriter("/tmp/web-"+domain);
