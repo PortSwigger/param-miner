@@ -60,7 +60,7 @@ public class Lenscrack extends Scan {
         baseReq = Utilities.setMethod(baseReq, "GET");
         baseReq = Utilities.convertToHttp1(baseReq);
 
-        baseReq = Utilities.addOrReplaceHeader(baseReq, "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.5993.70 Safari/537.36 albinowax");
+        baseReq = Utilities.addOrReplaceHeader(baseReq, "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.5993.70 Safari/537.36");
         //byte[] withCacheBuster = Utilities.appendToQuery(baseReq, "cb=zxcv");
 
 
