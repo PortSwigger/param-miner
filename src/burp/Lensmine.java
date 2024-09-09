@@ -43,7 +43,7 @@ public class Lensmine extends Scan {
             try {
                 String url = "https://columbus.elmasy.com/api/lookup/" + domain;
                 HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
-                subdomainProvider.addSourceWords(apiResp.response().toString());
+                subdomainProvider.addSourceWords(apiResp.response().bodyToString());
             } catch (Exception e) {
                 Utilities.out("External subdomain lookup failed: "+e.toString());
             }
