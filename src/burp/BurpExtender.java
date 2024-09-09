@@ -449,7 +449,7 @@ class HeaderNameInsertionPoint extends ParamNameInsertionPoint {
     }
 }
 
-class JsonParamNameInsertionPoint extends ParamInsertionPoint {
+class JsonParamNameInsertionPoint extends ParamNameInsertionPoint {
     byte[] headers;
     byte[] body;
     String baseInput;
@@ -457,7 +457,7 @@ class JsonParamNameInsertionPoint extends ParamInsertionPoint {
     JsonElement root;
 
     public JsonParamNameInsertionPoint(byte[] request, String name, String value, byte type, String attackID) {
-        super(request, name, value, type); // BulkUtilities.encodeJSON(value)
+        super(request, name, value, type, attackID);
         int start = BulkUtilities.getBodyStart(request);
         this.attackID = attackID;
         headers = Arrays.copyOfRange(request, 0, start);

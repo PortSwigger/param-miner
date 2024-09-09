@@ -58,7 +58,7 @@ public class DiscoveredParam {
 
         canSeeCache = canSeeCache(workedAttack.getFirstRequest().getResponse());
         IHttpRequestResponse scanBaseAttack = injector.probeAttack(name).getFirstRequest();
-        ParamNameInsertionPoint insertionPoint = (ParamNameInsertionPoint) injector.getInsertionPoint();
+        ParamNameInsertionPoint insertionPoint =  (ParamNameInsertionPoint) injector.getInsertionPoint();
         RawInsertionPoint valueInsertionPoint = insertionPoint.getValueInsertionPoint(name);
 
         if (type == BulkUtilities.PARAM_HEADER) {
