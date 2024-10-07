@@ -365,7 +365,6 @@ referer
 refresh
 remix-hash
 remote-host-wp
-request-method-
 response
 rest-key
 returned-error
@@ -390,7 +389,6 @@ server-not-implemented
 server-service-unavailable
 server-unsupported-version
 session-id-tag
-shib-
 shib-identity-provider
 shib-logouturl
 shopilex
@@ -401,7 +399,6 @@ sp-client
 ssl-offloaded
 sslsessionid
 ssl-session-id
-status-
 status-403
 status-403-admin-del
 status-404
@@ -499,7 +496,6 @@ x-gb-shared-secret
 x-geoip-country
 x-get-checksum
 x-helpscout-event
-x-hgarg-
 x-host
 x-https
 x-htx-agent
@@ -823,7 +819,6 @@ webodf-member-id
 webodf-session-id
 webodf-session-revision
 work-directory
-x-
 x-api-key
 x-apitoken
 x-csrftoken
@@ -929,7 +924,6 @@ shib-application-id
 x-fireloggerauth
 cookie-domain
 https
-meth-
 modauth
 port
 post
@@ -1013,7 +1007,6 @@ unauthorized
 user-agent-via
 appversion
 not-found
-url-strip-
 x-pjax
 cf-connecting-ip
 x-dcmguid
