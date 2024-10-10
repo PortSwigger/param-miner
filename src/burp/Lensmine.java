@@ -27,6 +27,7 @@ public class Lensmine extends Scan {
         scanSettings.register("subdomains-specific", "", "Format: /subdomains/$domain. Read https://github.com/PortSwigger/param-miner/proxy.md for further info.");
         scanSettings.register("external subdomain lookup", false, "Look up subdomains using columbus.elmasy.com. Warning: this discloses the top-level private domain that you are targeting.");
         scanSettings.register("I read the docs", false, "Read the docs at https://github.com/PortSwigger/param-miner/proxy.md then check this box to stop nagging me to read the docs.");
+        scanSettings.register("deep-scan", false, "Prevent early exit if nothing interesting is found within the first 100 attempts or so. Always check all entries in enabled wordlists.");
     }
 
     static MineFindings mineSubdomains(byte[] req, IHttpService service, String domain, int maxDomainsToCheck) {
@@ -70,7 +71,8 @@ public class Lensmine extends Scan {
 
         while ((subdomain = subdomainProvider.getNext()) != null && !Utilities.unloaded.get()) {
             checked += 1;
-            if (checked > maxDomainsToCheck) {
+            // Don't exit early if deep-scan enabled
+            if (checked > maxDomainsToCheck && !Utilities.globalSettings.getBoolean("deep-scan")) {
                 //Utilities.out("Bailing early on "+domain);
                 break;
             }
