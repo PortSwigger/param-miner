@@ -12,6 +12,7 @@ access-control-max-age
 access-control-request-headers
 access-control-request-method
 age
+akamai-client-ip
 allow
 authorization
 authenticate
