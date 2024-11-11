@@ -28,7 +28,7 @@ public class Lensmine extends Scan {
         scanSettings.register("external subdomain lookup", false, "Look up subdomains using columbus.elmasy.com. Warning: this discloses the top-level private domain that you are targeting.");
         scanSettings.register("I read the docs", false, "Read the docs at https://github.com/PortSwigger/param-miner/proxy.md then check this box to stop nagging me to read the docs.");
         scanSettings.register("deep-scan", false, "Prevent early exit if nothing interesting is found within the first 100 attempts or so. Always check all entries in enabled wordlists.");
-        scanSettings.register("override path", false, "Use the path from the selected requests rather than defaulting to '/'.");
+        scanSettings.register("inherit request path", false, "Use the path from the selected requests rather than defaulting to '/'.");
     }
 
     static MineFindings mineSubdomains(byte[] req, IHttpService service, String domain, int maxDomainsToCheck) {
@@ -270,7 +270,7 @@ public class Lensmine extends Scan {
     static MineFindings doScan(byte[] baseReq, IHttpService service, int domainsToCheck) {
         baseReq = Utilities.setBody(baseReq, "");
         baseReq = Utilities.setMethod(baseReq, "GET");
-        if (!Utilities.globalSettings.getBoolean("override path")) {
+        if (!Utilities.globalSettings.getBoolean("inherit request path")) {
             baseReq = Utilities.setPath(baseReq, "/"); // does this make sense?
         }
         baseReq = Utilities.addOrReplaceHeader(baseReq, "Content-Length", "0");
