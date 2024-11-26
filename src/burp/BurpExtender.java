@@ -27,6 +27,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
     @Override
     public void initialize(MontoyaApi api) {
         Utilities.montoyaApi = api;
+        BulkUtilities.registerContextMenu();
         api.userInterface().registerContextMenuItemsProvider(new OfferHostnameOverride());
     }
     @Override
@@ -148,7 +149,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
         new FatGet("fat GET");
-        new NormalisedAdvancedParamScan("normalised advanced param");
+        new InputTransformationParamScan("input transformation");
         new NormalisedParamScan("normalised param");
         new NormalisedPathScan("normalised path");
         new RailsUtmScan("rails param cloaking scan");

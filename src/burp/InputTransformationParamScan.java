@@ -6,9 +6,9 @@ import burp.api.montoya.http.message.params.ParsedHttpParameter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class NormalisedAdvancedParamScan extends ParamScan {
+public class InputTransformationParamScan extends ParamScan {
 
-    NormalisedAdvancedParamScan(String name) {
+    InputTransformationParamScan(String name) {
         super(name);
     }
 
