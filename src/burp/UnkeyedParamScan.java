@@ -23,6 +23,7 @@ public class UnkeyedParamScan extends ParamScan {
 
         IHttpService service = baseRequestResponse.getHttpService();
 
+
         // set value to canary
         String canary = "akzldka";
         String cacheBuster = BulkUtilities.generateCanary();
