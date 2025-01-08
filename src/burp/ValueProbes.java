@@ -10,12 +10,17 @@ public class ValueProbes
            return false;
        }
 
-       String collab = BasicCollab.getPayload();
-       Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest(collab.getBytes()));
-       if (BasicCollab.checkPayload(collab.split("[.]")[0])) {
-           // report("ping", "", resp);
-           return true;
+       try {
+           String collab = BasicCollab.getPayload();
+           Resp resp = Scan.request(baseRequestResponse.getHttpService(), insertionPoint.buildRequest(collab.getBytes()));
+           if (BasicCollab.checkPayload(collab.split("[.]")[0])) {
+               // report("ping", "", resp);
+               return true;
+           }
+       } catch (IllegalStateException e) {
+           // collaborator is disabled
        }
+
        return false;
    }
 
