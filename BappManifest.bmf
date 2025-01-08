@@ -2,7 +2,7 @@ Uuid: 17d2949a985c4b7ca092728dba871943
 ExtensionType: 1
 Name: Param Miner
 RepoName: param-miner
-ScreenVersion: 1.51
+ScreenVersion: 1.52
 SerialVersion: 27
 MinPlatformVersion: 0
 ProOnly: False
