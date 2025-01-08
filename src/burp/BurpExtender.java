@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
     private static final String name = "Param Miner";
-    private static final String version = "1.52";
+    private static final String version = "1.53";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -148,6 +148,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         //new ValueScan("param-value probe");
         new UnkeyedParamScan("Unkeyed param");
         new FatGet("fat GET");
+        new InputTransformationParamScan("input transformation");
         new NormalisedParamScan("normalised param");
         new NormalisedPathScan("normalised path");
         new RailsUtmScan("rails param cloaking scan");

@@ -16,9 +16,6 @@ public class OfferHostnameOverride  implements ContextMenuItemsProvider {
     public List<Component> provideMenuItems(ContextMenuEvent event)
     {
         List<Component> menuItemList = new ArrayList<>();
-        if (event.selectedRequestResponses().isEmpty()) {
-            return menuItemList;
-        }
         
         HttpRequestResponse requestResponse = event.messageEditorRequestResponse().isPresent() ? event.messageEditorRequestResponse().get().requestResponse() : event.selectedRequestResponses().get(0);
         String serviceHost = requestResponse.httpService().host();
@@ -41,7 +38,7 @@ public class OfferHostnameOverride  implements ContextMenuItemsProvider {
             return;
         }
         String json = "{\"enabled\":true,\"hostname\":\""+hostHeader+"\",\"ip_address\":\""+ipAddress+"\"}"; // {"project_options":{"connections":{"hostname_resolution":[     ]}}}
-        String currentSettings = Utilities.montoyaApi.burpSuite().exportProjectOptionsAsJson("project_options.connections.hostname_resolution");
+        String currentSettings = Utilities.montoyaApi.burpSuite().exportProjectOptionsAsJson("project_options.dns.hostname_resolution");
         if (currentSettings.contains("ip_address")) {
             json = currentSettings.replace("]", ","+json+"]");
         } else {
