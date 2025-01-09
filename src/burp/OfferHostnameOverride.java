@@ -18,6 +18,10 @@ public class OfferHostnameOverride  implements ContextMenuItemsProvider {
         List<Component> menuItemList = new ArrayList<>();
         
         HttpRequestResponse requestResponse = event.messageEditorRequestResponse().isPresent() ? event.messageEditorRequestResponse().get().requestResponse() : event.selectedRequestResponses().get(0);
+        if (requestResponse == null || requestResponse.httpService() == null) {
+            return menuItemList;
+        }
+
         String serviceHost = requestResponse.httpService().host();
         String hostHeader = requestResponse.request().headerValue("host");
         if (!serviceHost.equals(hostHeader)) {
