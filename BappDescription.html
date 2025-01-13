@@ -1,12 +1,16 @@
-<p>This extension identifies hidden, unlinked parameters. It's particularly useful for finding web cache poisoning vulnerabilities, and requires <strong>Burp Suite v2021.9</strong> or later.</p>
+<p>This extension identifies hidden, unlinked parameters. It's particularly useful for finding web cache poisoning vulnerabilities.</p>
 
 <p>It combines advanced diffing logic from Backslash Powered Scanner with a binary search technique to guess up to 65,536 param names per request. Param names come from a carefully curated built in wordlist, and it also harvests additional words from all in-scope traffic.</p>
 
-<p>To use it, right click on a request in Burp and click "Guess (cookies|headers|params)". If you're using Burp Suite Pro, identified parameters will be reported as scanner issues. If not, you can find them listed under Extender-&gt;Extensions-&gt;Param Miner-&gt;Output</p>
+<h2>Usage</h2>
+
+<p>Right click on a request in Burp and click "Guess (cookies|headers|params)". If you're using Burp Suite Pro, identified parameters will be reported as scanner issues. If not, you can find them listed under Extender-&gt;Extensions-&gt;Param Miner-&gt;Output</p>
 
 <p>You can also launch guessing attacks on multiple selected requests at the same time - this will use a thread pool so you can safely use it on thousands of requests if you want. Alternatively, you can enable auto-mining of all in scope traffic. Please note that this tool is designed to be highly scalable but may require tuning to avoid performance issues.</p>
+
+<h2>Additional information</h2>
 
 <p>For further information, please refer to the whitepaper at 
 <a href="https://portswigger.net/blog/practical-web-cache-poisoning">https://portswigger.net/blog/practical-web-cache-poisoning</a></p>
 
-<p>Copyright &copy; 2016-2024 PortSwigger Ltd.</p>
+<p>Copyright &copy; 2016-2025 PortSwigger Ltd.</p>
