@@ -25,7 +25,7 @@ public class Lensmine extends Scan {
         scanSettings.register("subdomains-builtin", true, "Use the builtin wordlist to discover interesting proxyable destinations");
         scanSettings.register("subdomains-generic", "", "/path/to/wordlist");
         scanSettings.register("subdomains-specific", "", "Format: /subdomains/$domain. Read https://github.com/PortSwigger/param-miner/proxy.md for further info.");
-        scanSettings.register("external subdomain lookup", false, "Look up subdomains using columbus.elmasy.com. Warning: this discloses the top-level private domain that you are targeting.");
+        scanSettings.register("external subdomain lookup", false, "Look up subdomains using an external service. Not currently functional. Warning: this discloses the top-level private domain that you are targeting.");
         scanSettings.register("I read the docs", false, "Read the docs at https://github.com/PortSwigger/param-miner/proxy.md then check this box to stop nagging me to read the docs.");
         scanSettings.register("deep-scan", false, "Prevent early exit if nothing interesting is found within the first 100 attempts or so. Always check all entries in enabled wordlists.");
         scanSettings.register("inherit request path", false, "Use the path from the selected requests rather than defaulting to '/'.");
@@ -42,13 +42,15 @@ public class Lensmine extends Scan {
         WordProvider subdomainProvider = new WordProvider();
         subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-specific").replace("$domain", domain));
         if (Utilities.globalSettings.getBoolean("external subdomain lookup")) {
-            try {
-                String url = "https://columbus.elmasy.com/api/lookup/" + domain;
-                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
-                subdomainProvider.addSourceWords(apiResp.response().bodyToString());
-            } catch (Exception e) {
-                Utilities.out("External subdomain lookup failed: "+e.toString());
-            }
+            Utilities.out("External subdomain lookup is not currently available. ");
+            // todo this service is dead, integrate a different subomdain lookup service instead
+//            try {
+//                String url = "https://columbus.elmasy.com/api/lookup/" + domain;
+//                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
+//                subdomainProvider.addSourceWords(apiResp.response().bodyToString());
+//            } catch (Exception e) {
+//                Utilities.out("External subdomain lookup failed: "+e.toString());
+//            }
         }
 
         subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-generic"));

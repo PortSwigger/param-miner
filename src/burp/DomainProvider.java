@@ -64,41 +64,41 @@ class DomainProvider {
 
 
     void saveDomainsToFile(String domain, String filePath, byte type) {
-        switch (type) {
-            case SUBDOMAIN -> {
-                String url =  "https://columbus.elmasy.com/api/lookup/"+domain;
-                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
-                PrintWriter out = null;
-                try {
-                    out = new PrintWriter("/tmp/web-"+domain);
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
-                }
-                if (apiResp.hasResponse() && apiResp.response().statusCode() == 200) {
-                    out.print(apiResp.response().bodyToString());
-                } else {
-                    out.print("");
-                }
-                out.close();
-
-                String revDomain = new StringBuilder(domain).reverse().toString();
-                String cmd = "look '"+revDomain+".' /Users/james.kettle/data/useful_records_sorted | cut -c"+(revDomain.length()+2)+"- | rev | sort | uniq > /tmp/rapid-"+domain;
-                execute(cmd);
-                cmd = "cat '/tmp/rapid-"+domain + "' '/tmp/web-"+domain+"'  | sort | uniq > '"+filePath+"'";
-                execute(cmd);
-            }
-            case ENDSWITH -> {
-                String revDomain = new StringBuilder(domain).reverse().toString();
-                String cmd = "look '" + revDomain + "' /Users/james.kettle/data/useful_records_sorted | cut -c" + (revDomain.length() + 1) + "- | grep -E '^[^.]' | rev | sort | uniq | shuf > " + filePath;
-                execute(cmd);
-
-            }
-            case STARTSWITH -> {
-                String cmd = "look '"+domain+"' /Users/james.kettle/data/useful_records_ordered > "+filePath;
-                execute(cmd);
-            }
-        }
-
+        throw new RuntimeException("This method is not implemented");
+//        switch (type) {
+//            case SUBDOMAIN -> {
+//                String url =  "https://columbus.elmasy.com/api/lookup/"+domain;
+//                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
+//                PrintWriter out = null;
+//                try {
+//                    out = new PrintWriter("/tmp/web-"+domain);
+//                } catch (FileNotFoundException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                if (apiResp.hasResponse() && apiResp.response().statusCode() == 200) {
+//                    out.print(apiResp.response().bodyToString());
+//                } else {
+//                    out.print("");
+//                }
+//                out.close();
+//
+//                String revDomain = new StringBuilder(domain).reverse().toString();
+//                String cmd = "look '"+revDomain+".' /Users/james.kettle/data/useful_records_sorted | cut -c"+(revDomain.length()+2)+"- | rev | sort | uniq > /tmp/rapid-"+domain;
+//                execute(cmd);
+//                cmd = "cat '/tmp/rapid-"+domain + "' '/tmp/web-"+domain+"'  | sort | uniq > '"+filePath+"'";
+//                execute(cmd);
+//            }
+//            case ENDSWITH -> {
+//                String revDomain = new StringBuilder(domain).reverse().toString();
+//                String cmd = "look '" + revDomain + "' /Users/james.kettle/data/useful_records_sorted | cut -c" + (revDomain.length() + 1) + "- | grep -E '^[^.]' | rev | sort | uniq | shuf > " + filePath;
+//                execute(cmd);
+//
+//            }
+//            case STARTSWITH -> {
+//                String cmd = "look '"+domain+"' /Users/james.kettle/data/useful_records_ordered > "+filePath;
+//                execute(cmd);
+//            }
+//        }
     }
 
     String getNextDomain() {
