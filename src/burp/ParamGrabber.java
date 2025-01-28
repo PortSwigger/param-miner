@@ -76,7 +76,7 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
         byte[] placeHolder = BulkUtilities.helpers.stringToBytes("$randomplz");
         if (BulkUtilities.countMatches(messageInfo.getRequest(), placeHolder) > 0) {
             messageInfo.setRequest(
-                    BulkUtilities.fixContentLength(BulkUtilities.replace(messageInfo.getRequest(), placeHolder, BulkUtilities.helpers.stringToBytes(BulkUtilities.generateCanary())))
+                    BulkUtilities.replace(messageInfo.getRequest(), placeHolder, BulkUtilities.helpers.stringToBytes(BulkUtilities.randomString(10)))
             );
         }
 
