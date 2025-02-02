@@ -1210,4 +1210,6 @@ x-use-alt-service
 x-use-http-status-code-override
 x-now-route-matches
 x-invoke-status
+x-invoke-query
+x-invoke-error
 x-middleware-prefetch
