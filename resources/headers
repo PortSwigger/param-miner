@@ -1208,3 +1208,11 @@ x-stadia-client-context
 x-upload-content-length
 x-use-alt-service
 x-use-http-status-code-override
+x-now-route-matches
+x-invoke-status
+x-invoke-query
+x-invoke-error
+x-invoke-output
+x-invoke-path
+x-middleware-invoke
+x-middleware-prefetch
