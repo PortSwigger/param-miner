@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
     private static final String name = "Param Miner";
-    private static final String version = "1.54";
+    private static final String version = "1.55";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
