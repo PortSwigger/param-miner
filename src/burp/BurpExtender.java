@@ -79,6 +79,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         guessSettings.register("max bucketsize", 65536, "Maximum number of parameters Param Miner will consider putting in a single request if the server allows it.");
         guessSettings.register("max param length", 32, "This is used alongside the bucketsize detection");
         guessSettings.register("lowercase headers", true, "Send header names in lowercase. Good for efficiency.");
+        guessSettings.register("include Hyphenated-Pascal-Case headers", false, "Include headers in Hyphenated-Pascal-Case to account for case sensitive HTTP header parsing (e.g. x-forwarded-for is also sent as X-Forwarded-For). This setting ignores `lowercase headers`.");
         guessSettings.register("name in issue", false, "Include the parameter name in the issue title");
         guessSettings.register("canary", "zwrtxqva", "Fixed prefix used to detect input reflection");
         guessSettings.register("force canary", "", "Use this to override the canary - useful with carpet bomb mode");
