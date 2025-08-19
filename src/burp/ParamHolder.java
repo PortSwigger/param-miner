@@ -28,6 +28,22 @@ class ParamHolder {
         paramBuckets.push(e);
     }
 
+    String toHyphenatedPascalCaseIgnorePercent(String s) {
+        StringBuilder b = new StringBuilder(s.length());
+
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+
+            // Do not capitalize the character after a percentage sign. This is used for string interpolation by the extension to add IP and Port information to HTTP headers
+            if (i == 0 || (!Character.isLetterOrDigit(s.charAt(i-1)) && s.charAt(i-1) != '%')) {
+                b.append(Character.toUpperCase(c));   
+            } else {
+                b.append(c);
+            }
+        }
+        return b.toString();
+    }
+
     void addParams(ArrayList<String> params, boolean topup) {
         removeBadEntries(params);
 
@@ -48,6 +64,18 @@ class ParamHolder {
                 }
                 else {
                     params.add("x-"+param);
+                }
+            }
+
+            if (BulkUtilities.globalSettings.getBoolean("include Hyphenated-Pascal-Case headers")) {
+                max = params.size();
+                params.ensureCapacity(max*2);
+                for (int i=0; i<max; i++) {
+                    String param = params.get(i);
+                    String pascalCaseParam = toHyphenatedPascalCaseIgnorePercent(param);
+                    if (!pascalCaseParam.equals(param)) {
+                        params.add(pascalCaseParam);
+                    }
                 }
             }
         }
