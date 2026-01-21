@@ -9,6 +9,8 @@ import burp.api.montoya.http.message.HttpRequestResponse;
 import burp.api.montoya.http.message.StatusCodeClass;
 import burp.api.montoya.http.message.requests.HttpRequest;
 import burp.api.montoya.logging.Logging;
+import burp.api.montoya.utilities.json.JsonArrayNode;
+import burp.api.montoya.utilities.json.JsonNode;
 import com.google.common.net.InternetDomainName;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +27,7 @@ public class Lensmine extends Scan {
         scanSettings.register("subdomains-builtin", true, "Use the builtin wordlist to discover interesting proxyable destinations");
         scanSettings.register("subdomains-generic", "", "/path/to/wordlist");
         scanSettings.register("subdomains-specific", "", "Format: /subdomains/$domain. Read https://github.com/PortSwigger/param-miner/proxy.md for further info.");
-        scanSettings.register("external subdomain lookup", false, "Look up subdomains using an external service. Not currently functional. Warning: this discloses the top-level private domain that you are targeting.");
+        scanSettings.register("external subdomain lookup", false, "Look up subdomains using an external service. Warning: this discloses the top-level private domain that you are targeting.");
         scanSettings.register("I read the docs", false, "Read the docs at https://github.com/PortSwigger/param-miner/proxy.md then check this box to stop nagging me to read the docs.");
         scanSettings.register("deep-scan", false, "Prevent early exit if nothing interesting is found within the first 100 attempts or so. Always check all entries in enabled wordlists.");
         scanSettings.register("inherit request path", false, "Use the path from the selected requests rather than defaulting to '/'.");
@@ -42,15 +44,31 @@ public class Lensmine extends Scan {
         WordProvider subdomainProvider = new WordProvider();
         subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-specific").replace("$domain", domain));
         if (Utilities.globalSettings.getBoolean("external subdomain lookup")) {
-            Utilities.out("External subdomain lookup is not currently available. ");
-            // todo this service is dead, integrate a different subomdain lookup service instead
-//            try {
-//                String url = "https://columbus.elmasy.com/api/lookup/" + domain;
-//                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withHeader("Accept", "text/plain"), RequestOptions.requestOptions().withUpstreamTLSVerification());
-//                subdomainProvider.addSourceWords(apiResp.response().bodyToString());
-//            } catch (Exception e) {
-//                Utilities.out("External subdomain lookup failed: "+e.toString());
-//            }
+            try {
+                String url = "https://ip.thc.org/api/v1/lookup/subdomains";
+                HttpRequestResponse apiResp = Utilities.montoyaApi.http().sendRequest(HttpRequest.httpRequestFromUrl(url).withMethod("POST").withHeader("Content-Type", "application/json").withBody("{\"domain\":\""+domain+"\",\"limit\":0}"), RequestOptions.requestOptions().withUpstreamTLSVerification());
+
+
+                if (!Utilities.montoyaApi.utilities().jsonUtils().read(apiResp.response().bodyToString(), "matching_records").equals("0")) { // Check that we got some results
+                    String domains = Utilities.montoyaApi.utilities().jsonUtils().read(apiResp.response().bodyToString(), "domains");
+
+                    JsonNode domainNode = burp.api.montoya.utilities.json.JsonNode.jsonNode(domains);
+                    JsonArrayNode domainsArray = domainNode.asArray();
+
+                    String subDomainsFromLookup = "";
+
+                    for (JsonNode node : domainsArray.asList()) {
+                        String subdomain = Utilities.montoyaApi.utilities().jsonUtils().read(node.toJsonString(), "domain").replace("\"", ""); // Strip quotes from output
+
+                        // Cover cases where the domain appears in a subdomain somewhere. E.g. example.com.admin.example.com.
+                        String subdomainOnly = StringUtils.reverse(subdomain).replaceFirst(StringUtils.reverse("."+domain), "");
+                        subDomainsFromLookup += StringUtils.reverse(subdomainOnly)+"\r\n"; // Correct the order of chars in the string, create wordlist
+                    }
+                    subdomainProvider.addSourceWords(subDomainsFromLookup);
+                }
+            } catch (Exception e) {
+                Utilities.out("External subdomain lookup failed: "+e.toString());
+            }
         }
 
         subdomainProvider.addSourceFile(Utilities.globalSettings.getString("subdomains-generic"));
