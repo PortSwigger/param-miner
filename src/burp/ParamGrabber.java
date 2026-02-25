@@ -94,6 +94,22 @@ public class ParamGrabber implements IProxyListener, IHttpListener {
         }
 
         messageInfo.setRequest(req);
+
+        if (cacheBuster != null && BulkUtilities.globalSettings.getBoolean("Log mutated requests")) {
+            try {
+                IRequestInfo ri = BulkUtilities.helpers.analyzeRequest(messageInfo.getHttpService(), req);
+                java.net.URL url = ri.getUrl();
+
+                BulkUtilities.out("=== Param Miner mutated request ===");
+                BulkUtilities.out("URL: " + url);
+                BulkUtilities.out("Cachebuster: " + cacheBuster);
+                BulkUtilities.out("-----------------------------------");
+                BulkUtilities.out(BulkUtilities.helpers.bytesToString(req));
+                BulkUtilities.out("=== end ===");
+            } catch (Exception e) {
+                BulkUtilities.out("Param Miner: failed to log mutated request: " + e);
+            }
+        }
     }
 
     private void launchScan(IHttpRequestResponse messageInfo) {

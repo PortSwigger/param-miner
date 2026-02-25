@@ -38,6 +38,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         // config only (currently param-guess displays everything)
         configSettings.register("Add 'fcbz' cachebuster", false, "Add a static cache-buster to all outbound requests, to avoid manual cache poisoning probes affecting other users");
         configSettings.register("Add dynamic cachebuster", false, "Add a dynamic cache-buster to all requests, to avoid seeing cached responses");
+        configSettings.register("Log mutated requests", false, "When Param Miner mutates an outbound request (e.g. cachebusters), log the final request bytes for reproducible PoCs");
         //configSettings.register("Add header cachebuster", false);
         configSettings.register("learn observed words", false, "During Burp's passive scanning, record all words seen in the response and use them when guessing parameters. ");
         configSettings.register("enable auto-mine", false, "Automatically launch param guessing attacks on traffic as it passes through the proxy");
