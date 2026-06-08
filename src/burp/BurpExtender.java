@@ -247,7 +247,7 @@ class ParamNameInsertionPoint extends ParamInsertionPoint {
         present = new HashMap<>();
         List<String> headers = BulkUtilities.analyzeRequest(request).getHeaders();
         for (String header: headers) {
-            if (header.startsWith("Host: ")) {
+            if (header.toLowerCase().startsWith("host: ")) {
                 host = header.split(": ", 2)[1];
             }
             header = header.split(": ", 2)[0];
