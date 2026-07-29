@@ -32,6 +32,32 @@ class ParamAttack {
     private ConfigurableSettings config;
     private ArrayList<String> headerMutations;
 
+    private ProxyServer ruler;
+    private boolean rulerInitialised;
+
+    /**
+     * Lazily calibrates the protocol-ruler size-cliff oracle, so targets where no header is ever
+     * discovered never pay for it, and targets with no usable cliff pay only once. Returns null if
+     * the target can't be measured. Safe without locking because guessParams is single-threaded
+     * per attack.
+     */
+    ProxyServer getRuler() {
+        if (!rulerInitialised) {
+            rulerInitialised = true;
+            ProxyServer candidate = new ProxyServer(baseRequestResponse);
+            if (candidate.badTarget) {
+                BulkUtilities.out("No usable header size limit on " + targetURL + " - skipping transformation probes");
+            } else {
+                ruler = candidate;
+            }
+        }
+        return ruler;
+    }
+
+    void disableRuler() {
+        ruler = null;
+    }
+
     int getStop() {
         return stop;
     }

@@ -324,7 +324,7 @@ class ParamGuesser implements Runnable {
                 BulkUtilities.out("Identified parameter on " + targetURL + ": " + submission);
 
 
-                DiscoveredParam discoveredParam = new DiscoveredParam(confirmed, injector, submission, failAttack, paramGuess, baseRequestResponse);
+                DiscoveredParam discoveredParam = new DiscoveredParam(confirmed, injector, submission, failAttack, paramGuess, baseRequestResponse, state);
                 discoveredParam.exploreAndReport();
                 base = state.updateBaseline();
                 //BulkUtilities.callbacks.doPassiveScan(service.getHost(), service.getPort(), service.getProtocol().equals("https"), paramGuess.getFirstRequest().getRequest(), paramGuess.getFirstRequest().getResponse());

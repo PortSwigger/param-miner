@@ -17,6 +17,7 @@ public class DiscoveredParam {
     String name;
     byte[] staticCanary;
     IHttpRequestResponse baseRequestResponse;
+    ParamAttack attack;
     byte type;
 
     boolean canSeeCache = false;
@@ -28,7 +29,7 @@ public class DiscoveredParam {
     boolean dynamicOnly = false;
     boolean magicIP = false;
 
-    public DiscoveredParam(ArrayList<Attack> evidence, PayloadInjector injector, String name, Attack failAttack, Attack workedAttack, IHttpRequestResponse baseRequestResponse) {
+    public DiscoveredParam(ArrayList<Attack> evidence, PayloadInjector injector, String name, Attack failAttack, Attack workedAttack, IHttpRequestResponse baseRequestResponse, ParamAttack attack) {
         this.evidence = evidence;
         this.injector = injector;
         this.name = name;
@@ -36,6 +37,7 @@ public class DiscoveredParam {
         this.workedAttack = workedAttack;
         this.staticCanary = BulkUtilities.globalSettings.getString("canary").getBytes();
         this.baseRequestResponse = baseRequestResponse;
+        this.attack = attack;
         this.type = injector.getInsertionPoint().getInsertionPointType();
     }
 
@@ -72,6 +74,16 @@ public class DiscoveredParam {
 
         ValueProbes.utf8(scanBaseAttack, valueInsertionPoint);
         ValueProbes.utf82(scanBaseAttack, valueInsertionPoint);
+
+        // Runs after the cheap reflection-based probes, and in its own try/catch, because it
+        // downgrades to HTTP/1.1 and sends requests padded to the server's header size limit
+        if (type == BulkUtilities.PARAM_HEADER && attack != null) {
+            try {
+                HeaderRuler.probe(attack, name);
+            } catch (Exception e) {
+                BulkUtilities.showError(e);
+            }
+        }
 
 //        if (type == BulkUtilities.PARAM_HEADER && !BulkUtilities.containsBytes(workedAttack.getFirstRequest().getResponse(), staticCanary)) {
 //            return;

@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 
 public class BurpExtender implements IBurpExtender, IExtensionStateListener, BurpExtension {
     private static final String name = "Param Miner";
-    private static final String version = "1.58";
+    private static final String version = "1.59";
     private ThreadPoolExecutor taskEngine;
     static ParamGrabber paramGrabber;
     static SettingsBox configSettings = new SettingsBox();
@@ -66,6 +66,7 @@ public class BurpExtender implements IBurpExtender, IExtensionStateListener, Bur
         guessSettings.register("max one per host", false);
         guessSettings.register("max one per host+status", false);
         guessSettings.register("probe identified params", true, "Attempt to identify what type of input discovered parameters expect.");
+        guessSettings.register("probe header transformations", true, "After discovering a header, use the protocol ruler size-cliff oracle to detect front-end rewriting. Needs HTTP/1.1 and sends requests padded to the server's max header size.");
         guessSettings.register("scan identified params", false, "Launch an active scan against every discovered parameter");
         guessSettings.register("fuzz detect", false, "Detect parameters by specifying a fuzz-string as a value, designed to cause errors");
         guessSettings.register("carpet bomb", false, "Send parameters as usual, but don't attempt to identify/report valid ones. Useful for OAST techniques.");
