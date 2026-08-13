@@ -3,8 +3,8 @@ ExtensionType: 1
 Name: Param Miner
 RepoName: param-miner
 ScreenVersion: 1.59
-SerialVersion: 38
-MinPlatformVersion: 12
+SerialVersion: 39
+MinPlatformVersion: 27
 ProOnly: False
 Author: James Kettle, PortSwigger
 ShortDescription: This extension identifies hidden, unlinked parameters. It's particularly useful for finding web cache poisoning vulnerabilities.
